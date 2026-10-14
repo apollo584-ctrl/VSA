@@ -2,6 +2,1661 @@
   "id": "00000000-0000-0000-0000-000000000002",
   "engine_version": "0.1.0",
   "knowledge_version": "1.0.0",
+  "knowledge_snapshot": {
+    "version": "1.0.0",
+    "concepts": [
+      {
+        "id": "stopping_volume",
+        "name": "Stopping Volume",
+        "category": "strength",
+        "definition": "Elevated activity near a declining background's low with an off-low close.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume; low touches prior rolling low; close not in bottom extreme."
+        ],
+        "required_background": [
+          "Declining prior closes and a local low."
+        ],
+        "preferred_price_location": [
+          "Declining prior closes and a local low."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Selling may be encountering opposing interest."
+        ],
+        "alternative_explanations": [
+          "News or liquidation can produce the same bar."
+        ],
+        "confirmation_conditions": [
+          "Closes above the candidate high; loss of its low weakens this view."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "selling_climax",
+        "name": "Selling Climax",
+        "category": "strength",
+        "definition": "Wide high-volume activity at a declining background's low, closing high in its range.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume and wide relative spread; new/tied low; upper close."
+        ],
+        "required_background": [
+          "Prior decline at a local low."
+        ],
+        "preferred_price_location": [
+          "Prior decline at a local low."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "A decline may be exhausting."
+        ],
+        "alternative_explanations": [
+          "Heavy selling may continue after a temporary bounce."
+        ],
+        "confirmation_conditions": [
+          "Sustained upward follow-through; a close below the candidate low invalidates the local reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "shakeout",
+        "name": "Shakeout",
+        "category": "strength",
+        "definition": "A sharp excursion through support followed by recovery.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Penetrate established support, recover, then test with reduced selling activity."
+        ],
+        "required_background": [
+          "A previously identified trading range and broader background."
+        ],
+        "preferred_price_location": [
+          "A previously identified trading range and broader background."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Weak holders may have been displaced; identity is unknown."
+        ],
+        "alternative_explanations": [
+          "Ordinary volatility or news-driven repricing."
+        ],
+        "confirmation_conditions": [
+          "Hold recovered support; sustained loss of support weakens the interpretation."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "spring",
+        "name": "Spring",
+        "category": "strength",
+        "definition": "An excursion below prior support that closes back above it.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Low below prior rolling low; close back above it in upper range; prior down background."
+        ],
+        "required_background": [
+          "Prior decline and a measurable lower boundary; this MVP uses a rolling low proxy."
+        ],
+        "preferred_price_location": [
+          "Prior decline and a measurable lower boundary; this MVP uses a rolling low proxy."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Lower prices may have been rejected."
+        ],
+        "alternative_explanations": [
+          "A temporary bounce can precede another decline."
+        ],
+        "confirmation_conditions": [
+          "Close above the excursion high; close below its low invalidates the local reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "successful_test_supply",
+        "name": "Successful Test Supply",
+        "category": "strength",
+        "definition": "A subsequent low-activity test of a prior strength observation with upward follow-through.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Prior strength candidate; lower activity on revisit; subsequent upward progress."
+        ],
+        "required_background": [
+          "Identified prior strength and tested price region."
+        ],
+        "preferred_price_location": [
+          "Identified prior strength and tested price region."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Selling pressure may have diminished."
+        ],
+        "alternative_explanations": [
+          "Low activity may reflect absent participation on both sides."
+        ],
+        "confirmation_conditions": [
+          "Later upward progress while retaining the test low."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "no_supply",
+        "name": "No Supply",
+        "category": "strength",
+        "definition": "A narrow low-volume down candle with an off-low close in a declining background.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Low relative volume; narrow spread; close below open and not in bottom extreme."
+        ],
+        "required_background": [
+          "Prior down background; broader support and previous strength improve interpretation."
+        ],
+        "preferred_price_location": [
+          "Prior down background; broader support and previous strength improve interpretation."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Available selling may be limited."
+        ],
+        "alternative_explanations": [
+          "Illiquidity or inactivity can explain the same observation."
+        ],
+        "confirmation_conditions": [
+          "Close above the candidate high; loss of its low weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "low_volume_pullback",
+        "name": "Low Volume Pullback",
+        "category": "strength",
+        "definition": "A countertrend retracement on diminished activity.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Established uptrend; downward retracement; volume below comparable prior activity."
+        ],
+        "required_background": [
+          "A confirmed upward structure."
+        ],
+        "preferred_price_location": [
+          "A confirmed upward structure."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Countertrend selling may be weak."
+        ],
+        "alternative_explanations": [
+          "Demand may also have disappeared."
+        ],
+        "confirmation_conditions": [
+          "Resumption above pullback high while retaining its low."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "bullish_effort_result",
+        "name": "Bullish Effort Result",
+        "category": "strength",
+        "definition": "High activity with a narrow range and lower wick at a declining background's local low.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume, narrow relative spread, large lower wick, local low, prior decline."
+        ],
+        "required_background": [
+          "Down background at local support proxy."
+        ],
+        "preferred_price_location": [
+          "Down background at local support proxy."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Selling effort may meet opposing interest."
+        ],
+        "alternative_explanations": [
+          "High turnover without durable support."
+        ],
+        "confirmation_conditions": [
+          "Upward follow-through beyond candidate high; loss of its low weakens this view."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "absorption_selling",
+        "name": "Absorption Selling",
+        "category": "strength",
+        "definition": "Repeated selling activity with limited downward progress.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Multiple tests of a region with activity but diminishing downward displacement."
+        ],
+        "required_background": [
+          "Repeated comparable support tests."
+        ],
+        "preferred_price_location": [
+          "Repeated comparable support tests."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Opposing interest may be absorbing selling."
+        ],
+        "alternative_explanations": [
+          "A pause before further liquidation."
+        ],
+        "confirmation_conditions": [
+          "Retain the region and progress higher; sustained loss of it invalidates the local view."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "buying_climax",
+        "name": "Buying Climax",
+        "category": "weakness",
+        "definition": "Wide high-volume activity at an advancing background's high, closing low in its range.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume and wide spread; new/tied local high; lower close."
+        ],
+        "required_background": [
+          "Prior advance at a local high."
+        ],
+        "preferred_price_location": [
+          "Prior advance at a local high."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "An advance may be exhausting."
+        ],
+        "alternative_explanations": [
+          "A pause during continuing strength."
+        ],
+        "confirmation_conditions": [
+          "Downward follow-through; a close above the high weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "upthrust",
+        "name": "Upthrust",
+        "category": "weakness",
+        "definition": "Excursion above a prior high followed by a lower close and large upper wick.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High above rolling prior high; close back below, in lower range; large upper wick."
+        ],
+        "required_background": [
+          "Prior upward background and a known upper boundary proxy."
+        ],
+        "preferred_price_location": [
+          "Prior upward background and a known upper boundary proxy."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Higher prices may have been rejected locally."
+        ],
+        "alternative_explanations": [
+          "Profit-taking within a continuing advance."
+        ],
+        "confirmation_conditions": [
+          "Close below the candidate low; recovery above its high weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "failed_upward_breakout",
+        "name": "Failed Upward Breakout",
+        "category": "weakness",
+        "definition": "An upward breakout attempt that cannot sustain the broken region.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Known resistance; penetration; return beneath it; failed recovery."
+        ],
+        "required_background": [
+          "Established upper boundary and attempted breakout."
+        ],
+        "preferred_price_location": [
+          "Established upper boundary and attempted breakout."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Upward auction may have failed."
+        ],
+        "alternative_explanations": [
+          "Temporary retracement before acceptance."
+        ],
+        "confirmation_conditions": [
+          "Continued lower closes; sustained recovery invalidates the failed-breakout reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "no_demand",
+        "name": "No Demand",
+        "category": "weakness",
+        "definition": "A narrow low-volume up candle with an off-high close in an advancing background.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Low relative volume; narrow spread; close above open but not in upper extreme."
+        ],
+        "required_background": [
+          "Prior upward background; resistance and previous weakness improve interpretation."
+        ],
+        "preferred_price_location": [
+          "Prior upward background; resistance and previous weakness improve interpretation."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Buying interest may be limited."
+        ],
+        "alternative_explanations": [
+          "A quiet advance can occur with little available selling."
+        ],
+        "confirmation_conditions": [
+          "Close below candidate low; recovery above its high weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "supply_entering",
+        "name": "Supply Entering",
+        "category": "weakness",
+        "definition": "Increasing activity accompanies reduced upward progress.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Compare several upward bars for increased activity and decreasing displacement."
+        ],
+        "required_background": [
+          "An advance into a known resistance region."
+        ],
+        "preferred_price_location": [
+          "An advance into a known resistance region."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Opposing selling may be increasing."
+        ],
+        "alternative_explanations": [
+          "Routine profit-taking without a durable transition."
+        ],
+        "confirmation_conditions": [
+          "Lower follow-through; sustained upward progress weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "high_volume_rejection",
+        "name": "High Volume Rejection",
+        "category": "weakness",
+        "definition": "A high-volume excursion above a reference that fails to retain higher prices.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Known reference; high relative volume; excursion above and close below."
+        ],
+        "required_background": [
+          "Measurable upper reference and upward attempt."
+        ],
+        "preferred_price_location": [
+          "Measurable upper reference and upward attempt."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Higher-price auction may be failing."
+        ],
+        "alternative_explanations": [
+          "Transient volatility around news."
+        ],
+        "confirmation_conditions": [
+          "Lower follow-through; acceptance above the reference weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "bearish_effort_result",
+        "name": "Bearish Effort Result",
+        "category": "weakness",
+        "definition": "High activity with narrow range and an upper wick at an advancing background's local high.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High volume, narrow spread, large upper wick, local high, prior advance."
+        ],
+        "required_background": [
+          "Up background at local resistance proxy."
+        ],
+        "preferred_price_location": [
+          "Up background at local resistance proxy."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Buying effort may meet opposing interest."
+        ],
+        "alternative_explanations": [
+          "Heavy turnover within a continuing advance."
+        ],
+        "confirmation_conditions": [
+          "Downward follow-through; recovery above candidate high weakens the reading."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "absorption_buying",
+        "name": "Absorption Buying",
+        "category": "weakness",
+        "definition": "Repeated buying activity with limited upward progress.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Multiple comparable resistance tests with activity but diminishing upward displacement."
+        ],
+        "required_background": [
+          "Repeated tests of resistance."
+        ],
+        "preferred_price_location": [
+          "Repeated tests of resistance."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Opposing interest may be absorbing buying."
+        ],
+        "alternative_explanations": [
+          "Consolidation before continued advance."
+        ],
+        "confirmation_conditions": [
+          "Failure below resistance; sustained acceptance above it invalidates the local view."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "high_volume_churn",
+        "name": "High Volume Churn",
+        "category": "neutral",
+        "definition": "Elevated volume with narrow spread and a middle-range close.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume; narrow relative spread; close away from both extremes."
+        ],
+        "required_background": [
+          "Comparable prior-volume and spread baselines."
+        ],
+        "preferred_price_location": [
+          "Comparable prior-volume and spread baselines."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Substantial activity achieved limited range expansion."
+        ],
+        "alternative_explanations": [
+          "Ordinary two-sided liquidity or rebalance activity."
+        ],
+        "confirmation_conditions": [
+          "Subsequent expansion establishes context; no direction is implied."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "narrow_spread_elevated_volume",
+        "name": "Narrow Spread Elevated Volume",
+        "category": "neutral",
+        "definition": "Elevated volume coincides with narrow spread.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume; narrow relative spread."
+        ],
+        "required_background": [
+          "Sufficient prior baseline."
+        ],
+        "preferred_price_location": [
+          "Sufficient prior baseline."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Activity and range expansion diverge."
+        ],
+        "alternative_explanations": [
+          "Routine liquidity concentration."
+        ],
+        "confirmation_conditions": [
+          "Later progress or rejection distinguishes interpretations."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "wide_spread_low_volume",
+        "name": "Wide Spread Low Volume",
+        "category": "neutral",
+        "definition": "Wide spread coincides with low relative volume.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Wide relative spread; low relative volume."
+        ],
+        "required_background": [
+          "Sufficient prior baseline."
+        ],
+        "preferred_price_location": [
+          "Sufficient prior baseline."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Price moved with relatively little observed activity."
+        ],
+        "alternative_explanations": [
+          "Sparse liquidity or ordinary volatility."
+        ],
+        "confirmation_conditions": [
+          "Later acceptance or reversal determines context."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "volume_expansion",
+        "name": "Volume Expansion",
+        "category": "neutral",
+        "definition": "Volume is elevated relative to prior bars.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Volume divided by prior-only moving average reaches high_volume."
+        ],
+        "required_background": [
+          "Sufficient prior bars; time of day may explain activity."
+        ],
+        "preferred_price_location": [
+          "Sufficient prior bars; time of day may explain activity."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Participation increased relative to this baseline."
+        ],
+        "alternative_explanations": [
+          "Session-open or close effects, news, and auctions."
+        ],
+        "confirmation_conditions": [
+          "Compare subsequent volume and directional progress."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_contraction"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "volume_contraction",
+        "name": "Volume Contraction",
+        "category": "neutral",
+        "definition": "Volume is reduced relative to prior bars.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Volume divided by prior-only moving average is below low_volume."
+        ],
+        "required_background": [
+          "Sufficient prior baseline; session context."
+        ],
+        "preferred_price_location": [
+          "Sufficient prior baseline; session context."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Participation decreased relative to this baseline."
+        ],
+        "alternative_explanations": [
+          "Lunch-hour seasonality or missing provider activity."
+        ],
+        "confirmation_conditions": [
+          "Compare later activity and price progress."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "climactic_activity",
+        "name": "Climactic Activity",
+        "category": "neutral",
+        "definition": "Wide spread and high relative volume occur together.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "High relative volume; wide relative spread."
+        ],
+        "required_background": [
+          "Sufficient prior baseline; no directional conclusion without location."
+        ],
+        "preferred_price_location": [
+          "Sufficient prior baseline; no directional conclusion without location."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Unusually active price expansion."
+        ],
+        "alternative_explanations": [
+          "News or persistent trend continuation."
+        ],
+        "confirmation_conditions": [
+          "Subsequent follow-through or rejection establishes context."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "compression",
+        "name": "Compression",
+        "category": "neutral",
+        "definition": "Current spread is narrow relative to prior spreads.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Prior-only relative spread below narrow_spread."
+        ],
+        "required_background": [
+          "Sufficient baseline; single-bar proxy rather than a full consolidation detector."
+        ],
+        "preferred_price_location": [
+          "Sufficient baseline; single-bar proxy rather than a full consolidation detector."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Current range contracted."
+        ],
+        "alternative_explanations": [
+          "Quiet session periods or sparse trading."
+        ],
+        "confirmation_conditions": [
+          "Later sustained expansion may resolve compression."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "volume_divergence",
+        "name": "Volume Divergence",
+        "category": "neutral",
+        "definition": "Volume activity and price progress differ across comparable swings.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Compare confirmed swings, displacement and activity under a fixed measurement window."
+        ],
+        "required_background": [
+          "Comparable multi-bar swings."
+        ],
+        "preferred_price_location": [
+          "Comparable multi-bar swings."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "The relationship between effort and result changed."
+        ],
+        "alternative_explanations": [
+          "Seasonality, liquidity, or corporate actions."
+        ],
+        "confirmation_conditions": [
+          "Subsequent price behavior; divergence alone gives no direction."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "knowledge_only"
+      },
+      {
+        "id": "abnormal_relative_volume",
+        "name": "Abnormal Relative Volume",
+        "category": "neutral",
+        "definition": "Volume is elevated versus the same local-time slot in prior sessions.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Same-slot relative volume reaches high_volume after tod_minimum_sessions."
+        ],
+        "required_background": [
+          "Enough prior New York time-slot history, without using the current bar in the baseline."
+        ],
+        "preferred_price_location": [
+          "Enough prior New York time-slot history, without using the current bar in the baseline."
+        ],
+        "volume_characteristics": [
+          "Use the stated prior-only relative-volume conditions; thresholds are local engine heuristics."
+        ],
+        "spread_characteristics": [
+          "Use range high minus low and the stated prior-only relative-spread conditions."
+        ],
+        "close_location_characteristics": [
+          "Close location is (close-low)/(high-low); zero-range bars use 0.5."
+        ],
+        "possible_interpretations": [
+          "Activity is unusual for this time of day."
+        ],
+        "alternative_explanations": [
+          "News, index rebalancing, or non-comparable sessions."
+        ],
+        "confirmation_conditions": [
+          "Evaluate persistence and price progress; no directional conclusion follows alone."
+        ],
+        "invalidation_conditions": [
+          "Opposite price follow-through weakens directional hypotheses; neutral observations are measurements rather than forecasts."
+        ],
+        "known_limitations": [
+          "OHLCV cannot prove institutional intent or order flow.",
+          "These are operational definitions, not a verbatim or exhaustive VSA doctrine.",
+          "Rule confirmation means price follow-through, not confirmation of motives."
+        ],
+        "related_patterns": [
+          "volume_expansion"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "profile_shapes",
+        "name": "Profile Shapes",
+        "category": "profile",
+        "definition": "Numerical descriptors of estimated time or volume distributions; D, P, b, B, elongated, multimodal or unclassified.",
+        "historical_origin_or_source": [
+          "https://www.cqg.com/sites/default/files/archive/docs/Trading_Time.pdf",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Skewness, separated peaks, concentration and directional progress; all heuristic."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "auction_state",
+        "name": "Auction State",
+        "category": "auction",
+        "definition": "Observable classifications of closes relative to frozen prior-session estimated value.",
+        "historical_origin_or_source": [
+          "https://www.cqg.com/sites/default/files/archive/docs/Trading_Time.pdf",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Consecutive closes beyond value indicate acceptance; return inside indicates rejection."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "breakout",
+        "name": "Breakout",
+        "category": "price_action",
+        "definition": "Close beyond a prior rolling high or low.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Close outside a prior-only rolling boundary after minimum history."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "failed_breakout",
+        "name": "Failed Breakout",
+        "category": "price_action",
+        "definition": "Intrabar penetration of a rolling boundary followed by a close back inside.",
+        "historical_origin_or_source": [
+          "https://www.wyckoffanalytics.com/wyckoff-method/",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Range exceeds the boundary; close returns inside. This MVP is a single-bar failure proxy."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "rejection_wick",
+        "name": "Rejection Wick",
+        "category": "price_action",
+        "definition": "A wick occupies a configurable fraction of the candle range.",
+        "historical_origin_or_source": [
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules.",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Upper or lower wick fraction reaches wick_fraction."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "swing_structure",
+        "name": "Swing Structure",
+        "category": "price_action",
+        "definition": "Strict local pivot compared with previously confirmed same-side pivots.",
+        "historical_origin_or_source": [
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules.",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Pivot confirmed only after pivot_bars right-hand bars close; tied extrema are excluded."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "data_requirements",
+        "name": "Data Requirements",
+        "category": "data",
+        "definition": "Timestamped consistent OHLCV and declared session and split-adjustment basis.",
+        "historical_origin_or_source": [
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules.",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Finite consistent OHLC; nonnegative volume; strictly ordered timestamps on exchange session grids."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "common_misconceptions"
+        ],
+        "detector_status": "implemented"
+      },
+      {
+        "id": "common_misconceptions",
+        "name": "Common Misconceptions",
+        "category": "limitations",
+        "definition": "Profile shapes and VSA observations do not establish participant intent or predictive certainty.",
+        "historical_origin_or_source": [
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules.",
+          "Local engine v0.1.0: operational heuristics, not source-author thresholds or validated predictive rules."
+        ],
+        "observable_conditions": [
+          "Estimated profiles cannot reconstruct exact trade-at-price or aggressor flow."
+        ],
+        "required_background": [
+          "Validated, consistently adjusted completed bars."
+        ],
+        "preferred_price_location": [
+          "Relative to the relevant observed reference region."
+        ],
+        "volume_characteristics": [
+          "OHLCV aggregate volume, not trade-at-price."
+        ],
+        "spread_characteristics": [
+          "High minus low."
+        ],
+        "close_location_characteristics": [
+          "Range-relative close."
+        ],
+        "possible_interpretations": [
+          "Contextual description of the available data."
+        ],
+        "alternative_explanations": [
+          "Missing data, ordinary volatility or different binning can alter the classification."
+        ],
+        "confirmation_conditions": [
+          "Additional completed data consistent with the classification."
+        ],
+        "invalidation_conditions": [
+          "Observed behavior contradicts the stated operational rule."
+        ],
+        "known_limitations": [
+          "No prediction or participant identity follows from these measurements."
+        ],
+        "related_patterns": [
+          "data_requirements"
+        ],
+        "detector_status": "knowledge_only"
+      }
+    ]
+  },
   "dataset_id": "00000000-0000-0000-0000-000000000001",
   "instrument": "DEMO",
   "timeframe": "5m",

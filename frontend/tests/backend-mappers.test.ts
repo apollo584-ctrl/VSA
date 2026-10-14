@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { clipBars, knownEvents } from "@/lib/replay";
 import { analysisSchema, barsResponseSchema, knowledgeListSchema } from "@/lib/api/schemas";
-import { mapAnalysis, mapConcept, barsResponse } from "@/lib/api/backend/mappers";
+import { mapAnalysis, mapConcept, mapProfile, barsResponse } from "@/lib/api/backend/mappers";
 import { rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema } from "@/lib/api/backend/schemas";
 
 // Backend-published example responses (backend/fixtures). Skipped if the backend folder is absent.
@@ -18,7 +18,7 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
   const concepts = have
     ? new Map(rawConceptSchema.array().parse(JSON.parse(readFileSync(path.resolve(__dirname, "../../backend/app/knowledge/concepts.json"), "utf8")).concepts).map((c) => [c.id, c]))
     : new Map();
-  const ui = have ? mapAnalysis(rawAnalysis, { bars, concepts }) : (null as never);
+  const ui = have ? mapAnalysis(rawAnalysis, { bars }) : (null as never);
 
   it("raw responses satisfy the documented schemas and map to valid UI types", () => {
     expect(analysisSchema.safeParse(ui).success).toBe(true);
@@ -81,5 +81,55 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
     expect(vol.poc).toBe(raw.volume.poc);
     expect(vol.vah).toBe(raw.volume.vah);
     expect(clipBars([], null)).toEqual([]);
+  });
+
+  it("uses visible constituent OHLC and dates for composite bounds", () => {
+    const p = structuredClone(rawAnalysis.profile_analysis[0]!);
+    p.scope = "composite";
+    p.session = `${bars[0]!.session}/${bars[bars.length - 1]!.session}`;
+    p.as_of = bars[200]!.available_at;
+    const visible = bars.slice(0, 201);
+    const mapped = mapProfile(p, "composite", bars, Date.parse(rawAnalysis.analysis_timestamp) / 1000, "Composite", concepts)!;
+    expect(mapped.startTime).toBe(Date.parse(visible[0]!.timestamp) / 1000);
+    expect(mapped.endTime).toBe(Date.parse(visible.at(-1)!.timestamp) / 1000);
+    expect(mapped.sessionHigh).toBe(Math.max(...visible.map((b) => b.high)));
+    expect(mapped.sessionLow).toBe(Math.min(...visible.map((b) => b.low)));
+    expect(mapProfile(p, "composite", [], Infinity, "Composite", concepts)).toBeNull();
+  });
+
+  it.each(["indeterminate", "higher_price_acceptance"])("closes historical states after a session reset to %s", (currentState) => {
+    const a = structuredClone(rawAnalysis);
+    const oldBar = bars.find((b) => b.session === "2025-03-04")!;
+    const latestBar = bars.find((b) => b.session === "2025-03-06")!;
+    a.analysis_timestamp = latestBar.available_at;
+    a.auction_state.state = currentState;
+    a.auction_state.transitions = [{
+      id: "old-acceptance", kind: "classified", concept_id: "auction_state", timestamp: oldBar.timestamp,
+      first_observable_at: oldBar.available_at, status: "observed", direction: "neutral",
+      description: "upward_breakout_attempt → higher_price_acceptance", coordinates: {}, measurements: {}, supporting_evidence: [],
+    }];
+    const subset = bars.filter((b) => b.session === oldBar.session || b.timestamp === latestBar.timestamp);
+    const mapped = mapAnalysis(a, { bars: subset });
+    expect(mapped.auctionStates.filter((s) => s.endTime === null).map((s) => s.kind)).toEqual([currentState]);
+    expect(mapped.auctionStates[0]!.endTime).toBe(Date.parse(subset[77]!.timestamp) / 1000);
+    expect(mapped.auctionStates.at(-1)!.detectedAt).toBe(Date.parse(latestBar.timestamp) / 1000);
+    expect(mapped.auctionTransitions).toHaveLength(1); // no invented reset transition
+  });
+
+  it("uses preserved knowledge and explicitly withholds legacy or mismatched catalog text", () => {
+    const a = structuredClone(rawAnalysis);
+    a.knowledge_snapshot = { version: a.knowledge_version, concepts: [...concepts.values()].map((c) => structuredClone(c)) };
+    const before = mapAnalysis(a, { bars });
+    const changedCurrentCatalog = new Map([...concepts].map(([id, c]) => [id, { ...c, possible_interpretations: ["changed current catalog"] }]));
+    expect(changedCurrentCatalog.get(before.vsaEvents[0]!.type)!.possible_interpretations).toEqual(["changed current catalog"]);
+    expect(mapAnalysis(a, { bars })).toEqual(before);
+    const legacy = { ...a, knowledge_snapshot: undefined };
+    const mismatched = { ...a, knowledge_snapshot: { ...a.knowledge_snapshot!, version: "different-version" } };
+    for (const raw of [legacy, mismatched]) {
+      const mapped = mapAnalysis(raw, { bars });
+      expect(mapped.vsaEvents.every((e) => e.textSource === "unavailable" && e.implications.length === 0 && e.conditions.length === 0)).toBe(true);
+      expect(mapped.interpretation!.uncertainty.some((u) => u.text.includes("no matching preserved knowledge"))).toBe(true);
+      expect(mapped.interpretation!.whatIsHappening!.standard).toBe(raw.plain_english_summary);
+    }
   });
 });

@@ -176,6 +176,8 @@ class Analysis(Model):
     id: str
     engine_version: str = "0.1.0"
     knowledge_version: str = "1.0.0"
+    # Optional only for snapshots created before catalogs were preserved.
+    knowledge_snapshot: "Knowledge | None" = None
     dataset_id: str
     instrument: str
     timeframe: str
@@ -223,3 +225,6 @@ class Concept(Model):
 class Knowledge(Model):
     version: str
     concepts: list[Concept]
+
+
+Analysis.model_rebuild()

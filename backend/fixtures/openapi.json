@@ -519,6 +519,16 @@
             "title": "Knowledge Version",
             "default": "1.0.0"
           },
+          "knowledge_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Knowledge"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dataset_id": {
             "type": "string",
             "title": "Dataset Id"
@@ -1205,6 +1215,28 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "Knowledge": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/Concept"
+            },
+            "type": "array",
+            "title": "Concepts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "concepts"
+        ],
+        "title": "Knowledge"
       },
       "Parameters": {
         "properties": {

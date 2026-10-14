@@ -54,9 +54,14 @@ describe.skipIf(!live)("live backend integration", () => {
     const reopened = await backendApi.getSnapshot(a.snapshot!.id);
     // The composite profile comes from GET /profiles (recomputed), not from the stored snapshot, so it is excluded.
     expect(a.profiles["composite"]).toBeDefined();
+    expect(a.profiles["composite"]!.startTime).toBe(bars.bars[0]!.t);
+    expect(a.profiles["composite"]!.endTime).toBe(bars.bars.at(-1)!.t);
+    expect(a.profiles["composite"]!.sessionHigh).toBe(Math.max(...bars.bars.map((b) => b.h)));
+    expect(a.profiles["composite"]!.sessionLow).toBe(Math.min(...bars.bars.map((b) => b.l)));
     expect(reopened.profiles["composite"]).toBeUndefined();
     const { composite: _omit, ...liveProfiles } = a.profiles;
     expect({ ...a, profiles: liveProfiles }).toEqual(reopened);
+    expect(reopened.vsaEvents.every((e) => e.textSource === "catalog")).toBe(true);
 
     // 6. rejection path: as_of before the first bar completes → withheld analysis, not a crash
     const none = await backendApi.getAnalysis({ symbol: id, asOf: bars.bars[0]!.t - 3600 });
@@ -75,5 +80,21 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(r.accepted).toBe(false);
     expect(r.issues[0]!.message).toMatch(/header/i);
     expect((await backendApi.listInstruments()).length).toBe(before);
+  });
+
+  it("uploads and analyzes supported 60-minute extended-session bars", async () => {
+    const { backendApi } = await import("@/lib/api/backend/client");
+    const metadata = { ...JSON.parse(readFileSync(path.join(fixtures, "upload_metadata.json"), "utf8")), timeframe_minutes: 60, session_mode: "extended" };
+    const csv = "timestamp,open,high,low,close,volume\n2025-03-10T04:00:00-04:00,100,101,99,100,1000\n2025-03-10T05:00:00-04:00,100,101,99,100,1000\n";
+    const uploaded = await backendApi.uploadDataset(new File([csv], "hourly.csv"), metadata);
+    expect(uploaded.accepted).toBe(true);
+    const analysis = await backendApi.getAnalysis({ symbol: uploaded.datasetId! });
+    expect(analysis.status).toBe("ok");
+    expect(analysis.timeframe).toBe("60m");
+    expect(analysis.profiles.volume!.startTime).toBe(Date.parse("2025-03-10T04:00:00-04:00") / 1000);
+    expect(analysis.profiles.composite!.endTime).toBe(Date.parse("2025-03-10T05:00:00-04:00") / 1000);
+    const reopened = await backendApi.getSnapshot(analysis.snapshot!.id);
+    const { composite: _composite, ...profiles } = analysis.profiles;
+    expect(reopened).toEqual({ ...analysis, profiles });
   });
 });

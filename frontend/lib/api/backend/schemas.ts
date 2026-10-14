@@ -118,6 +118,8 @@ export const rawAnalysisSchema = z.object({
   id: z.string(),
   engine_version: z.string(),
   knowledge_version: z.string(),
+  // Legacy persisted snapshots predate this optional field.
+  knowledge_snapshot: z.lazy(() => z.object({ version: z.string(), concepts: z.array(rawConceptSchema) })).nullable().optional(),
   dataset_id: z.string(),
   instrument: z.string(),
   timeframe: z.string(),

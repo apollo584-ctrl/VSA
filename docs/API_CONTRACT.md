@@ -75,6 +75,8 @@ Analysis fields: `id`, `engine_version`, `knowledge_version`, `dataset_id`, `ins
 
 Each Scenario has `kind=inferred`, `id`, `description`, `evidence_ids`, `confirmation_conditions`, `invalidation_conditions`. IDs resolve against profile IDs and the VSA/price-action/auction Evidence lists in that response. `uncertainties` are explicit limits; neither shape ambiguity nor detector confirmation is a predictive probability. The catalog's `detector_status` is `implemented` or `knowledge_only`; only implemented rules can emit observations.
 
+Additive v1 field: new analyses include `knowledge_snapshot: {version, concepts}` containing the validated catalog used at creation. Its version matches `knowledge_version`. This object is persisted with the analysis so generic concept definitions, implications and conditions can be displayed without consulting a later catalog. Existing stored analyses predate this field and return null; clients must treat missing/null or version-mismatched embedded catalogs as unavailable and display the stored observations/scenarios without substituting current knowledge. No database migration or rewrite of old snapshots is performed.
+
 Claude should use `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1` and follow this sequence:
 
 1. Upload `file` and `metadata` using FormData. Let the browser set the multipart Content-Type boundary.

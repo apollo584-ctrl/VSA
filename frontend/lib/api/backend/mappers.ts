@@ -155,7 +155,7 @@ export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<stri
     alternatives: c?.alternative_explanations ?? [],
     confirmation: c?.confirmation_conditions ?? [],
     invalidation: c?.invalidation_conditions ?? [],
-    textSource: "catalog",
+    textSource: c ? "catalog" : "unavailable",
     profileRefs: [],
     referencePrices: Object.values(e.coordinates).filter((v): v is number => typeof v === "number"),
     knowledgeSlugs: c ? [c.id, ...c.related_patterns.slice(0, 3)] : [e.concept_id],
@@ -164,8 +164,9 @@ export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<stri
 
 // ------------------------------------------------------------------ profiles
 
-function sessionExtremes(bars: RawBar[], session: string, upTo: number) {
-  const inSession = bars.filter((b) => b.session === session && epoch(b.available_at) <= upTo);
+function sessionExtremes(bars: RawBar[], session: string, upTo: number, composite = false) {
+  const [first, last = first] = session.split("/");
+  const inSession = bars.filter((b) => (composite ? b.session >= first! && b.session <= last! : b.session === session) && epoch(b.available_at) <= upTo);
   return {
     high: inSession.length ? Math.max(...inSession.map((b) => b.high)) : null,
     low: inSession.length ? Math.min(...inSession.map((b) => b.low)) : null,
@@ -180,7 +181,9 @@ export const shapeLabel = (c: string) => c.replace(/_/g, " "); // keep case: P /
 export function mapProfile(p: RawProfile, kind: "tpo" | "volume" | "prior" | "composite", bars: RawBar[], upTo: number, label: string, concepts: Map<string, RawConcept>): Profile | null {
   const weightDist = kind === "tpo" ? p.tpo : p.volume;
   if (weightDist.poc === null || weightDist.vah === null || weightDist.val === null) return null; // e.g. zero volume: levels are null
-  const ex = sessionExtremes(bars, p.session, upTo);
+  const ex = sessionExtremes(bars, p.session, Math.min(upTo, epoch(p.as_of)), p.scope === "composite");
+  // Missing constituent bars cannot be replaced by bin coordinates or epoch dates.
+  if (ex.first === null || ex.last === null || ex.high === null || ex.low === null) return null;
   const ib = p.initial_balance;
   const hasIb = typeof ib["high"] === "number" && typeof ib["low"] === "number";
   const sh = weightDist.shape;
@@ -190,14 +193,14 @@ export function mapProfile(p: RawProfile, kind: "tpo" | "volume" | "prior" | "co
     estimated: weightDist.estimated,
     estimationMethod: weightDist.method,
     label,
-    startTime: ex.first ?? 0,
-    endTime: ex.last ?? 0,
+    startTime: ex.first,
+    endTime: ex.last,
     binSize: p.bin_size,
     bins: lows.map((price, i) => ({ price, tpo: p.tpo.counts[i] ?? 0, volume: p.volume.counts[i] ?? 0 })),
     poc: weightDist.poc, vah: weightDist.vah, val: weightDist.val,
     hvns: p.hvns, lvns: p.lvns,
-    sessionHigh: ex.high ?? Math.max(...p.price_bin_lower, ...lows),
-    sessionLow: ex.low ?? Math.min(...lows),
+    sessionHigh: ex.high,
+    sessionLow: ex.low,
     initialBalance: hasIb ? { high: ib["high"] as number, low: ib["low"] as number } : null,
     shape: {
       type: sh.classification,
@@ -226,6 +229,7 @@ export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { 
     return ofSession.length ? epoch(ofSession[ofSession.length - 1]!.timestamp) : null;
   };
   const ts = a.auction_state.transitions;
+  const latestSession = bars.findLast((b) => epoch(b.available_at) <= epoch(a.analysis_timestamp))?.session;
   ts.forEach((t, i) => {
     const [from, to] = t.description.split("→").map((x) => x.trim());
     const id = `state-${t.id}`;
@@ -233,7 +237,7 @@ export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { 
     const next = ts[i + 1];
     const session = bars.find((b) => epoch(b.timestamp) === start)?.session;
     const sameSessionNext = next && bars.find((b) => epoch(b.timestamp) === epoch(next.timestamp))?.session === session;
-    const end = sameSessionNext ? epoch(next!.timestamp) : i === ts.length - 1 ? null : session ? lastBarOfSession(session) : null;
+    const end = sameSessionNext ? epoch(next!.timestamp) : session === latestSession ? null : session ? lastBarOfSession(session) : start;
     const closes = Object.entries(t.coordinates);
     states.push({
       id, kind: to ?? t.description,
@@ -245,7 +249,7 @@ export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { 
     });
     transitions.push({
       id: `tr-${t.id}`,
-      fromStateId: i > 0 ? states[i - 1]!.id : null,
+      fromStateId: i > 0 && bars.find((b) => epoch(b.timestamp) === epoch(ts[i - 1]!.timestamp))?.session === session ? states[i - 1]!.id : null,
       toStateId: id,
       at: start,
       detectedAt: epoch(t.first_observable_at) - interval,
@@ -352,7 +356,10 @@ export function mapLevels(a: RawAnalysis): Level[] {
 
 // ------------------------------------------------------------------ top level
 
-export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; concepts: Map<string, RawConcept>; composite?: RawProfile | null }): Analysis {
+export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; composite?: RawProfile | null }): Analysis {
+  const storedKnowledge = a.knowledge_snapshot;
+  const hasStoredKnowledge = storedKnowledge?.version === a.knowledge_version;
+  const concepts = new Map(hasStoredKnowledge ? storedKnowledge!.concepts.map((c) => [c.id, c]) : []);
   const interval = intervalSec(a.provenance);
   const upTo = epoch(a.analysis_timestamp);
   const sessions = a.profile_analysis.filter((p) => p.scope === "session");
@@ -361,11 +368,11 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; concepts: Map
   const profiles: Analysis["profiles"] = {};
   const put = (key: string, p: Profile | null) => { if (p) profiles[key] = p; };
   if (cur) {
-    put("tpo", mapProfile(cur, "tpo", ctx.bars, upTo, `TPO — session ${cur.session}`, ctx.concepts));
-    put("volume", mapProfile(cur, "volume", ctx.bars, upTo, `Volume — session ${cur.session}`, ctx.concepts));
+    put("tpo", mapProfile(cur, "tpo", ctx.bars, upTo, `TPO — session ${cur.session}`, concepts));
+    put("volume", mapProfile(cur, "volume", ctx.bars, upTo, `Volume — session ${cur.session}`, concepts));
   }
-  if (prior) put("prior", mapProfile(prior, "prior", ctx.bars, upTo, `Prior session ${prior.session}`, ctx.concepts));
-  if (ctx.composite) put("composite", mapProfile(ctx.composite, "composite", ctx.bars, upTo, "Composite — all visible sessions", ctx.concepts));
+  if (prior) put("prior", mapProfile(prior, "prior", ctx.bars, upTo, `Prior session ${prior.session}`, concepts));
+  if (ctx.composite) put("composite", mapProfile(ctx.composite, "composite", ctx.bars, upTo, "Composite — all visible sessions", concepts));
 
   // Per-session value values (facts from each session's profile) – not a migration classification.
   const migration = sessions.slice(-8).filter((p) => p.volume.poc !== null && p.volume.vah !== null && p.volume.val !== null)
@@ -374,16 +381,18 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; concepts: Map
 
   const { states, transitions } = mapAuction(a, ctx.bars, interval);
   const lastBarStart = upTo - interval;
-  if (!states.length || states[states.length - 1]!.kind !== a.auction_state.state) {
-    const sessionStart = cur ? sessionExtremes(ctx.bars, cur.session, upTo).first : null;
+  if (!states.length || states[states.length - 1]!.endTime !== null || states[states.length - 1]!.kind !== a.auction_state.state) {
+    for (const state of states) if (state.endTime === null) state.endTime = lastBarStart;
     states.push({
-      id: "state-current", kind: a.auction_state.state, startTime: sessionStart ?? lastBarStart, endTime: null, detectedAt: sessionStart ?? lastBarStart,
+      id: "state-current", kind: a.auction_state.state, startTime: lastBarStart, endTime: null, detectedAt: lastBarStart,
       summary: `Current engine state: ${humanize(a.auction_state.state)}. No transition evidence is recorded for this state in the current session.`,
     });
   }
 
   const ref = prior?.volume;
   const lastClose = typeof a.market_context["last_close"] === "number" ? a.market_context["last_close"] : null;
+  const interpretation = mapInterpretation(a, concepts, interval, ctx.bars);
+  if (!hasStoredKnowledge) interpretation.uncertainty.push({ kind: "other", text: "This saved analysis has no matching preserved knowledge catalog. Generic concept explanations are unavailable; current catalog text has not been substituted." });
   return {
     symbol: a.instrument,
     timeframe: a.timeframe,
@@ -404,10 +413,10 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; concepts: Map
       referenceProfile: ref?.vah != null && ref?.val != null ? `Prior session ${prior!.session} value area ${ref.val}–${ref.vah} (estimated)` : "No prior session value area",
       distanceFromPocPct: null,
     },
-    vsaEvents: a.vsa_observations.map((e) => mapVsaEvent(e, interval, ctx.concepts)),
+    vsaEvents: a.vsa_observations.map((e) => mapVsaEvent(e, interval, concepts)),
     auctionStates: states,
     auctionTransitions: transitions,
     levels: mapLevels(a),
-    interpretation: mapInterpretation(a, ctx.concepts, interval, ctx.bars),
+    interpretation,
   };
 }

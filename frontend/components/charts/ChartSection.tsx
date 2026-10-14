@@ -20,7 +20,7 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
         <LayerControls only={layerKeys} />
         <QualityIndicators quality={market.barsResponse?.quality} asOf={market.asOf} />
       </div>
-      <AnalysisStatusBanner analysis={analysis} error={null} />
+      <AnalysisStatusBanner analysis={analysis} error={market.error} />
       <div className={cn("min-h-[22rem] flex-1 rounded-lg border border-border bg-surface p-1", className)}>
         <MarketChart
           bars={market.bars} fitKey={fitKey} timeframe={state.timeframe} analysis={analysis?.status === "ok" ? analysis : null}

@@ -79,7 +79,9 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
         uncertainties.append("Auction state is indeterminate without a complete previous observed session reference.")
     state_text = "Mixed evidence" if contradiction else "Potential local strength" if strengths else "Potential local weakness" if weaknesses else "No significant directional pattern"
     summary = f"{state_text}. Estimated volume profile: {shape_label}. Auction classification: {auction_state.state}. {scenarios[0].description}"
-    return Analysis(id=str(uuid4()), knowledge_version=load().version, dataset_id=dataset.id, instrument=dataset.source.instrument,
+    knowledge = load().model_copy(deep=True)
+    return Analysis(id=str(uuid4()), knowledge_version=knowledge.version, knowledge_snapshot=knowledge,
+                    dataset_id=dataset.id, instrument=dataset.source.instrument,
                     timeframe=f"{dataset.source.timeframe_minutes}m", analysis_timestamp=bars[-1].available_at,
                     created_at=datetime.now(UTC), provenance=dataset.source, parameters=p, data_quality=q,
                     market_context={"background": measurements[-1]["background"], "last_close": bars[-1].close,

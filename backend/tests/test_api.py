@@ -80,3 +80,33 @@ def test_split_blocks_analysis_and_profile_but_keeps_source(client):
     assert client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).status_code == 422
     assert client.get("/api/v1/profiles", params={"dataset_id": dataset["id"]}).status_code == 422
     assert len(client.get("/api/v1/market/bars", params={"dataset_id": dataset["id"]}).json()) == 2
+
+
+def test_snapshot_preserves_knowledge_across_catalog_updates(client, monkeypatch):
+    from app.knowledge import load
+    dataset = upload(client).json()
+    original = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    assert original["knowledge_snapshot"]["version"] == original["knowledge_version"]
+    changed = load().model_copy(deep=True)
+    changed.version = "2.0.0"
+    for concept in changed.concepts:
+        concept.possible_interpretations = ["New catalog explanation"]
+    monkeypatch.setattr("app.interpretation.load", lambda: changed)
+    monkeypatch.setattr("app.main.load", lambda: changed)
+    assert client.get(f'/api/v1/analyses/{original["id"]}').json() == original
+    updated = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    assert updated["knowledge_snapshot"]["version"] == "2.0.0"
+    assert original["knowledge_snapshot"] != updated["knowledge_snapshot"]
+    legacy = Analysis.model_validate({k: v for k, v in original.items() if k != "knowledge_snapshot"}).model_copy(update={"id": "legacy-snapshot"})
+    client.app.state.store.save_analysis(legacy)
+    assert client.get("/api/v1/analyses/legacy-snapshot").json()["knowledge_snapshot"] is None
+
+
+def test_extended_hourly_analysis_with_compatible_tpo(client):
+    metadata = demo_source().model_dump() | {"timeframe_minutes": 60, "session_mode": "extended"}
+    raw = b"timestamp,open,high,low,close,volume\n2025-03-10T04:00:00-04:00,100,101,99,100,1000\n"
+    response = client.post("/api/v1/datasets/upload", files={"file": ("hourly.csv", raw)}, data={"metadata": json.dumps(metadata)})
+    assert response.status_code == 201
+    result = client.post("/api/v1/analyze", json={"dataset_id": response.json()["id"], "parameters": {"tpo_minutes": 60}})
+    assert result.status_code == 201, result.text
+    assert result.json()["timeframe"] == "60m"

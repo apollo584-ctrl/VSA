@@ -70,7 +70,6 @@ const getConcepts = () => {
   if (!conceptsCache) { conceptsCache = request("/knowledge/concepts", z.array(rawConceptSchema)); conceptsCache.catch(() => { conceptsCache = null; }); }
   return conceptsCache;
 };
-const conceptMap = async () => new Map((await getConcepts()).map((c) => [c.id, c]));
 
 /** UI cursor times are bar START times; the backend filters on available_at (bar END). */
 function asOfIso(bars: RawBar[], asOf: number | undefined): string | undefined {
@@ -80,8 +79,8 @@ function asOfIso(bars: RawBar[], asOf: number | undefined): string | undefined {
 }
 
 async function snapshotToUi(raw: RawAnalysis, composite: z.infer<typeof rawProfileSchema> | null): Promise<Analysis> {
-  const [bars, concepts] = await Promise.all([getAllBars(raw.dataset_id), conceptMap()]);
-  return mapAnalysis(raw, { bars, concepts, composite });
+  const bars = await getAllBars(raw.dataset_id);
+  return mapAnalysis(raw, { bars, composite });
 }
 
 export const backendApi = {
@@ -105,11 +104,11 @@ export const backendApi = {
   },
 
   async getAnalysis(p: { symbol: string; asOf?: number }): Promise<Analysis> {
-    const [d, bars, concepts] = await Promise.all([getDataset(p.symbol), getAllBars(p.symbol), conceptMap()]);
+    const [d, bars] = await Promise.all([getDataset(p.symbol), getAllBars(p.symbol)]);
     const as_of = asOfIso(bars, p.asOf);
     let raw: RawAnalysis;
     try {
-      raw = await request("/analyze", rawAnalysisSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataset_id: p.symbol, ...(as_of ? { as_of } : {}) }) });
+      raw = await request("/analyze", rawAnalysisSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataset_id: p.symbol, parameters: { tpo_minutes: Math.max(30, d.source.timeframe_minutes) }, ...(as_of ? { as_of } : {}) }) });
     } catch (e) {
       if (e instanceof ApiError && e.code === "rejected") {
         // Domain rejection (no bars at as_of, split suspected, …): the chart stays viewable, analysis is withheld.
@@ -127,7 +126,6 @@ export const backendApi = {
     try {
       composite = (await request(`/profiles?dataset_id=${encodeURIComponent(p.symbol)}&composite=true${as_of ? `&as_of=${encodeURIComponent(as_of)}` : ""}&bin_size=${raw.parameters["bin_size"] ?? 0.25}`, z.array(rawProfileSchema)))[0] ?? null;
     } catch { /* composite is optional context; its absence is shown as an unavailable profile type */ }
-    void concepts;
     return snapshotToUi(raw, composite);
   },
 

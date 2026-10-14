@@ -64,6 +64,8 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
         {onClose && <button type="button" onClick={onClose} className="ml-auto text-subtle hover:text-fg">Clear selection</button>}
       </header>
 
+      {event.textSource === "unavailable" && <p className="text-muted">A matching knowledge catalog is unavailable for this saved observation. Generic explanations are unavailable.</p>}
+
       <section>
         <div className="mb-1 flex items-center gap-2"><SectionLabel>What was observed</SectionLabel>{event.kind === "classified" ? <ClassificationBadge /> : <ObservationBadge />}</div>
         {event.description && <p className="mb-1 text-muted">{event.description}</p>}

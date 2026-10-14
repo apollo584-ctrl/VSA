@@ -170,7 +170,7 @@ export const vsaEventSchema = z.object({
   /** `met` is null when the source (knowledge catalog) lists a rule but the instance does not report per-rule results. */
   conditions: z.array(z.object({ label: z.string(), met: z.boolean().nullable(), detail: z.string() })),
   /** "instance" = text written for this observation; "catalog" = generic text from the knowledge catalog for this concept. */
-  textSource: z.enum(["instance", "catalog"]).optional(),
+  textSource: z.enum(["instance", "catalog", "unavailable"]).optional(),
   implications: z.array(z.string()),
   alternatives: z.array(z.string()),
   confirmation: z.array(z.string()),

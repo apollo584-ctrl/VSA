@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
@@ -45,16 +45,15 @@ export function useMarket() {
     queryKey: ["bars", symbol, timeframe, session, windowEnd ?? "latest"],
     queryFn: () => api.getBars({ symbol: symbol!, timeframe, session, to: windowEnd }),
     enabled: !!symbol,
-    placeholderData: keepPreviousData,
   });
 
   const debouncedReplay = useDebounced(replayTime, 180);
+  const cursorSettled = replayTime === debouncedReplay;
   const asOfParam = debouncedReplay ?? windowEnd;
   const analysisQuery = useQuery({
     queryKey: ["analysis", symbol, timeframe, session, asOfParam ?? "latest"],
     queryFn: () => api.getAnalysis({ symbol: symbol!, timeframe, session, asOf: asOfParam }),
-    enabled: !!symbol,
-    placeholderData: keepPreviousData,
+    enabled: !!symbol && cursorSettled,
   });
 
   const allBars = barsQuery.data?.bars;
@@ -63,17 +62,21 @@ export function useMarket() {
 
   const analysis: Analysis | null = useMemo(() => {
     const a = analysisQuery.data;
-    if (!a) return null;
+    // Withhold the entire previous analysis, including during the debounce interval.
+    if (!a || !cursorSettled || analysisQuery.isError || !barsQuery.data) return null;
+    if (a.timeframe !== timeframe || a.session !== session) return null;
+    if ((a.snapshot?.datasetId ?? a.symbol) !== symbol) return null;
     const cut = replayTime ?? windowEnd ?? null;
+    if (cut !== null && a.asOf > cut) return null;
     return {
       ...a,
       vsaEvents: knownEvents(a.vsaEvents, cut),
       auctionStates: knownStates(a.auctionStates, cut),
       auctionTransitions: knownTransitions(a.auctionTransitions, cut),
     };
-  }, [analysisQuery.data, replayTime, windowEnd]);
+  }, [analysisQuery.data, analysisQuery.isError, barsQuery.data, cursorSettled, timeframe, session, symbol, replayTime, windowEnd]);
 
-  const analysisIsStale = replayTime !== null && analysisQuery.data !== undefined && analysisQuery.data.asOf !== bars[bars.length - 1]?.t;
+  const analysisIsStale = !!symbol && !analysis && !analysisQuery.isError;
 
   return {
     symbol, instrument, instruments,
