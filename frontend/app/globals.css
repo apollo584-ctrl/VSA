@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens.
+ * - up/down describe PRICE DIRECTION only. They never imply a recommendation.
+ * - Level colors (poc, value, hvn, lvn, ib) are consistent across chart, profile and explanations.
+ * - observation vs hypothesis have distinct treatments (solid vs dashed + tint) in addition to color.
+ */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0e13;
+  --surface: #11151c;
+  --surface-2: #171c25;
+  --surface-3: #1e2430;
+  --border: #252c38;
+  --border-strong: #343d4d;
+  --fg: #e6e9ef;
+  --fg-muted: #9aa4b4;
+  --fg-subtle: #6c7686;
+  --accent: #5b9dff;
+  --accent-soft: rgba(91, 157, 255, 0.14);
+  --up: #2bb8a3;
+  --down: #ef6b5f;
+  --poc: #f2b84b;
+  --value: #a98bff;
+  --hvn: #4cc3e6;
+  --lvn: #8793a6;
+  --ib: #ee8fc0;
+  --vsa: #c9d1e0;
+  --hyp: #b48cff;
+  --hyp-soft: rgba(180, 140, 255, 0.1);
+  --warn: #e8b04a;
+  --danger: #ef6b5f;
+  --ok: #3cc4a4;
+  --focus: #8ab8ff;
+  --chart-grid: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f0f3f7;
+  --surface-3: #e6eaf0;
+  --border: #d9dee6;
+  --border-strong: #bcc4d0;
+  --fg: #151a22;
+  --fg-muted: #4b5666;
+  --fg-subtle: #6f7a8a;
+  --accent: #1f6feb;
+  --accent-soft: rgba(31, 111, 235, 0.1);
+  --up: #0d8f7c;
+  --down: #d1453b;
+  --poc: #b97a00;
+  --value: #6a46d9;
+  --hvn: #0a86a8;
+  --lvn: #6a7586;
+  --ib: #c2467f;
+  --vsa: #3a4458;
+  --hyp: #7a4fd6;
+  --hyp-soft: rgba(122, 79, 214, 0.08);
+  --warn: #a86a00;
+  --danger: #c23b30;
+  --ok: #0d8f7c;
+  --focus: #1f6feb;
+  --chart-grid: rgba(0, 0, 0, 0.06);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-poc: var(--poc);
+  --color-value: var(--value);
+  --color-hvn: var(--hvn);
+  --color-lvn: var(--lvn);
+  --color-ib: var(--ib);
+  --color-vsa: var(--vsa);
+  --color-hyp: var(--hyp);
+  --color-hyp-soft: var(--hyp-soft);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --font-sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+/* Thin, unobtrusive scrollbars for dense panels */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+.hypothesis {
+  border: 1px dashed color-mix(in srgb, var(--hyp) 60%, transparent);
+  background: var(--hyp-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
+
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 4px;
+}
