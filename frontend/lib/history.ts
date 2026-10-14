@@ -2,6 +2,10 @@
 export interface HistoryEntry {
   id: string;
   symbol: string;
+  /** Display label (instrument ticker) when the key is a dataset id. */
+  label?: string;
+  /** Backend snapshot id, when the analysis was persisted. */
+  snapshotId?: string;
   timeframe: string;
   session: string;
   date: string | null;

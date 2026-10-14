@@ -2,7 +2,7 @@
 
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { HypothesisBadge, ObservationBadge } from "@/components/common/badges";
+import { ClassificationBadge, HypothesisBadge, ObservationBadge } from "@/components/common/badges";
 import { MixedEvidenceNotice, StateMessage } from "@/components/common/states";
 import { Badge, SectionLabel, Segmented } from "@/components/ui/primitives";
 import { useWorkspace } from "@/hooks/workspace";
@@ -26,7 +26,8 @@ export function DetailLevelSwitch() {
 }
 
 /** Renders a narrative at the chosen depth. Depth changes presentation only — never the facts. */
-export function NarrativeText({ n, level }: { n: Narrative; level: DetailLevel }) {
+export function NarrativeText({ n, level }: { n: Narrative | null; level: DetailLevel }) {
+  if (!n) return <p className="text-subtle">Not provided by the analysis engine.</p>;
   if (level === "quick") return <p>{n.quick}</p>;
   return (
     <div className="space-y-1">
@@ -46,6 +47,7 @@ function EvidenceList({ items, tone }: { items: EvidenceItem[]; tone: "support" 
           <span>
             {e.text} {e.measurement && <span className="num text-subtle">[{e.measurement}]</span>}
             <span className="ml-1 text-[10px] uppercase tracking-wide text-subtle">{humanize(e.kind)}</span>
+            {e.nature === "classified" && <span className="ml-1 align-middle"><ClassificationBadge /></span>}
           </span>
         </li>
       ))}
@@ -70,7 +72,7 @@ export function InterpretationSummary({ analysis, level }: { analysis: Analysis;
     <div className="space-y-3">
       {i.evidenceBalance === "mixed" || i.evidenceBalance === "contradictory" ? <MixedEvidenceNotice /> : null}
       <Block title="What is happening?" tag={<ObservationBadge />}><NarrativeText n={i.whatIsHappening} level={level} /></Block>
-      <Block title="Why does it matter?"><NarrativeText n={i.whyItMatters} level={level} /></Block>
+      {i.whyItMatters && <Block title="Why does it matter?"><NarrativeText n={i.whyItMatters} level={level} /></Block>}
       <Block title="What evidence supports it?"><EvidenceList items={i.supporting} tone="support" /></Block>
       <Block title="What contradicts it?"><EvidenceList items={i.contradicting} tone="contradict" /></Block>
       <Block title="What should I watch next?">
@@ -115,7 +117,7 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {i.scenarios.map((s) => (
             <article key={s.id} className="hypothesis space-y-1.5 rounded-md p-2.5">
-              <h4 className="text-xs font-semibold">{s.title}</h4>
+              <h4 className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">{s.title}{s.isAlternative && <Badge tone="hypothesis">alternative</Badge>}</h4>
               <p className="text-muted">{s.description}</p>
               {level !== "quick" && (
                 <>
@@ -123,6 +125,12 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
                   <p><b>Challenged by:</b> {s.challengedBy.length ? s.challengedBy.map((id) => firstSentence(evById.get(id)?.text) ?? id).join("; ") : "—"}</p>
                 </>
               )}
+              {level === "deep" && (s.confirmation?.length || s.invalidation?.length) ? (
+                <div className="space-y-1">
+                  {s.confirmation?.length ? <p><b>Would support:</b> {s.confirmation.join(" ")}</p> : null}
+                  {s.invalidation?.length ? <p><b>Would weaken:</b> {s.invalidation.join(" ")}</p> : null}
+                </div>
+              ) : null}
               {level === "deep" && s.knowledgeSlugs.length > 0 && (
                 <p className="flex flex-wrap gap-2">{s.knowledgeSlugs.map((k) => <Link key={k} href={`/knowledge/${k}`} className="text-accent hover:underline">{humanize(k)}</Link>)}</p>
               )}
@@ -148,7 +156,7 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
       <Block title="Uncertainty and limitations">
         <ul className="space-y-1">
           {i.uncertainty.map((u, n) => (
-            <li key={n} className={cn("flex items-start gap-2")}><Badge tone="warn">{humanize(u.kind)}</Badge><span>{u.text}</span></li>
+            <li key={n} className={cn("flex items-start gap-2")}>{u.kind !== "other" && <Badge tone="warn">{humanize(u.kind)}</Badge>}<span>{u.text}</span></li>
           ))}
         </ul>
       </Block>

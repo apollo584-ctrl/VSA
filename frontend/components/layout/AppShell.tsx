@@ -8,6 +8,7 @@ import { useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "./StatusBar";
 import { TopBar } from "./TopBar";
+import { CapabilitySync } from "./CapabilitySync";
 import { HistoryRecorder } from "./HistoryRecorder";
 
 export const NAV: { href: string; label: string; icon: LucideIcon; match?: (p: string) => boolean }[] = [
@@ -70,6 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main id="main" className="min-w-0 flex-1 overflow-auto p-3" tabIndex={-1}>{children}</main>
       </div>
       <StatusBar />
+      <CapabilitySync />
       <HistoryRecorder />
     </div>
   );

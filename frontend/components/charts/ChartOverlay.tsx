@@ -3,7 +3,7 @@
 import type { AuctionState, Bar, Profile, VsaEvent } from "@/types";
 import type { ChartPalette } from "@/lib/charting/theme";
 import { withAlpha } from "@/lib/charting/theme";
-import { AUCTION_LABELS } from "@/lib/formatting";
+import { auctionLabel } from "@/lib/formatting";
 import { barTimeContaining } from "@/lib/replay";
 
 export interface OverlayProps {
@@ -101,7 +101,7 @@ export function ChartOverlay(p: OverlayProps) {
       els.push(
         <g key={`st-${s.id}`}>
           <rect x={x1} y={y} width={Math.max(2, x2 - x1)} height={13} rx={2} fill={withAlpha(c.fg, 0.07)} stroke={withAlpha(c.fg, 0.28)} strokeDasharray={s.endTime === null ? "3 2" : undefined} />
-          <text x={x1 + 4} y={y + 10} fontSize={9.5} fill={c.muted} style={{ pointerEvents: "none" }}>{AUCTION_LABELS[s.kind]}</text>
+          <text x={x1 + 4} y={y + 10} fontSize={9.5} fill={c.muted} style={{ pointerEvents: "none" }}>{auctionLabel(s.kind)}</text>
         </g>,
       );
     });

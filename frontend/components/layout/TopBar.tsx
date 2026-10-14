@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import type { Instrument } from "@/types";
 
 function InstrumentSearch({ instruments, current, onSelect }: { instruments: Instrument[]; current: string | null; onSelect: (s: string) => void }) {
+  const currentLabel = instruments.find((i) => i.symbol === current)?.label ?? current;
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -17,7 +18,7 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
   const listId = useId();
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return instruments.filter((i) => !q || i.symbol.toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
+    return instruments.filter((i) => !q || i.symbol.toLowerCase().includes(q) || (i.label ?? "").toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
   }, [instruments, query]);
 
   useEffect(() => {
@@ -43,7 +44,7 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
         aria-controls={listId}
         aria-autocomplete="list"
         aria-label="Search instruments (press / to focus)"
-        placeholder={current ? `${current} — search…` : "Search symbol…  ( / )"}
+        placeholder={current ? `${currentLabel} — search…` : "Search symbol…  ( / )"}
         value={query}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }}
         onFocus={() => setOpen(true)}
@@ -58,10 +59,10 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
       />
       {open && (
         <ul id={listId} role="listbox" className="absolute left-0 top-9 z-50 max-h-72 w-80 overflow-auto rounded-md border border-border-strong bg-surface-2 p-1 shadow-xl">
-          {results.length === 0 && <li className="px-2 py-2 text-xs text-muted">No matching instruments.</li>}
+          {results.length === 0 && <li className="px-2 py-2 text-xs text-muted">No matching datasets. Upload one in Settings.</li>}
           {results.map((i, n) => (
             <li key={i.symbol} role="option" aria-selected={n === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded px-2 py-1.5", n === active && "bg-surface-3")}>
-              <div className="flex items-center justify-between gap-2"><span className="num font-semibold">{i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
+              <div className="flex items-center justify-between gap-2"><span className="num font-semibold">{i.label ?? i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
               <div className="text-[11px] text-muted">{i.name}</div>
             </li>
           ))}
@@ -89,7 +90,7 @@ export function TopBar() {
       <div className="min-w-0 max-md:order-last max-md:w-full">
         {inst ? (
           <div className="flex items-center gap-2" aria-live="polite">
-            <span className="num text-sm font-semibold">{inst.symbol}</span>
+            <span className="num text-sm font-semibold">{inst.label ?? inst.symbol}</span>
             <span className="truncate text-xs text-muted max-w-72">{inst.name}</span>
           </div>
         ) : <span className="text-xs text-subtle">No instrument selected</span>}

@@ -13,7 +13,7 @@ export function HistoryRecorder() {
   const settled = a && a.status === "ok" && !market.isFetchingAnalysis && state.replayTime === null;
   useEffect(() => {
     if (!settled || !a || !state.symbol) return;
-    pushHistory({ symbol: a.symbol, timeframe: a.timeframe, session: a.session, date: state.date, asOf: a.asOf, headline: a.interpretation?.whatIsHappening.quick ?? "No interpretation" });
+    pushHistory({ symbol: state.symbol, label: a.symbol, timeframe: a.timeframe, session: a.session, date: state.date, asOf: a.asOf, headline: a.interpretation?.whatIsHappening?.quick ?? "No interpretation", snapshotId: a.snapshot?.id });
   }, [settled, a, state.symbol, state.date]);
   return null;
 }

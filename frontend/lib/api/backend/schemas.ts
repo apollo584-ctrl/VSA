@@ -1,0 +1,172 @@
+/**
+ * Raw response schemas for the Codex backend, mirroring backend/app/models.py (docs/API_CONTRACT.md).
+ * Strict about what the UI relies on; tolerant (passthrough) about additions, which the contract allows within v1.
+ */
+import { z } from "zod";
+
+const num = z.number();
+const iso = z.string();
+const scalar = z.union([z.number(), z.string(), z.null()]);
+
+export const rawSourceSchema = z.object({
+  instrument: z.string(),
+  timeframe_minutes: z.number(),
+  exchange: z.string(),
+  session_mode: z.enum(["regular", "extended"]),
+  timestamp_convention: z.enum(["bar_start", "bar_end"]),
+  timezone: z.string(),
+  price_adjustment: z.string(),
+  volume_adjustment: z.string(),
+  source_name: z.string(),
+  is_demo: z.boolean(),
+});
+
+export const rawQualitySchema = z.object({
+  warnings: z.array(z.string()),
+  missing_bars: z.number(),
+  absent_sessions: z.array(z.string()),
+  incomplete_sessions: z.array(z.string()),
+  split_suspected: z.boolean(),
+});
+
+export const rawDatasetSchema = z.object({
+  id: z.string(),
+  content_sha256: z.string(),
+  source: rawSourceSchema,
+  created_at: iso,
+  row_count: z.number(),
+  first_timestamp: iso,
+  last_available_at: iso,
+  quality: rawQualitySchema,
+});
+
+export const rawInstrumentsSchema = z.object({
+  items: z.array(z.object({ instrument: z.string(), dataset_ids: z.array(z.string()) }).passthrough()),
+});
+
+export const rawBarSchema = z.object({
+  timestamp: iso,
+  available_at: iso,
+  session: z.string(),
+  open: num, high: num, low: num, close: num, volume: num,
+});
+
+export const rawEvidenceSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["observed", "classified"]),
+  concept_id: z.string(),
+  timestamp: iso,
+  first_observable_at: iso,
+  confirmed_at: iso.nullable().optional(),
+  status: z.enum(["observed", "provisional", "confirmed", "invalidated", "expired"]),
+  direction: z.enum(["strength", "weakness", "neutral"]),
+  description: z.string(),
+  coordinates: z.record(z.string(), scalar),
+  measurements: z.record(z.string(), scalar),
+  supporting_evidence: z.array(z.string()),
+});
+
+const rawShapeSchema = z.object({
+  classification: z.string(),
+  ambiguity: z.enum(["low", "high"]),
+  features: z.record(z.string(), z.number()),
+  alternatives: z.array(z.string()),
+  interpretation: z.string(),
+  limitations: z.array(z.string()),
+});
+
+const rawDistributionSchema = z.object({
+  method: z.string(),
+  estimated: z.boolean(),
+  counts: z.array(z.number()),
+  poc: z.number().nullable(),
+  vah: z.number().nullable(),
+  val: z.number().nullable(),
+  achieved_value_fraction: z.number().nullable(),
+  shape: rawShapeSchema,
+});
+
+export const rawProfileSchema = z.object({
+  id: z.string(),
+  session: z.string(),
+  scope: z.enum(["session", "composite"]),
+  as_of: iso,
+  bin_size: z.number(),
+  price_bin_lower: z.array(z.number()),
+  price_bin_center: z.array(z.number()),
+  tpo: rawDistributionSchema,
+  volume: rawDistributionSchema,
+  hvns: z.array(z.number()),
+  lvns: z.array(z.number()),
+  single_print_bins: z.array(z.number()),
+  initial_balance: z.record(z.string(), z.union([z.number(), z.string(), z.boolean(), z.null()])),
+  range_extension: z.record(z.string(), z.number().nullable()),
+  extremes: z.record(z.string(), z.string()),
+  limitations: z.array(z.string()),
+});
+
+const rawScenarioSchema = z.object({
+  id: z.string(),
+  kind: z.literal("inferred"),
+  description: z.string(),
+  evidence_ids: z.array(z.string()),
+  confirmation_conditions: z.array(z.string()),
+  invalidation_conditions: z.array(z.string()),
+});
+
+export const rawAnalysisSchema = z.object({
+  id: z.string(),
+  engine_version: z.string(),
+  knowledge_version: z.string(),
+  dataset_id: z.string(),
+  instrument: z.string(),
+  timeframe: z.string(),
+  analysis_timestamp: iso,
+  created_at: iso,
+  provenance: rawSourceSchema,
+  parameters: z.record(z.string(), z.unknown()),
+  data_quality: rawQualitySchema,
+  market_context: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
+  profile_analysis: z.array(rawProfileSchema),
+  vsa_observations: z.array(rawEvidenceSchema),
+  price_action_observations: z.array(rawEvidenceSchema),
+  auction_state: z.object({ state: z.string(), evidence_ids: z.array(z.string()), transitions: z.array(rawEvidenceSchema) }),
+  supporting_evidence: z.array(z.string()),
+  contradicting_evidence: z.array(z.string()),
+  interpretations: z.array(rawScenarioSchema),
+  alternative_scenarios: z.array(rawScenarioSchema),
+  confirmation_conditions: z.array(z.string()),
+  invalidation_conditions: z.array(z.string()),
+  uncertainties: z.array(z.string()),
+  plain_english_summary: z.string(),
+});
+
+export const rawConceptSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  definition: z.string(),
+  historical_origin_or_source: z.array(z.string()),
+  observable_conditions: z.array(z.string()),
+  required_background: z.array(z.string()),
+  preferred_price_location: z.array(z.string()),
+  volume_characteristics: z.array(z.string()),
+  spread_characteristics: z.array(z.string()),
+  close_location_characteristics: z.array(z.string()),
+  possible_interpretations: z.array(z.string()),
+  alternative_explanations: z.array(z.string()),
+  confirmation_conditions: z.array(z.string()),
+  invalidation_conditions: z.array(z.string()),
+  known_limitations: z.array(z.string()),
+  related_patterns: z.array(z.string()),
+  detector_status: z.enum(["implemented", "knowledge_only"]),
+});
+
+export type RawSource = z.infer<typeof rawSourceSchema>;
+export type RawQuality = z.infer<typeof rawQualitySchema>;
+export type RawDataset = z.infer<typeof rawDatasetSchema>;
+export type RawBar = z.infer<typeof rawBarSchema>;
+export type RawEvidence = z.infer<typeof rawEvidenceSchema>;
+export type RawProfile = z.infer<typeof rawProfileSchema>;
+export type RawAnalysis = z.infer<typeof rawAnalysisSchema>;
+export type RawConcept = z.infer<typeof rawConceptSchema>;

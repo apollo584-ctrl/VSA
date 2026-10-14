@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { StateMessage } from "@/components/common/states";
 import { Badge, SectionLabel } from "@/components/ui/primitives";
-import { AUCTION_LABELS, fmtDateTime, fmtPrice, humanize } from "@/lib/formatting";
+import { auctionLabel, fmtDateTime, fmtPrice, humanize } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
 import type { AuctionState, AuctionTransition, DetailLevel } from "@/types";
 import { Workflow } from "lucide-react";
@@ -26,10 +26,10 @@ export function StateStrip({ states, selectedStateId, onSelect }: { states: Auct
           <li key={s.id} style={{ flexBasis: `${w}%`, flexGrow: w }} className="min-w-14">
             <button
               type="button" onClick={() => onSelect(s.id)} aria-pressed={selectedStateId === s.id}
-              title={`${AUCTION_LABELS[s.kind]} — ${s.summary}`}
+              title={`${auctionLabel(s.kind)} — ${s.summary}`}
               className={cn("h-full w-full truncate rounded border px-1.5 text-left text-[11px] transition-colors", selectedStateId === s.id ? "border-accent bg-accent-soft" : "border-border-strong bg-surface-2 hover:bg-surface-3", s.endTime === null && "border-dashed")}
             >
-              {AUCTION_LABELS[s.kind]}
+              {auctionLabel(s.kind)}
             </button>
           </li>
         );
@@ -65,7 +65,7 @@ export function StateFlow({ states, transitions, selectedTransitionId, onSelect 
             )}
             <li className={cn("rounded-md border px-3 py-2", current ? "border-accent/60 bg-accent-soft" : "border-border bg-surface-2")}>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold">{AUCTION_LABELS[s.kind]}</span>
+                <span className="text-xs font-semibold">{auctionLabel(s.kind)}</span>
                 {current && <Badge tone="info">Current</Badge>}
                 <span className="text-[11px] text-subtle">{fmtDateTime(s.startTime)} → {s.endTime ? fmtDateTime(s.endTime) : "ongoing"}</span>
                 {s.priceLow !== undefined && s.priceHigh !== undefined && <span className="num text-[11px] text-subtle">{fmtPrice(s.priceLow)}–{fmtPrice(s.priceHigh)}</span>}
@@ -85,7 +85,7 @@ export function TransitionDetail({ transition, from, to, level }: { transition: 
   }
   return (
     <article className="space-y-3 text-xs leading-relaxed">
-      <h3 className="text-sm font-semibold">{from ? AUCTION_LABELS[from.kind] : "Start"} → {AUCTION_LABELS[to.kind]}</h3>
+      <h3 className="text-sm font-semibold">{from ? auctionLabel(from.kind) : "Start"} → {auctionLabel(to.kind)}</h3>
       <p className="text-subtle">At {fmtDateTime(transition.at, true)} · classified when {fmtDateTime(transition.detectedAt, true)}</p>
       <section><SectionLabel>Why the engine classified it</SectionLabel><p>{transition.rationale}</p></section>
       {level !== "quick" && (

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useMarket } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 import { Badge, Button, GLOSSARY, KeyValue, Term } from "@/components/ui/primitives";
-import { AUCTION_LABELS, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
+import { auctionLabel, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
 import type { Analysis, Level } from "@/types";
 import { EmptyChartState, ErrorState, InsufficientDataState, InvalidDataState, LoadingState, NoDatasetState, StateMessage } from "./states";
 import { FlaskConical } from "lucide-react";
@@ -19,7 +19,8 @@ export function AnalysisGate({ market, children }: { market: Market; children: R
       <NoDatasetState
         action={
           <div className="flex flex-wrap justify-center gap-2">
-            {(market.instruments.data ?? []).map((i) => <Button key={i.symbol} onClick={() => selectInstrument(i.symbol)}>{i.symbol}</Button>)}
+            {(market.instruments.data ?? []).map((i) => <Button key={i.symbol} onClick={() => selectInstrument(i.symbol)}>{i.label ?? i.symbol}</Button>)}
+            {market.instruments.isSuccess && market.instruments.data.length === 0 && <span className="text-xs text-muted">No datasets yet. <a className="text-accent hover:underline" href="/settings">Upload a CSV in Settings</a>.</span>}
             {market.instruments.isError && <span className="text-xs text-danger">Instrument list unavailable.</span>}
           </div>
         }
@@ -58,7 +59,7 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
         </>)}
         <KeyValue k="vs prior POC" v={fmtPct(v.distanceFromPocPct)} />
       </dl>
-      <p className="text-[11px] text-subtle">Location describes where price is relative to value; it is not a directional signal.</p>
+      <p className="text-[11px] text-subtle">{v.relativeTo === "unknown" ? "The engine does not classify price location relative to value. The prior value area and last close are shown as supplied." : "Location describes where price is relative to value; it is not a directional signal."}</p>
     </div>
   );
 }
@@ -68,7 +69,7 @@ export function AuctionSummaryCard({ analysis }: { analysis: Analysis }) {
   if (!s) return <p className="text-xs text-subtle">No auction state classified yet.</p>;
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-2"><span className="text-sm font-semibold">{AUCTION_LABELS[s.kind]}</span>{s.endTime === null && <Badge tone="info">Current</Badge>}</div>
+      <div className="flex items-center gap-2"><span className="text-sm font-semibold">{auctionLabel(s.kind)}</span>{s.endTime === null && <Badge tone="info">Current</Badge>}</div>
       <p className="text-xs text-muted">{s.summary}</p>
     </div>
   );

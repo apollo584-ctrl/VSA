@@ -418,13 +418,13 @@ function interpret(ctx: {
   const priorTxt = prior ? `prior-session value ${f2(prior.val)}–${f2(prior.vah)}` : "no prior session available";
   const posTxt = rel === "above_value" ? "above" : rel === "below_value" ? "below" : rel === "inside_value" ? "inside" : "unclassified relative to";
 
-  supporting.push({ id: "ev-profile", kind: "profile", text: `Current session profile is classified ${shape === "undetermined" ? "undetermined" : `${shape}-shaped`} with POC ${f2(current.poc)}.`, measurement: `confidence ${current.shape.confidence.toFixed(2)}` });
+  supporting.push({ id: "ev-profile", kind: "profile", text: `Current session profile is classified ${shape === "undetermined" ? "undetermined" : `${shape}-shaped`} with POC ${f2(current.poc)}.`, measurement: `confidence ${(current.shape.confidence ?? 0).toFixed(2)}` });
   if (rel !== "unknown") supporting.push({ id: "ev-loc", kind: "profile", text: `Last price ${f2(last.c)} is ${posTxt} ${priorTxt}.` });
 
   if (ev?.type === "upthrust" && rel === "above_value") {
     balance = "mixed";
     supporting.push({ id: "ev-adv", kind: "price_action", text: "Price has advanced over recent sessions and the value area has migrated higher." });
-    contradicting.push({ id: "ev-ut", kind: "vsa", text: `Upthrust bar: spread ${ev.measurements.spreadVsAvg.toFixed(2)}× average, volume ${ev.measurements.relativeVolume.toFixed(2)}× average, close location ${ev.measurements.closeLocation.toFixed(2)}.`, at: ev.barTime });
+    contradicting.push({ id: "ev-ut", kind: "vsa", text: `Upthrust bar: spread ${ev.measurements.spreadVsAvg!.toFixed(2)}× average, volume ${ev.measurements.relativeVolume!.toFixed(2)}× average, close location ${ev.measurements.closeLocation!.toFixed(2)}.`, at: ev.barTime });
     scenarios = [
       { id: "sc-hold", title: "Higher-value acceptance continues", description: "The upthrust is a local rejection inside a broader advance; value continues to build above the prior range.", supportedBy: ["ev-profile", "ev-loc", "ev-adv"], challengedBy: ["ev-ut"], knowledgeSlugs: ["auction-acceptance-vs-excursion", "profile-shape-p"] },
       { id: "sc-fail", title: "Failed upside auction", description: "Higher prices could not be sustained; price rotates back toward the prior value area.", supportedBy: ["ev-ut"], challengedBy: ["ev-profile", "ev-adv"], knowledgeSlugs: ["auction-failed-auction", "vsa-upthrust"] },
@@ -437,7 +437,7 @@ function interpret(ctx: {
     ];
   } else if (ev && (ev.type === "shakeout" || ev.type === "stopping_volume")) {
     balance = "mixed";
-    supporting.push({ id: "ev-vsa", kind: "vsa", text: `${ev.type.replace(/_/g, " ")} observed with volume ${ev.measurements.relativeVolume.toFixed(2)}× average.`, at: ev.barTime });
+    supporting.push({ id: "ev-vsa", kind: "vsa", text: `${ev.type.replace(/_/g, " ")} observed with volume ${ev.measurements.relativeVolume!.toFixed(2)}× average.`, at: ev.barTime });
     contradicting.push({ id: "ev-trend", kind: "price_action", text: `Prior trend was ${ev.measurements.priorTrend}; a single bar rarely resolves a prevailing direction.` });
     scenarios = [
       { id: "sc-fail", title: "Failed downside excursion", description: "Lower prices were not accepted and price returns toward prior value.", supportedBy: ["ev-vsa"], challengedBy: ["ev-trend"], knowledgeSlugs: ["auction-failed-auction", "vsa-shakeout"] },
@@ -449,7 +449,7 @@ function interpret(ctx: {
     ];
   } else if (ev?.type === "no_demand") {
     balance = "mixed";
-    supporting.push({ id: "ev-vsa", kind: "vsa", text: `No-demand bar: volume ${ev.measurements.relativeVolume.toFixed(2)}× average on ${ev.measurements.spreadVsAvg.toFixed(2)}× average spread.`, at: ev.barTime });
+    supporting.push({ id: "ev-vsa", kind: "vsa", text: `No-demand bar: volume ${ev.measurements.relativeVolume!.toFixed(2)}× average on ${ev.measurements.spreadVsAvg!.toFixed(2)}× average spread.`, at: ev.barTime });
     contradicting.push({ id: "ev-loc2", kind: "price_action", text: "Low-volume bars are common mid-session and may carry little information." });
     scenarios = [
       { id: "sc-stall", title: "Advance stalling", description: "Participation is thinning near the highs.", supportedBy: ["ev-vsa"], challengedBy: ["ev-loc2"], knowledgeSlugs: ["vsa-no-demand"] },
@@ -502,7 +502,7 @@ function interpret(ctx: {
     ),
     vsa: nar(
       ev ? `${ev.type.replace(/_/g, " ")} — ${ev.status}.` : "No recent VSA events.",
-      ev ? `The latest observation is ${ev.type.replace(/_/g, " ")} (${ev.status}) with relative volume ${ev.measurements.relativeVolume.toFixed(2)}× and close location ${ev.measurements.closeLocation.toFixed(2)}. ${ev.implications[0] ?? ""}` : "No volume/spread pattern met detection conditions in the last several bars. Absence of a pattern is not itself a signal.",
+      ev ? `The latest observation is ${ev.type.replace(/_/g, " ")} (${ev.status}) with relative volume ${ev.measurements.relativeVolume!.toFixed(2)}× and close location ${ev.measurements.closeLocation!.toFixed(2)}. ${ev.implications[0] ?? ""}` : "No volume/spread pattern met detection conditions in the last several bars. Absence of a pattern is not itself a signal.",
       ev ? ev.conditions.map((c) => `${c.met ? "✓" : "✗"} ${c.label}: ${c.detail}`) : ["No conditions satisfied."],
     ),
     priceAction: nar(

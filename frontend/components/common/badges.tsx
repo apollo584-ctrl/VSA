@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, CircleDashed, Clock, FlaskConical, History, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDashed, Clock, Eye, FlaskConical, History, Tag, TimerOff, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/primitives";
 import { STATUS_LABELS, fmtDateTime } from "@/lib/formatting";
 import type { DataQuality, DetectionStatus, Profile } from "@/types";
@@ -13,13 +13,17 @@ export function EstimatedBadge({ profile }: { profile: Pick<Profile, "estimation
   );
 }
 
-const STATUS_ICON = { provisional: CircleDashed, confirmed: CheckCircle2, invalidated: XCircle, historical: History } as const;
-const STATUS_TONE = { provisional: "warn", confirmed: "ok", invalidated: "danger", historical: "neutral" } as const;
+const STATUS_ICON = { observed: Eye, provisional: CircleDashed, confirmed: CheckCircle2, invalidated: XCircle, expired: TimerOff, historical: History } as const;
+const STATUS_TONE = { observed: "neutral", provisional: "warn", confirmed: "ok", invalidated: "danger", expired: "neutral", historical: "neutral" } as const;
 
 /** Status uses icon + text, never color alone. */
 export function StatusBadge({ status }: { status: DetectionStatus }) {
   const Icon = STATUS_ICON[status];
   return <Badge tone={STATUS_TONE[status]}><Icon size={11} aria-hidden />{STATUS_LABELS[status]}</Badge>;
+}
+
+export function ClassificationBadge() {
+  return <Badge tone="info" title="A deterministic rule label applied to measured values. Participant intent is not observed."><Tag size={11} aria-hidden />Rule classification</Badge>;
 }
 
 export function HypothesisBadge() {
@@ -41,7 +45,7 @@ export function QualityIndicators({ quality, asOf }: { quality: DataQuality | un
       <Badge tone="neutral">{quality.barCount} bars</Badge>
       {!quality.hasVolume && <Badge tone="warn"><AlertTriangle size={11} aria-hidden />Volume incomplete</Badge>}
       {quality.profileEstimated && <Badge tone="warn" title="Volume-at-price is not exact.">Estimated profiles</Badge>}
-      {warnings.map((w) => <Badge key={w.code} tone={w.severity === "error" ? "danger" : "warn"} title={w.message}><AlertTriangle size={11} aria-hidden />{w.code.replace(/_/g, " ")}</Badge>)}
+      {warnings.map((w, n) => <Badge key={`${w.code}-${n}`} tone={w.severity === "error" ? "danger" : "warn"} title={w.message}><AlertTriangle size={11} aria-hidden />{w.code.replace(/_/g, " ")}</Badge>)}
       {asOf ? <span className="sr-only">Analysis as of {fmtDateTime(asOf, true)}</span> : null}
     </div>
   );

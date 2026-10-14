@@ -18,7 +18,7 @@ export function useKnowledge() {
 }
 
 export function useUpload() {
-  return useMutation({ mutationFn: (file: File) => api.uploadDataset(file) });
+  return useMutation({ mutationFn: (v: { file: File; metadata: Record<string, unknown> }) => api.uploadDataset(v.file, v.metadata) });
 }
 
 function useDebounced<T>(value: T, ms: number): T {

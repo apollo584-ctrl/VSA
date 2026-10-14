@@ -20,7 +20,7 @@ Copy `.env.example` to `.env.local`:
 | Variable | Meaning |
 |---|---|
 | `NEXT_PUBLIC_API_MODE` | `mock` — deterministic synthetic fixtures (clearly badged **MOCK DATA**); `http` — real backend. Defaults to `mock` in `next dev`, `http` in production builds. |
-| `NEXT_PUBLIC_API_BASE_URL` | Backend origin used in `http` mode. If missing, the UI shows "Analysis service unavailable" — it never falls back to fabricated data. |
+| `NEXT_PUBLIC_API_BASE_URL` | Backend base URL **including `/api/v1`** (e.g. `http://127.0.0.1:8000/api/v1`), used in `http` mode. If missing, the UI shows "Analysis service unavailable" — it never falls back to fabricated data. Backend CORS defaults allow ports 3000. |
 
 Fixture instruments (`FIXA`, `FIXB`, `FIXC`) are synthetic and intentionally not real tickers:
 `FIXA` has an advance with a late provisional upthrust (P-shaped session), `FIXB` is orderly balance with **no patterns**,
@@ -41,10 +41,11 @@ components/
   knowledge/         browser, concept detail, schematics, relationship path
   common/            states (loading/empty/error/…), badges, gate
 hooks/               workspace state (context), data hooks (TanStack Query)
-lib/api/             Zod schemas, typed client, errors
+lib/api/             internal Zod schemas, client switch, errors
+lib/api/backend/     raw backend schemas, mappers, HTTP client
 lib/replay.ts        no-look-ahead guards
 fixtures/            MOCK ONLY: synthetic bars, mock engine, knowledge, mock transport
-docs/                FRONTEND_API_REQUIREMENTS.md — the contract this UI consumes
+docs/                BACKEND_INTEGRATION.md — how the UI maps docs/API_CONTRACT.md, and the reported mismatches
 tests/               vitest
 ```
 

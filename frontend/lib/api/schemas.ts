@@ -24,6 +24,8 @@ export const datasetSourceSchema = z.object({
 export const instrumentSchema = z.object({
   symbol: z.string(),
   name: z.string(),
+  /** Short human label (e.g. "DEMO · 5m"); falls back to symbol. Real datasets are keyed by dataset id. */
+  label: z.string().optional(),
   exchange: z.string().optional(),
   timeframes: z.array(z.string()),
   sessions: z.array(z.string()),
@@ -73,7 +75,8 @@ export const barsResponseSchema = z.object({
 
 // ---------- Profiles ----------
 export const profileKindSchema = z.enum(["tpo", "volume", "developing", "prior", "composite"]);
-export const profileShapeTypeSchema = z.enum(["D", "P", "b", "B", "trend", "multi", "undetermined"]);
+/** Backend classification string, e.g. "P_upper_heavy", "D_balanced" (open set), or a mock family letter. */
+export const profileShapeTypeSchema = z.string();
 
 export const profileBinSchema = z.object({
   price: z.number(),
@@ -115,32 +118,28 @@ export const profileSchema = z.object({
   initialBalance: z.object({ high: z.number(), low: z.number() }).nullable().optional(),
   shape: z.object({
     type: profileShapeTypeSchema,
-    confidence: z.number().min(0).max(1),
+    /** Only present when the backend supplies a numeric confidence (the current engine does not). */
+    confidence: z.number().min(0).max(1).nullable().optional(),
+    ambiguity: z.enum(["low", "high"]).nullable().optional(),
     knowledgeSlug: z.string().nullable().optional(),
     distributions: z.array(distributionSchema),
     rationale: z.array(z.string()),
+    alternatives: z.array(z.string()).optional(),
+    features: z.record(z.string(), z.number()).optional(),
+    limitations: z.array(z.string()).optional(),
   }),
+  limitations: z.array(z.string()).optional(),
+  singlePrints: z.array(z.number()).optional(),
   valueMigration: z.array(migrationPointSchema),
   /** Bar-by-bar POC/VAH/VAL as the session developed (present for "developing" profiles). */
   developingTrack: z.array(z.object({ time: z.number(), poc: z.number(), vah: z.number(), val: z.number() })).optional(),
 });
 
 // ---------- VSA ----------
-export const vsaPatternTypeSchema = z.enum([
-  "upthrust",
-  "shakeout",
-  "stopping_volume",
-  "buying_climax",
-  "selling_climax",
-  "no_demand",
-  "no_supply",
-  "test_of_supply",
-  "high_volume_churn",
-  "effort_vs_result",
-  "volume_divergence",
-]);
+/** Concept id from the knowledge catalog (open set, e.g. "upthrust", "abnormal_relative_volume"). */
+export const vsaPatternTypeSchema = z.string();
 
-export const detectionStatusSchema = z.enum(["provisional", "confirmed", "invalidated", "historical"]);
+export const detectionStatusSchema = z.enum(["observed", "provisional", "confirmed", "invalidated", "expired", "historical"]);
 
 export const vsaEventSchema = z.object({
   id: z.string(),
@@ -153,15 +152,25 @@ export const vsaEventSchema = z.object({
   status: detectionStatusSchema,
   /** Status transitions with timestamps so the UI can show "what was known when". */
   statusHistory: z.array(z.object({ status: detectionStatusSchema, at: z.number(), reason: z.string().optional() })),
+  /** "observed" = measured directly; "classified" = a deterministic rule label applied to measurements. */
+  kind: z.enum(["observed", "classified"]).optional(),
+  /** Contextual label from the engine; not a trade instruction. */
+  direction: z.enum(["strength", "weakness", "neutral"]).optional(),
+  description: z.string().optional(),
   measurements: z.object({
-    spread: z.number(),
-    spreadVsAvg: z.number().describe("spread ÷ average spread"),
-    relativeVolume: z.number().describe("volume ÷ average volume"),
-    closeLocation: z.number().min(0).max(1).describe("0 = close at low, 1 = close at high"),
-    priorTrend: z.enum(["up", "down", "sideways", "unknown"]),
-    priceLocation: z.string(),
+    spread: z.number().nullable().optional(),
+    spreadVsAvg: z.number().nullable().optional().describe("spread ÷ baseline spread"),
+    relativeVolume: z.number().nullable().optional().describe("volume ÷ baseline volume"),
+    closeLocation: z.number().min(0).max(1).nullable().optional().describe("0 = close at low, 1 = close at high"),
+    priorTrend: z.enum(["up", "down", "sideways", "unknown"]).nullable().optional(),
+    priceLocation: z.string().nullable().optional(),
+    /** Every measurement the backend supplied, verbatim. */
+    raw: z.record(z.string(), z.union([z.number(), z.string(), z.null()])).optional(),
   }),
-  conditions: z.array(z.object({ label: z.string(), met: z.boolean(), detail: z.string() })),
+  /** `met` is null when the source (knowledge catalog) lists a rule but the instance does not report per-rule results. */
+  conditions: z.array(z.object({ label: z.string(), met: z.boolean().nullable(), detail: z.string() })),
+  /** "instance" = text written for this observation; "catalog" = generic text from the knowledge catalog for this concept. */
+  textSource: z.enum(["instance", "catalog"]).optional(),
   implications: z.array(z.string()),
   alternatives: z.array(z.string()),
   confirmation: z.array(z.string()),
@@ -172,20 +181,14 @@ export const vsaEventSchema = z.object({
 });
 
 // ---------- Auction structure ----------
-export const auctionStateKindSchema = z.enum([
-  "balance",
-  "breakout_attempt",
-  "acceptance",
-  "rejection",
-  "failed_auction",
-  "value_migration",
-  "trend_development",
-  "distribution_transition",
-]);
+/** Backend state id (open set, e.g. "balance", "higher_price_acceptance", "rejection_above_value"). */
+export const auctionStateKindSchema = z.string();
 
 export const evidenceItemSchema = z.object({
   id: z.string(),
-  kind: z.enum(["profile", "vsa", "price_action", "volume", "structure", "data"]),
+  kind: z.enum(["profile", "vsa", "price_action", "volume", "structure", "data", "auction", "unresolved"]),
+  /** Observation vs deterministic classification, when the backend says. */
+  nature: z.enum(["observed", "classified"]).optional(),
   text: z.string(),
   measurement: z.string().optional(),
   at: z.number().optional(),
@@ -235,6 +238,9 @@ export const scenarioSchema = z.object({
   supportedBy: z.array(z.string()), // evidence ids
   challengedBy: z.array(z.string()),
   knowledgeSlugs: z.array(z.string()),
+  confirmation: z.array(z.string()).optional(),
+  invalidation: z.array(z.string()).optional(),
+  isAlternative: z.boolean().optional(),
 });
 
 export const watchItemSchema = z.object({
@@ -251,12 +257,13 @@ export const uncertaintySchema = z.object({
 
 export const interpretationSchema = z.object({
   asOf: z.number(),
-  whatIsHappening: narrativeSchema,
-  whyItMatters: narrativeSchema,
-  context: narrativeSchema,
-  profile: narrativeSchema,
-  vsa: narrativeSchema,
-  priceAction: narrativeSchema,
+  // Narratives are nullable: the backend does not author every section (see docs/BACKEND_INTEGRATION.md).
+  whatIsHappening: narrativeSchema.nullable(),
+  whyItMatters: narrativeSchema.nullable(),
+  context: narrativeSchema.nullable(),
+  profile: narrativeSchema.nullable(),
+  vsa: narrativeSchema.nullable(),
+  priceAction: narrativeSchema.nullable(),
   supporting: z.array(evidenceItemSchema),
   contradicting: z.array(evidenceItemSchema),
   scenarios: z.array(scenarioSchema),
@@ -282,6 +289,8 @@ export const analysisSchema = z.object({
   source: datasetSourceSchema,
   /** Timeframe the engine actually analysed (may differ from the displayed chart timeframe). */
   analysisTimeframe: z.string().optional(),
+  /** Persisted immutable snapshot identity (real backend). */
+  snapshot: z.object({ id: z.string(), engineVersion: z.string(), knowledgeVersion: z.string(), createdAt: z.string(), datasetId: z.string() }).optional(),
   /** Server-side state: ok, or why analysis could not be produced. */
   status: z.enum(["ok", "insufficient_data", "invalid_data"]),
   statusMessage: z.string().nullable().optional(),
@@ -296,16 +305,8 @@ export const analysisSchema = z.object({
 });
 
 // ---------- Knowledge ----------
-export const knowledgeCategorySchema = z.enum([
-  "market_profile_shapes",
-  "market_profile_concepts",
-  "volume_profile",
-  "vsa_patterns",
-  "auction_market_theory",
-  "price_action",
-  "volume_and_volatility",
-  "pattern_relationships",
-]);
+/** Category id (open set: mock uses market_profile_shapes…; the backend uses strength, weakness, profile, auction…). */
+export const knowledgeCategorySchema = z.string();
 
 export const knowledgeConceptSchema = z.object({
   slug: z.string(),
@@ -321,6 +322,9 @@ export const knowledgeConceptSchema = z.object({
   confirmation: z.array(z.string()),
   invalidation: z.array(z.string()),
   doesNotProve: z.array(z.string()).optional(),
+  /** "knowledge_only" concepts are explained but have no detector — they can never appear as observations. */
+  detectorStatus: z.enum(["implemented", "knowledge_only"]).optional(),
+  extraSections: z.array(z.object({ title: z.string(), items: z.array(z.string()) })).optional(),
   related: z.array(
     z.object({
       slug: z.string(),

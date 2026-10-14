@@ -5,6 +5,7 @@ import { QualityIndicators } from "@/components/common/badges";
 import { useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
 import type { LayerKey } from "@/types";
+import Link from "next/link";
 import { LayerControls, ReplayControls } from "./ChartControls";
 import { MarketChart } from "./MarketChart";
 
@@ -29,6 +30,11 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
       </div>
       {market.analysisIsStale && <p className="text-[11px] text-subtle" role="status">Updating analysis for the selected bar…</p>}
       <ReplayControls allBars={market.allBars} />
+      {analysis?.snapshot && (
+        <p className="text-[11px] text-subtle" data-testid="snapshot-line">
+          Saved snapshot <Link href={`/snapshot/${analysis.snapshot.id}`} className="num text-accent hover:underline">{analysis.snapshot.id.slice(0, 8)}</Link> · engine {analysis.snapshot.engineVersion} · knowledge {analysis.snapshot.knowledgeVersion} · computed {new Date(analysis.snapshot.createdAt).toLocaleString()} · immutable
+        </p>
+      )}
       {analysis?.analysisTimeframe && analysis.analysisTimeframe !== state.timeframe && (
         <p className="text-[11px] text-subtle">Annotations were computed on {analysis.analysisTimeframe} bars and are mapped onto {state.timeframe} bars here.</p>
       )}

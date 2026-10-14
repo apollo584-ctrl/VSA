@@ -31,7 +31,7 @@ export default function VsaPage() {
               ? <VsaDetailPanel event={selected} level={state.detailLevel} onClose={() => set({ selectedEventId: null })} />
               : <StateMessage icon={MousePointerClick} title="Select a pattern">Click a marker on the chart or an event in the list to see its measurements, conditions and alternative explanations.</StateMessage>}
           </Panel>
-          <p className="px-1 text-[11px] text-subtle">Markers: code + status — <b>?</b> provisional, <b>✓</b> confirmed, <b>×</b> invalidated. Position above/below a bar only shows where the event occurred in the bar, not a direction.</p>
+          <p className="px-1 text-[11px] text-subtle">Markers: code + status — <b>?</b> provisional, <b>✓</b> confirmed, <b>×</b> invalidated. Placement above or below a bar follows the engine's contextual label (weakness, strength or neutral); it is not a trade instruction.</p>
         </aside>
       </div>
     </AnalysisGate>

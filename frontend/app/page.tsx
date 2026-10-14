@@ -25,7 +25,7 @@ export default function OverviewPage() {
           <div className="flex min-h-[30rem] flex-col"><ChartSection market={market} /></div>
           <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
             <Panel title="Profile" actions={profile?.estimated ? <EstimatedBadge profile={profile} /> : undefined}>
-              <AnalysisBody analysis={a}>{(an) => <div className="space-y-2"><ProfileKindTabs /><MiniProfile analysis={an} kind={state.profileKind} /></div>}</AnalysisBody>
+              <AnalysisBody analysis={a}>{(an) => <div className="space-y-2"><ProfileKindTabs available={Object.keys(an.profiles)} /><MiniProfile analysis={an} kind={state.profileKind} /></div>}</AnalysisBody>
             </Panel>
             <Panel title="VSA observations" className="max-h-96" bodyClassName="overflow-auto">
               {selected

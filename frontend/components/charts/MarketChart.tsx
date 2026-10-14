@@ -7,14 +7,17 @@ import {
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useWorkspace } from "@/hooks/workspace";
 import { readPalette, withAlpha, type ChartPalette } from "@/lib/charting/theme";
-import { fmtDate, fmtDateTime, fmtPrice, fmtTime, fmtVolume, PATTERN_CODES } from "@/lib/formatting";
+import { fmtDate, fmtDateTime, fmtPrice, fmtTime, fmtVolume, patternCode } from "@/lib/formatting";
 import { barTimeContaining } from "@/lib/replay";
 import { cn } from "@/lib/utils";
-import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent, VsaPatternType } from "@/types";
+import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/types";
 import { ChartOverlay } from "./ChartOverlay";
 
-const ABOVE: VsaPatternType[] = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
-const STATUS_MARK = { provisional: "?", confirmed: "✓", invalidated: "×", historical: "" } as const;
+const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
+const STATUS_MARK = { observed: "", provisional: "?", confirmed: "✓", invalidated: "×", expired: "~", historical: "" } as const;
+
+/** Marker placement only anchors the label to the bar; engine direction (when given) picks the side. */
+const placeAbove = (e: VsaEvent) => (e.direction ? e.direction !== "strength" : ABOVE.includes(e.type));
 
 export function profileRefPrices(event: VsaEvent, profile: Profile | null): { label: string; price: number }[] {
   if (!profile) return [];
@@ -198,10 +201,10 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
       const sel = e.id === selectedEventId;
       markers.push({
         time: t as UTCTimestamp,
-        position: ABOVE.includes(e.type) ? "aboveBar" : "belowBar",
+        position: placeAbove(e) ? "aboveBar" : "belowBar",
         shape: "circle",
         color: sel ? palette.accent : e.status === "invalidated" ? withAlpha(palette.vsa, 0.45) : palette.vsa,
-        text: `${PATTERN_CODES[e.type]}${STATUS_MARK[e.status]}`,
+        text: `${patternCode(e.type)}${STATUS_MARK[e.status]}`,
         size: sel ? 1.6 : 1,
       });
     }

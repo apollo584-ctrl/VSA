@@ -10,9 +10,18 @@ import { useKnowledge } from "@/hooks/data";
 import { cn } from "@/lib/utils";
 import { humanize } from "@/lib/formatting";
 import { toApiError } from "@/lib/api/errors";
-import type { KnowledgeCategory, KnowledgeConcept } from "@/types";
+import type { KnowledgeConcept } from "@/types";
 
-export const CATEGORY_LABELS: Record<KnowledgeCategory, string> = {
+export const categoryLabel = (c: string) => CATEGORY_LABELS[c] ?? humanize(c);
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  strength: "VSA — strength-context patterns",
+  weakness: "VSA — weakness-context patterns",
+  neutral: "VSA — neutral measurements",
+  profile: "Market Profile",
+  auction: "Auction",
+  data: "Data requirements",
+  limitations: "Limitations",
   market_profile_shapes: "Market Profile Shapes",
   market_profile_concepts: "Market Profile Concepts",
   volume_profile: "Volume Profile",
@@ -70,14 +79,15 @@ export function Schematic({ concept }: { concept: Pick<KnowledgeConcept, "schema
 export function KnowledgeBrowser() {
   const { data, isPending, error, refetch } = useKnowledge();
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<KnowledgeCategory | "all">("all");
+  const [cat, setCat] = useState<string>("all");
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return (data ?? []).filter((c) => (cat === "all" || c.category === cat) && (!needle || `${c.name} ${c.summary} ${c.definition}`.toLowerCase().includes(needle)));
   }, [data, q, cat]);
   if (isPending) return <LoadingState label="Loading knowledge library…" />;
   if (error) return <ErrorState error={toApiError(error)} onRetry={() => void refetch()} />;
-  const categories = Object.keys(CATEGORY_LABELS) as KnowledgeCategory[];
+  const present = [...new Set(data.map((c) => c.category))];
+  const categories = [...Object.keys(CATEGORY_LABELS).filter((c) => present.includes(c)), ...present.filter((c) => !(c in CATEGORY_LABELS))];
   return (
     <div className="grid gap-3 lg:grid-cols-[14rem_1fr]">
       <aside className="space-y-3">
@@ -90,7 +100,7 @@ export function KnowledgeBrowser() {
             {(["all", ...categories] as const).map((c) => (
               <li key={c}>
                 <button type="button" onClick={() => setCat(c)} aria-pressed={cat === c} className={cn("flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs", cat === c ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2 hover:text-fg")}>
-                  {c === "all" ? "All concepts" : CATEGORY_LABELS[c]}
+                  {c === "all" ? "All concepts" : categoryLabel(c)}
                   <span className="num text-[10px] text-subtle">{c === "all" ? data!.length : data!.filter((x) => x.category === c).length}</span>
                 </button>
               </li>
@@ -104,7 +114,7 @@ export function KnowledgeBrowser() {
             {filtered.map((c) => (
               <li key={c.slug}>
                 <Link href={`/knowledge/${c.slug}`} className="block h-full rounded-lg border border-border bg-surface p-3 transition-colors hover:border-border-strong hover:bg-surface-2">
-                  <Badge>{CATEGORY_LABELS[c.category]}</Badge>
+                  <span className="flex flex-wrap gap-1"><Badge>{categoryLabel(c.category)}</Badge>{c.detectorStatus === "knowledge_only" && <Badge tone="warn" title="Explained in the catalog but no detector exists; it never appears as an observation.">knowledge only</Badge>}</span>
                   <h3 className="mt-1.5 text-sm font-semibold">{c.name}</h3>
                   <p className="mt-0.5 text-xs text-muted">{c.summary}</p>
                 </Link>
@@ -150,13 +160,14 @@ export function ConceptDetail({ slug }: { slug: string }) {
   const list = (xs: string[]) => <ul className="list-disc space-y-0.5 pl-4">{xs.map((x, i) => <li key={i}>{x}</li>)}</ul>;
   return (
     <article className="mx-auto max-w-4xl space-y-5">
-      <nav aria-label="Breadcrumb" className="text-xs text-subtle"><Link href="/knowledge" className="hover:text-fg">Knowledge</Link> / {CATEGORY_LABELS[concept.category]}</nav>
+      <nav aria-label="Breadcrumb" className="text-xs text-subtle"><Link href="/knowledge" className="hover:text-fg">Knowledge</Link> / {categoryLabel(concept.category)}</nav>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold">{concept.name}</h1>
           <p className="mt-1 text-sm text-muted">{concept.summary}</p>
+          {concept.detectorStatus && <p className="mt-2"><Badge tone={concept.detectorStatus === "implemented" ? "ok" : "warn"}>{concept.detectorStatus === "implemented" ? "Detector implemented" : "Knowledge only — no detector, never emitted as an observation"}</Badge></p>}
         </div>
-        <Schematic concept={concept} />
+        {concept.schematic.kind !== "none" && <Schematic concept={concept} />}
       </header>
       <div className="space-y-4 text-xs leading-relaxed">
         <section><SectionLabel>Definition</SectionLabel><p>{concept.definition}</p></section>
@@ -164,6 +175,7 @@ export function ConceptDetail({ slug }: { slug: string }) {
         {concept.marketContext && <section><SectionLabel>Market context</SectionLabel><p>{concept.marketContext}</p></section>}
         {concept.implications.length > 0 && <section><div className="mb-1 flex items-center gap-2"><SectionLabel>Possible implications</SectionLabel><HypothesisBadge /></div>{list(concept.implications)}</section>}
         {concept.doesNotProve && <section><SectionLabel>What it does not prove</SectionLabel>{list(concept.doesNotProve)}</section>}
+        {concept.extraSections?.map((s) => <section key={s.title}><SectionLabel>{s.title}</SectionLabel>{list(s.items)}</section>)}
         {concept.alternatives.length > 0 && <section><SectionLabel>Alternative explanations</SectionLabel>{list(concept.alternatives)}</section>}
         {(concept.confirmation.length > 0 || concept.invalidation.length > 0) && (
           <section className="grid gap-4 sm:grid-cols-2">
