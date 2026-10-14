@@ -1,0 +1,12 @@
+{
+  "instrument": "DEMO",
+  "timeframe_minutes": 5,
+  "exchange": "XNYS",
+  "session_mode": "regular",
+  "timestamp_convention": "bar_start",
+  "timezone": "America/New_York",
+  "price_adjustment": "unadjusted",
+  "volume_adjustment": "raw",
+  "source_name": "deterministic_synthetic_v1",
+  "is_demo": true
+}

@@ -1,0 +1,1783 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Market Structure Intelligence",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/instruments": {
+      "get": {
+        "summary": "Instruments",
+        "operationId": "instruments_api_v1_instruments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/datasets/upload": {
+      "post": {
+        "summary": "Upload",
+        "operationId": "upload_api_v1_datasets_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_api_v1_datasets_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dataset"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/datasets/{dataset_id}": {
+      "get": {
+        "summary": "Dataset",
+        "operationId": "dataset_api_v1_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dataset"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/market/bars": {
+      "get": {
+        "summary": "Market Bars",
+        "operationId": "market_bars_api_v1_market_bars_get",
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Id"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "default": 1000,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bar"
+                  },
+                  "title": "Response Market Bars Api V1 Market Bars Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profiles": {
+      "get": {
+        "summary": "Get Profiles",
+        "operationId": "get_profiles_api_v1_profiles_get",
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Id"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "bin_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 10000,
+              "minimum": 1e-06,
+              "default": 0.25,
+              "title": "Bin Size"
+            }
+          },
+          {
+            "name": "value_area_fraction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1,
+              "exclusiveMinimum": 0,
+              "default": 0.7,
+              "title": "Value Area Fraction"
+            }
+          },
+          {
+            "name": "composite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Composite"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Profile"
+                  },
+                  "title": "Response Get Profiles Api V1 Profiles Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/concepts": {
+      "get": {
+        "summary": "Concepts",
+        "operationId": "concepts_api_v1_knowledge_concepts_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Concept"
+                  },
+                  "title": "Response Concepts Api V1 Knowledge Concepts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/concepts/{concept_id}": {
+      "get": {
+        "summary": "Concept",
+        "operationId": "concept_api_v1_knowledge_concepts__concept_id__get",
+        "parameters": [
+          {
+            "name": "concept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Concept Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Concept"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/concepts/{concept_id}/related": {
+      "get": {
+        "summary": "Related",
+        "operationId": "related_api_v1_knowledge_concepts__concept_id__related_get",
+        "parameters": [
+          {
+            "name": "concept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Concept Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Concept"
+                  },
+                  "title": "Response Related Api V1 Knowledge Concepts  Concept Id  Related Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyze": {
+      "post": {
+        "summary": "Analyze",
+        "operationId": "analyze_api_v1_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Analysis"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}": {
+      "get": {
+        "summary": "Analysis",
+        "operationId": "analysis_api_v1_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Analysis"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Analysis": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version",
+            "default": "0.1.0"
+          },
+          "knowledge_version": {
+            "type": "string",
+            "title": "Knowledge Version",
+            "default": "1.0.0"
+          },
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "instrument": {
+            "type": "string",
+            "title": "Instrument"
+          },
+          "timeframe": {
+            "type": "string",
+            "title": "Timeframe"
+          },
+          "analysis_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Analysis Timestamp"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Parameters"
+          },
+          "data_quality": {
+            "$ref": "#/components/schemas/Quality"
+          },
+          "market_context": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Market Context"
+          },
+          "profile_analysis": {
+            "items": {
+              "$ref": "#/components/schemas/Profile"
+            },
+            "type": "array",
+            "title": "Profile Analysis"
+          },
+          "vsa_observations": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Vsa Observations"
+          },
+          "price_action_observations": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Price Action Observations"
+          },
+          "auction_state": {
+            "$ref": "#/components/schemas/AuctionState"
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence"
+          },
+          "contradicting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Contradicting Evidence"
+          },
+          "interpretations": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "type": "array",
+            "title": "Interpretations"
+          },
+          "alternative_scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "type": "array",
+            "title": "Alternative Scenarios"
+          },
+          "confirmation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Confirmation Conditions"
+          },
+          "invalidation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invalidation Conditions"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Uncertainties"
+          },
+          "plain_english_summary": {
+            "type": "string",
+            "title": "Plain English Summary"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "dataset_id",
+          "instrument",
+          "timeframe",
+          "analysis_timestamp",
+          "created_at",
+          "provenance",
+          "parameters",
+          "data_quality",
+          "market_context",
+          "profile_analysis",
+          "vsa_observations",
+          "price_action_observations",
+          "auction_state",
+          "supporting_evidence",
+          "contradicting_evidence",
+          "interpretations",
+          "alternative_scenarios",
+          "confirmation_conditions",
+          "invalidation_conditions",
+          "uncertainties",
+          "plain_english_summary"
+        ],
+        "title": "Analysis"
+      },
+      "AnalyzeRequest": {
+        "properties": {
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/Parameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dataset_id"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AuctionState": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "transitions": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "title": "Transitions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "evidence_ids",
+          "transitions"
+        ],
+        "title": "AuctionState"
+      },
+      "Bar": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "available_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Available At"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "open": {
+            "type": "number",
+            "title": "Open"
+          },
+          "high": {
+            "type": "number",
+            "title": "High"
+          },
+          "low": {
+            "type": "number",
+            "title": "Low"
+          },
+          "close": {
+            "type": "number",
+            "title": "Close"
+          },
+          "volume": {
+            "type": "number",
+            "title": "Volume"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp",
+          "available_at",
+          "session",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "title": "Bar"
+      },
+      "Body_upload_api_v1_datasets_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "metadata": {
+            "type": "string",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "metadata"
+        ],
+        "title": "Body_upload_api_v1_datasets_upload_post"
+      },
+      "Concept": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "definition": {
+            "type": "string",
+            "title": "Definition"
+          },
+          "historical_origin_or_source": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Historical Origin Or Source"
+          },
+          "observable_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Observable Conditions"
+          },
+          "required_background": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Background"
+          },
+          "preferred_price_location": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Preferred Price Location"
+          },
+          "volume_characteristics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Volume Characteristics"
+          },
+          "spread_characteristics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Spread Characteristics"
+          },
+          "close_location_characteristics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Close Location Characteristics"
+          },
+          "possible_interpretations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Possible Interpretations"
+          },
+          "alternative_explanations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Alternative Explanations"
+          },
+          "confirmation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Confirmation Conditions"
+          },
+          "invalidation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invalidation Conditions"
+          },
+          "known_limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Known Limitations"
+          },
+          "related_patterns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Related Patterns"
+          },
+          "detector_status": {
+            "type": "string",
+            "enum": [
+              "implemented",
+              "knowledge_only"
+            ],
+            "title": "Detector Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "definition",
+          "historical_origin_or_source",
+          "observable_conditions",
+          "required_background",
+          "preferred_price_location",
+          "volume_characteristics",
+          "spread_characteristics",
+          "close_location_characteristics",
+          "possible_interpretations",
+          "alternative_explanations",
+          "confirmation_conditions",
+          "invalidation_conditions",
+          "known_limitations",
+          "related_patterns",
+          "detector_status"
+        ],
+        "title": "Concept"
+      },
+      "Dataset": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "content_sha256": {
+            "type": "string",
+            "title": "Content Sha256"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "first_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Timestamp"
+          },
+          "last_available_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Available At"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/Quality"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "content_sha256",
+          "source",
+          "created_at",
+          "row_count",
+          "first_timestamp",
+          "last_available_at",
+          "quality"
+        ],
+        "title": "Dataset"
+      },
+      "Distribution": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "estimated": {
+            "type": "boolean",
+            "title": "Estimated",
+            "default": true
+          },
+          "counts": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Counts"
+          },
+          "poc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poc"
+          },
+          "vah": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vah"
+          },
+          "val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Val"
+          },
+          "achieved_value_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Achieved Value Fraction"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/Shape"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "method",
+          "counts",
+          "poc",
+          "vah",
+          "val",
+          "achieved_value_fraction",
+          "shape"
+        ],
+        "title": "Distribution"
+      },
+      "Evidence": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "classified"
+            ],
+            "title": "Kind"
+          },
+          "concept_id": {
+            "type": "string",
+            "title": "Concept Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "first_observable_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Observable At"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "provisional",
+              "confirmed",
+              "invalidated",
+              "expired"
+            ],
+            "title": "Status"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "strength",
+              "weakness",
+              "neutral"
+            ],
+            "title": "Direction",
+            "default": "neutral"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "coordinates": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Coordinates"
+          },
+          "measurements": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Measurements"
+          },
+          "supporting_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Supporting Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "concept_id",
+          "timestamp",
+          "first_observable_at",
+          "status",
+          "description"
+        ],
+        "title": "Evidence"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Parameters": {
+        "properties": {
+          "bin_size": {
+            "type": "number",
+            "maximum": 10000.0,
+            "minimum": 1e-06,
+            "title": "Bin Size",
+            "default": 0.25
+          },
+          "value_area_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Value Area Fraction",
+            "default": 0.7
+          },
+          "tpo_minutes": {
+            "type": "integer",
+            "enum": [
+              30,
+              60
+            ],
+            "title": "Tpo Minutes",
+            "default": 30
+          },
+          "initial_balance_minutes": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 30.0,
+            "title": "Initial Balance Minutes",
+            "default": 60
+          },
+          "lookback": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 3.0,
+            "title": "Lookback",
+            "default": 20
+          },
+          "minimum_history": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 3.0,
+            "title": "Minimum History",
+            "default": 5
+          },
+          "tod_minimum_sessions": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 2.0,
+            "title": "Tod Minimum Sessions",
+            "default": 5
+          },
+          "high_volume": {
+            "type": "number",
+            "maximum": 20.0,
+            "exclusiveMinimum": 1.0,
+            "title": "High Volume",
+            "default": 1.8
+          },
+          "low_volume": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Low Volume",
+            "default": 0.65
+          },
+          "wide_spread": {
+            "type": "number",
+            "maximum": 10.0,
+            "exclusiveMinimum": 1.0,
+            "title": "Wide Spread",
+            "default": 1.5
+          },
+          "narrow_spread": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Narrow Spread",
+            "default": 0.65
+          },
+          "close_extreme": {
+            "type": "number",
+            "exclusiveMaximum": 0.5,
+            "exclusiveMinimum": 0.0,
+            "title": "Close Extreme",
+            "default": 0.25
+          },
+          "wick_fraction": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Wick Fraction",
+            "default": 0.45
+          },
+          "confirmation_bars": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Confirmation Bars",
+            "default": 3
+          },
+          "pivot_bars": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Pivot Bars",
+            "default": 2
+          },
+          "acceptance_bars": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 2.0,
+            "title": "Acceptance Bars",
+            "default": 3
+          },
+          "shape_skew": {
+            "type": "number",
+            "maximum": 3.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Shape Skew",
+            "default": 0.5
+          },
+          "node_fraction": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Node Fraction",
+            "default": 0.6
+          },
+          "valley_fraction": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Valley Fraction",
+            "default": 0.35
+          },
+          "node_separation_bins": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 2.0,
+            "title": "Node Separation Bins",
+            "default": 3
+          },
+          "trend_progress": {
+            "type": "number",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Trend Progress",
+            "default": 0.6
+          },
+          "split_ratio": {
+            "type": "number",
+            "maximum": 10.0,
+            "exclusiveMinimum": 1.0,
+            "title": "Split Ratio",
+            "default": 1.8
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Parameters"
+      },
+      "Profile": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "session",
+              "composite"
+            ],
+            "title": "Scope"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "bin_size": {
+            "type": "number",
+            "title": "Bin Size"
+          },
+          "price_bin_lower": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Price Bin Lower"
+          },
+          "price_bin_center": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Price Bin Center"
+          },
+          "tpo": {
+            "$ref": "#/components/schemas/Distribution"
+          },
+          "volume": {
+            "$ref": "#/components/schemas/Distribution"
+          },
+          "hvns": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Hvns"
+          },
+          "lvns": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Lvns"
+          },
+          "single_print_bins": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Single Print Bins"
+          },
+          "initial_balance": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Initial Balance"
+          },
+          "range_extension": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Range Extension"
+          },
+          "extremes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Extremes"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "session",
+          "scope",
+          "as_of",
+          "bin_size",
+          "price_bin_lower",
+          "price_bin_center",
+          "tpo",
+          "volume",
+          "hvns",
+          "lvns",
+          "single_print_bins",
+          "initial_balance",
+          "range_extension",
+          "extremes",
+          "limitations"
+        ],
+        "title": "Profile"
+      },
+      "Quality": {
+        "properties": {
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "missing_bars": {
+            "type": "integer",
+            "title": "Missing Bars"
+          },
+          "absent_sessions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Absent Sessions"
+          },
+          "incomplete_sessions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Incomplete Sessions"
+          },
+          "split_suspected": {
+            "type": "boolean",
+            "title": "Split Suspected",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "warnings",
+          "missing_bars",
+          "absent_sessions",
+          "incomplete_sessions"
+        ],
+        "title": "Quality"
+      },
+      "Scenario": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "inferred",
+            "title": "Kind",
+            "default": "inferred"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "confirmation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Confirmation Conditions"
+          },
+          "invalidation_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invalidation Conditions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "evidence_ids",
+          "confirmation_conditions",
+          "invalidation_conditions"
+        ],
+        "title": "Scenario"
+      },
+      "Shape": {
+        "properties": {
+          "classification": {
+            "type": "string",
+            "title": "Classification"
+          },
+          "ambiguity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "high"
+            ],
+            "title": "Ambiguity"
+          },
+          "features": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Features"
+          },
+          "alternatives": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Alternatives"
+          },
+          "interpretation": {
+            "type": "string",
+            "title": "Interpretation"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "classification",
+          "ambiguity",
+          "features",
+          "alternatives",
+          "interpretation",
+          "limitations"
+        ],
+        "title": "Shape"
+      },
+      "Source": {
+        "properties": {
+          "instrument": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9.\\-]{0,15}$",
+            "title": "Instrument"
+          },
+          "timeframe_minutes": {
+            "type": "integer",
+            "enum": [
+              1,
+              5,
+              15,
+              30,
+              60
+            ],
+            "title": "Timeframe Minutes",
+            "default": 5
+          },
+          "exchange": {
+            "type": "string",
+            "const": "XNYS",
+            "title": "Exchange",
+            "default": "XNYS"
+          },
+          "session_mode": {
+            "type": "string",
+            "enum": [
+              "regular",
+              "extended"
+            ],
+            "title": "Session Mode",
+            "default": "regular"
+          },
+          "timestamp_convention": {
+            "type": "string",
+            "enum": [
+              "bar_start",
+              "bar_end"
+            ],
+            "title": "Timestamp Convention",
+            "default": "bar_start"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "America/New_York"
+          },
+          "price_adjustment": {
+            "type": "string",
+            "enum": [
+              "unadjusted",
+              "split_adjusted"
+            ],
+            "title": "Price Adjustment"
+          },
+          "volume_adjustment": {
+            "type": "string",
+            "enum": [
+              "raw",
+              "split_adjusted"
+            ],
+            "title": "Volume Adjustment"
+          },
+          "source_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Source Name"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "instrument",
+          "price_adjustment",
+          "volume_adjustment",
+          "source_name"
+        ],
+        "title": "Source"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
