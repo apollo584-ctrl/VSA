@@ -164,7 +164,7 @@ export function makeProfile(kind: ProfileKind, slice: Bar[], allBars: Bar[], k: 
     hvns, lvns: lvnPrices,
     sessionHigh: hi, sessionLow: lo,
     initialBalance: ibBars ? { high: Math.max(...ibBars.map((b) => b.h)), low: Math.min(...ibBars.map((b) => b.l)) } : null,
-    shape: { type, confidence: +confidence.toFixed(2), knowledgeSlug: slugByType[type] ?? null, distributions, rationale },
+    shape: { type, confidence: null, ambiguity: confidence >= 0.6 ? "low" : "high", knowledgeSlug: slugByType[type] ?? null, distributions, rationale },
     valueMigration: migration,
   };
 }
@@ -418,7 +418,7 @@ function interpret(ctx: {
   const priorTxt = prior ? `prior-session value ${f2(prior.val)}–${f2(prior.vah)}` : "no prior session available";
   const posTxt = rel === "above_value" ? "above" : rel === "below_value" ? "below" : rel === "inside_value" ? "inside" : "unclassified relative to";
 
-  supporting.push({ id: "ev-profile", kind: "profile", text: `Current session profile is classified ${shape === "undetermined" ? "undetermined" : `${shape}-shaped`} with POC ${f2(current.poc)}.`, measurement: `confidence ${(current.shape.confidence ?? 0).toFixed(2)}` });
+  supporting.push({ id: "ev-profile", kind: "profile", text: `Current session profile is classified ${shape === "undetermined" ? "undetermined" : `${shape}-shaped`} with POC ${f2(current.poc)}.`, measurement: `${current.shape.ambiguity ?? "unknown"} ambiguity` });
   if (rel !== "unknown") supporting.push({ id: "ev-loc", kind: "profile", text: `Last price ${f2(last.c)} is ${posTxt} ${priorTxt}.` });
 
   if (ev?.type === "upthrust" && rel === "above_value") {
