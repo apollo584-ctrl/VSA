@@ -24,7 +24,7 @@ export default function VsaPage() {
         </div>
         <aside className="flex min-w-0 flex-col gap-3" aria-label="VSA workspace">
           <Panel title="Detected events" bodyClassName="max-h-72 overflow-auto">
-            <AnalysisBody analysis={a}>{() => <VsaEventList events={events} selectedId={state.selectedEventId} onSelect={(id) => set({ selectedEventId: id })} scopeLabel="up to this point" />}</AnalysisBody>
+            <AnalysisBody analysis={a} error={market.error}>{() => <VsaEventList events={events} selectedId={state.selectedEventId} onSelect={(id) => set({ selectedEventId: id })} scopeLabel="up to this point" />}</AnalysisBody>
           </Panel>
           <Panel title="Pattern detail" actions={<DetailLevelSwitch />} bodyClassName="overflow-auto">
             {selected

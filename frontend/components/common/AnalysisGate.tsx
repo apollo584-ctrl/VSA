@@ -35,7 +35,7 @@ export function AnalysisGate({ market, children }: { market: Market; children: R
 
 /** Non-fatal analysis problems (chart remains viewable). */
 export function AnalysisStatusBanner({ analysis, error }: { analysis: Analysis | null; error: Error | null }) {
-  if (error) return <div className="rounded-md border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">Analysis could not be refreshed: {error.message}. Chart data may be shown without current annotations.</div>;
+  if (error) return <div className="rounded-md border border-danger/40 bg-danger/10 p-2 text-xs text-danger" role="alert">Analysis could not be refreshed: {error.message.replace(/\.+$/, "")}. Chart data may be shown without current annotations.</div>;
   if (!analysis) return null;
   if (analysis.status === "insufficient_data") return <InsufficientDataState message={analysis.statusMessage} />;
   if (analysis.status === "invalid_data") return <InvalidDataState message={analysis.statusMessage} />;

@@ -22,7 +22,7 @@ export default function ChartProfilePage() {
           <Panel title="Market Profile" actions={<>{profile?.estimated && <EstimatedBadge profile={profile} />}</>}>
             <div className="space-y-3">
               <ProfileKindTabs available={a?.status === "ok" ? Object.keys(a.profiles) : undefined} />
-              <AnalysisBody analysis={a}>{() => profile ? (
+              <AnalysisBody analysis={a} error={market.error}>{() => profile ? (
                 <>
                   <p className="text-[11px] text-subtle">{profile.label}{profile.estimated && profile.estimationMethod ? ` — ${profile.estimationMethod}` : ""}</p>
                   <ProfileVisual profile={profile} weight={state.profileKind === "tpo" ? "tpo" : "volume"} currentPrice={a?.valueLocation?.price} />

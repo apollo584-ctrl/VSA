@@ -16,7 +16,7 @@ export default function InterpretationPage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-3">
         <ReplayControls allBars={market.allBars} />
         <Panel title="Market interpretation" actions={<DetailLevelSwitch />}>
-          <AnalysisBody analysis={a}>{(an) => <InterpretationFull analysis={an} level={state.detailLevel} />}</AnalysisBody>
+          <AnalysisBody analysis={a} error={market.error}>{(an) => <InterpretationFull analysis={an} level={state.detailLevel} />}</AnalysisBody>
         </Panel>
       </div>
     </AnalysisGate>

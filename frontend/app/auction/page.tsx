@@ -23,7 +23,7 @@ export default function AuctionPage() {
     <AnalysisGate market={market}>
       <div className="flex flex-col gap-3">
         <ReplayControls allBars={market.allBars} />
-        <AnalysisBody analysis={a}>{() => (
+        <AnalysisBody analysis={a} error={market.error}>{() => (
           <>
             <Panel title="State timeline"><StateStrip states={states} selectedStateId={to?.id ?? null} onSelect={(id) => setSelectedId(transitions.find((t) => t.toStateId === id)?.id ?? null)} /></Panel>
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_24rem]">
