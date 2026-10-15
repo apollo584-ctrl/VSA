@@ -1717,6 +1717,17 @@
     "last_session": "2025-03-05",
     "profile_evidence_id": "profile:session:2025-03-05:2025-03-05"
   },
+  "value_location": {
+    "state": "inside_value",
+    "price": 102.2,
+    "price_basis": "bar_close",
+    "as_of": "2025-03-05T18:15:00Z",
+    "reference_session": "2025-03-04",
+    "val": 100.75,
+    "vah": 102.25,
+    "poc": 101.625,
+    "unavailable_reason": null
+  },
   "profile_analysis": [
     {
       "id": "profile:session:2025-03-03:2025-03-03",
@@ -2317,7 +2328,18 @@
         "relation": "swing_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.16,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:7:0",
@@ -2382,7 +2404,18 @@
         "prior_high": 100.3,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:5",
@@ -2443,7 +2476,18 @@
         "relation": "swing_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:8:0",
@@ -2508,7 +2552,18 @@
         "prior_high": 100.315,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.27,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:9:0",
@@ -2573,7 +2628,18 @@
         "prior_high": 100.37,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.325,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:9",
@@ -2634,7 +2700,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.285,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:12:0",
@@ -2699,7 +2776,18 @@
         "prior_high": 100.425,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:10",
@@ -2760,7 +2848,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:13:0",
@@ -2825,7 +2924,18 @@
         "prior_high": 100.44,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.395,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:14:0",
@@ -2890,7 +3000,18 @@
         "prior_high": 100.495,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.45,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:14",
@@ -2951,7 +3072,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.41,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T15:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:17:0",
@@ -3016,7 +3148,18 @@
         "prior_high": 100.55,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:15",
@@ -3077,7 +3220,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:18:0",
@@ -3142,7 +3296,18 @@
         "prior_high": 100.565,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.52,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:19:0",
@@ -3207,7 +3372,18 @@
         "prior_high": 100.62,
         "prior_low": 99.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.575,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:19",
@@ -3268,7 +3444,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.535,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:22:0",
@@ -3333,7 +3520,18 @@
         "prior_high": 100.675,
         "prior_low": 99.91
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:25:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:20",
@@ -3394,7 +3592,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:25:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:23:0",
@@ -3459,7 +3668,18 @@
         "prior_high": 100.69,
         "prior_low": 99.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.645,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:24:0",
@@ -3524,7 +3744,18 @@
         "prior_high": 100.745,
         "prior_low": 99.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.7,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:24",
@@ -3585,7 +3816,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.66,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:27:0",
@@ -3650,7 +3892,18 @@
         "prior_high": 100.8,
         "prior_low": 100.035
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:50:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:25",
@@ -3711,7 +3964,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:50:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:28:0",
@@ -3776,7 +4040,18 @@
         "prior_high": 100.815,
         "prior_low": 100.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.77,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T16:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:29:0",
@@ -3841,7 +4116,18 @@
         "prior_high": 100.87,
         "prior_low": 100.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.825,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:29",
@@ -3902,7 +4188,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.785,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:32:0",
@@ -3967,7 +4264,18 @@
         "prior_high": 100.925,
         "prior_low": 100.16
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:30",
@@ -4028,7 +4336,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:33:0",
@@ -4093,7 +4412,18 @@
         "prior_high": 100.94,
         "prior_low": 100.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.895,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:34:0",
@@ -4158,7 +4488,18 @@
         "prior_high": 100.995,
         "prior_low": 100.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.95,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:25:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:34",
@@ -4219,7 +4560,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.91,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:37:0",
@@ -4284,7 +4636,18 @@
         "prior_high": 101.05,
         "prior_low": 100.285
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:35",
@@ -4345,7 +4708,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 100.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:38:0",
@@ -4410,7 +4784,18 @@
         "prior_high": 101.065,
         "prior_low": 100.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.02,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:39:0",
@@ -4475,7 +4860,18 @@
         "prior_high": 101.12,
         "prior_low": 100.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.075,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T17:50:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:39",
@@ -4536,7 +4932,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.035,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:42:0",
@@ -4601,7 +5008,18 @@
         "prior_high": 101.175,
         "prior_low": 100.41
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:40",
@@ -4662,7 +5080,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:43:0",
@@ -4727,7 +5156,18 @@
         "prior_high": 101.19,
         "prior_low": 100.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.145,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:44:0",
@@ -4792,7 +5232,18 @@
         "prior_high": 101.245,
         "prior_low": 100.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.2,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:44",
@@ -4853,7 +5304,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.16,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:25:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:47:0",
@@ -4918,7 +5380,18 @@
         "prior_high": 101.3,
         "prior_low": 100.535
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:45",
@@ -4979,7 +5452,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:48:0",
@@ -5044,7 +5528,18 @@
         "prior_high": 101.315,
         "prior_low": 100.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.27,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:49:0",
@@ -5109,7 +5604,18 @@
         "prior_high": 101.37,
         "prior_low": 100.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.325,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:49",
@@ -5170,7 +5676,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.285,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:50:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:52:0",
@@ -5235,7 +5752,18 @@
         "prior_high": 101.425,
         "prior_low": 100.66
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:50",
@@ -5296,7 +5824,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T18:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:53:0",
@@ -5361,7 +5900,18 @@
         "prior_high": 101.44,
         "prior_low": 100.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.395,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:54:0",
@@ -5426,7 +5976,18 @@
         "prior_high": 101.495,
         "prior_low": 100.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.45,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:54",
@@ -5487,7 +6048,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.41,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:57:0",
@@ -5552,7 +6124,18 @@
         "prior_high": 101.55,
         "prior_low": 100.785
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:55",
@@ -5613,7 +6196,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:58:0",
@@ -5678,7 +6272,18 @@
         "prior_high": 101.565,
         "prior_low": 100.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.52,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:25:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:59:0",
@@ -5743,7 +6348,18 @@
         "prior_high": 101.62,
         "prior_low": 100.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.575,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:59",
@@ -5804,7 +6420,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.535,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:62:0",
@@ -5869,7 +6496,18 @@
         "prior_high": 101.675,
         "prior_low": 100.91
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:60",
@@ -5930,7 +6568,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:63:0",
@@ -5995,7 +6644,18 @@
         "prior_high": 101.69,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.645,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:50:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:64:0",
@@ -6060,7 +6720,18 @@
         "prior_high": 101.745,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.7,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T19:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:64",
@@ -6121,7 +6792,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.66,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:05:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:67:0",
@@ -6186,7 +6868,18 @@
         "prior_high": 101.8,
         "prior_low": 101.035
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:65",
@@ -6247,7 +6940,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:10:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:68:0",
@@ -6312,7 +7016,18 @@
         "prior_high": 101.815,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.77,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:15:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:69:0",
@@ -6377,7 +7092,18 @@
         "prior_high": 101.87,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.825,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:20:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:69",
@@ -6438,7 +7164,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.785,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:30:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:72:0",
@@ -6503,7 +7240,18 @@
         "prior_high": 101.925,
         "prior_low": 101.16
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:70",
@@ -6564,7 +7312,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:35:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:73:0",
@@ -6629,7 +7388,18 @@
         "prior_high": 101.94,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.895,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:40:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:74:0",
@@ -6694,7 +7464,18 @@
         "prior_high": 101.995,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.95,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:45:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:high:74",
@@ -6755,7 +7536,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.91,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T20:55:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:failed_breakout:77:0",
@@ -6820,7 +7612,18 @@
         "prior_high": 102.05,
         "prior_low": 101.285
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T21:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:pivot:low:75",
@@ -6881,7 +7684,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "unavailable",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-03T21:00:00Z",
+        "reference_session": null,
+        "val": null,
+        "vah": null,
+        "poc": null,
+        "unavailable_reason": "no_prior_session"
+      }
     },
     {
       "id": "pa:breakout:78:0",
@@ -6936,7 +7750,18 @@
         "prior_high": 102.065,
         "prior_low": 101.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.48,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T14:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:82",
@@ -6997,7 +7822,18 @@
         "relation": "lower_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.66,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T15:05:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:83",
@@ -7058,7 +7894,18 @@
         "relation": "lower_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T15:10:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:87",
@@ -7119,7 +7966,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.785,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T15:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:88",
@@ -7180,7 +8038,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T15:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:92",
@@ -7241,7 +8110,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.91,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T15:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:93",
@@ -7302,7 +8182,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:97",
@@ -7363,7 +8254,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.035,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:20:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:100:0",
@@ -7428,7 +8330,18 @@
         "prior_high": 101.175,
         "prior_low": 100.41
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:25:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:98",
@@ -7489,7 +8402,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:25:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:101:0",
@@ -7554,7 +8478,18 @@
         "prior_high": 101.19,
         "prior_low": 100.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.145,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:102:0",
@@ -7619,7 +8554,18 @@
         "prior_high": 101.245,
         "prior_low": 100.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.2,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:102",
@@ -7680,7 +8626,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.16,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:45:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:105:0",
@@ -7745,7 +8702,18 @@
         "prior_high": 101.3,
         "prior_low": 100.535
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:50:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:103",
@@ -7806,7 +8774,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:50:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:106:0",
@@ -7871,7 +8850,18 @@
         "prior_high": 101.315,
         "prior_low": 100.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.27,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T16:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:107:0",
@@ -7936,7 +8926,18 @@
         "prior_high": 101.37,
         "prior_low": 100.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.325,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:107",
@@ -7997,7 +8998,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.285,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:10:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:110:0",
@@ -8062,7 +9074,18 @@
         "prior_high": 101.425,
         "prior_low": 100.66
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:15:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:108",
@@ -8123,7 +9146,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:15:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:111:0",
@@ -8188,7 +9222,18 @@
         "prior_high": 101.44,
         "prior_low": 100.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.395,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:20:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:112:0",
@@ -8253,7 +9298,18 @@
         "prior_high": 101.495,
         "prior_low": 100.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.45,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:25:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:112",
@@ -8314,7 +9370,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.41,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:115:0",
@@ -8379,7 +9446,18 @@
         "prior_high": 101.55,
         "prior_low": 100.785
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:40:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:113",
@@ -8440,7 +9518,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:40:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:116:0",
@@ -8505,7 +9594,18 @@
         "prior_high": 101.565,
         "prior_low": 100.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.52,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:45:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:117:0",
@@ -8570,7 +9670,18 @@
         "prior_high": 101.62,
         "prior_low": 100.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.575,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T17:50:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:117",
@@ -8631,7 +9742,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.535,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:120:0",
@@ -8696,7 +9818,18 @@
         "prior_high": 101.675,
         "prior_low": 100.91
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:05:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:118",
@@ -8757,7 +9890,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:05:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:121:0",
@@ -8822,7 +9966,18 @@
         "prior_high": 101.69,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.645,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:10:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:122:0",
@@ -8887,7 +10042,18 @@
         "prior_high": 101.745,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.7,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:15:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:122",
@@ -8948,7 +10114,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.66,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:25:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:125:0",
@@ -9013,7 +10190,18 @@
         "prior_high": 101.8,
         "prior_low": 101.035
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:123",
@@ -9074,7 +10262,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:126:0",
@@ -9139,7 +10338,18 @@
         "prior_high": 101.815,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.77,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:127:0",
@@ -9204,7 +10414,18 @@
         "prior_high": 101.87,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.825,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:40:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:127",
@@ -9265,7 +10486,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.785,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:50:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:130:0",
@@ -9330,7 +10562,18 @@
         "prior_high": 101.925,
         "prior_low": 101.16
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:128",
@@ -9391,7 +10634,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T18:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:131:0",
@@ -9456,7 +10710,18 @@
         "prior_high": 101.94,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.895,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:132:0",
@@ -9521,7 +10786,18 @@
         "prior_high": 101.995,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.95,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:05:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:132",
@@ -9582,7 +10858,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.91,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:15:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:135:0",
@@ -9647,7 +10934,18 @@
         "prior_high": 102.05,
         "prior_low": 101.285
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:20:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:133",
@@ -9708,7 +11006,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:20:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:136:0",
@@ -9773,7 +11082,18 @@
         "prior_high": 102.065,
         "prior_low": 101.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.02,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:25:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:137:0",
@@ -9838,7 +11158,18 @@
         "prior_high": 102.12,
         "prior_low": 101.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.075,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:137",
@@ -9899,7 +11230,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.035,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:40:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:140:0",
@@ -9964,7 +11306,18 @@
         "prior_high": 102.175,
         "prior_low": 101.41
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:45:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:138",
@@ -10025,7 +11378,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:45:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:141:0",
@@ -10090,7 +11454,18 @@
         "prior_high": 102.19,
         "prior_low": 101.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.145,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:50:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:142:0",
@@ -10155,7 +11530,18 @@
         "prior_high": 102.245,
         "prior_low": 101.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.2,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T19:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:142",
@@ -10216,7 +11602,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.16,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:05:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:145:0",
@@ -10281,7 +11678,18 @@
         "prior_high": 102.3,
         "prior_low": 101.535
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:10:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:143",
@@ -10342,7 +11750,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:10:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:146:0",
@@ -10407,7 +11826,18 @@
         "prior_high": 102.315,
         "prior_low": 101.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.27,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:15:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:147:0",
@@ -10472,7 +11902,18 @@
         "prior_high": 102.37,
         "prior_low": 101.55
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.325,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:20:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:147",
@@ -10533,7 +11974,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.285,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:30:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:150:0",
@@ -10598,7 +12050,18 @@
         "prior_high": 102.425,
         "prior_low": 101.66
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:148",
@@ -10659,7 +12122,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:35:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:151:0",
@@ -10724,7 +12198,18 @@
         "prior_high": 102.44,
         "prior_low": 101.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.395,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:40:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:152:0",
@@ -10789,7 +12274,18 @@
         "prior_high": 102.495,
         "prior_low": 101.675
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.45,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:45:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:152",
@@ -10850,7 +12346,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.41,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T20:55:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:155:0",
@@ -10915,7 +12422,18 @@
         "prior_high": 102.55,
         "prior_low": 101.785
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T21:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:153",
@@ -10976,7 +12494,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "above_value",
+        "price": 102.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-04T21:00:00Z",
+        "reference_session": "2025-03-03",
+        "val": 100.25,
+        "vah": 101.75,
+        "poc": 101.125,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:breakout:156:0",
@@ -11031,7 +12560,18 @@
         "prior_high": 102.565,
         "prior_low": 101.8
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 100.98,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T14:35:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:160",
@@ -11092,7 +12632,18 @@
         "relation": "lower_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.16,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T15:05:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:161",
@@ -11153,7 +12704,18 @@
         "relation": "lower_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.215,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T15:10:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:165",
@@ -11214,7 +12776,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.285,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T15:30:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:166",
@@ -11275,7 +12848,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.34,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T15:35:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:170",
@@ -11336,7 +12920,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.41,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T15:55:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:171",
@@ -11397,7 +12992,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.465,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:00:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:175",
@@ -11458,7 +13064,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.535,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:20:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:178:0",
@@ -11523,7 +13140,18 @@
         "prior_high": 101.675,
         "prior_low": 100.91
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:25:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:176",
@@ -11584,7 +13212,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.59,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:25:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:179:0",
@@ -11649,7 +13288,18 @@
         "prior_high": 101.69,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.645,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:30:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:180:0",
@@ -11714,7 +13364,18 @@
         "prior_high": 101.745,
         "prior_low": 100.925
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.7,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:35:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:180",
@@ -11775,7 +13436,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.66,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:45:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:183:0",
@@ -11840,7 +13512,18 @@
         "prior_high": 101.8,
         "prior_low": 101.035
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:50:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:181",
@@ -11901,7 +13584,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.715,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:50:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:184:0",
@@ -11966,7 +13660,18 @@
         "prior_high": 101.815,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.77,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T16:55:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:185:0",
@@ -12031,7 +13736,18 @@
         "prior_high": 101.87,
         "prior_low": 101.05
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.825,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:00:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:185",
@@ -12092,7 +13808,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.785,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:10:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:188:0",
@@ -12157,7 +13884,18 @@
         "prior_high": 101.925,
         "prior_low": 101.16
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:15:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:186",
@@ -12218,7 +13956,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.84,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:15:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:189:0",
@@ -12283,7 +14032,18 @@
         "prior_high": 101.94,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.895,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:20:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:190:0",
@@ -12348,7 +14108,18 @@
         "prior_high": 101.995,
         "prior_low": 101.175
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.95,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:25:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:190",
@@ -12409,7 +14180,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.91,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:35:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:193:0",
@@ -12474,7 +14256,18 @@
         "prior_high": 102.05,
         "prior_low": 101.285
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:40:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:191",
@@ -12535,7 +14328,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 101.965,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:40:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:194:0",
@@ -12600,7 +14404,18 @@
         "prior_high": 102.065,
         "prior_low": 101.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.02,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:45:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:195:0",
@@ -12665,7 +14480,18 @@
         "prior_high": 102.12,
         "prior_low": 101.3
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.075,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T17:50:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:high:195",
@@ -12726,7 +14552,18 @@
         "relation": "higher_high",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.035,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T18:00:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:198:0",
@@ -12791,7 +14628,18 @@
         "prior_high": 102.175,
         "prior_low": 101.41
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T18:05:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:pivot:low:196",
@@ -12852,7 +14700,18 @@
         "relation": "higher_low",
         "right_bars": 2.0
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.09,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T18:05:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:199:0",
@@ -12917,7 +14776,18 @@
         "prior_high": 102.19,
         "prior_low": 101.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.145,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T18:10:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     },
     {
       "id": "pa:failed_breakout:200:0",
@@ -12982,7 +14852,18 @@
         "prior_high": 102.245,
         "prior_low": 101.425
       },
-      "supporting_evidence": []
+      "supporting_evidence": [],
+      "value_location": {
+        "state": "inside_value",
+        "price": 102.2,
+        "price_basis": "bar_close",
+        "as_of": "2025-03-05T18:15:00Z",
+        "reference_session": "2025-03-04",
+        "val": 100.75,
+        "vah": 102.25,
+        "poc": 101.625,
+        "unavailable_reason": null
+      }
     }
   ],
   "auction_state": {
@@ -13080,7 +14961,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-03:2025-03-03"
-        ]
+        ],
+        "value_location": {
+          "state": "inside_value",
+          "price": 100.48,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-04T14:35:00Z",
+          "reference_session": "2025-03-03",
+          "val": 100.25,
+          "vah": 101.75,
+          "poc": 101.125,
+          "unavailable_reason": null
+        }
       },
       {
         "id": "auction:126",
@@ -13156,7 +15048,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-03:2025-03-03"
-        ]
+        ],
+        "value_location": {
+          "state": "above_value",
+          "price": 101.77,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-04T18:35:00Z",
+          "reference_session": "2025-03-03",
+          "val": 100.25,
+          "vah": 101.75,
+          "poc": 101.125,
+          "unavailable_reason": null
+        }
       },
       {
         "id": "auction:128",
@@ -13245,7 +15148,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-03:2025-03-03"
-        ]
+        ],
+        "value_location": {
+          "state": "inside_value",
+          "price": 101.73,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-04T18:45:00Z",
+          "reference_session": "2025-03-03",
+          "val": 100.25,
+          "vah": 101.75,
+          "poc": 101.125,
+          "unavailable_reason": null
+        }
       },
       {
         "id": "auction:129",
@@ -13321,7 +15235,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-03:2025-03-03"
-        ]
+        ],
+        "value_location": {
+          "state": "above_value",
+          "price": 101.785,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-04T18:50:00Z",
+          "reference_session": "2025-03-03",
+          "val": 100.25,
+          "vah": 101.75,
+          "poc": 101.125,
+          "unavailable_reason": null
+        }
       },
       {
         "id": "auction:131",
@@ -13397,7 +15322,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-03:2025-03-03"
-        ]
+        ],
+        "value_location": {
+          "state": "above_value",
+          "price": 101.895,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-04T19:00:00Z",
+          "reference_session": "2025-03-03",
+          "val": 100.25,
+          "vah": 101.75,
+          "poc": 101.125,
+          "unavailable_reason": null
+        }
       },
       {
         "id": "auction:156",
@@ -13488,7 +15424,18 @@
         },
         "supporting_evidence": [
           "profile:session:2025-03-04:2025-03-04"
-        ]
+        ],
+        "value_location": {
+          "state": "inside_value",
+          "price": 100.98,
+          "price_basis": "bar_close",
+          "as_of": "2025-03-05T14:35:00Z",
+          "reference_session": "2025-03-04",
+          "val": 100.75,
+          "vah": 102.25,
+          "poc": 101.625,
+          "unavailable_reason": null
+        }
       }
     ],
     "session_resets": [

@@ -136,6 +136,27 @@ class StatusChange(Model):
     reason: str
 
 
+# One vocabulary for "no usable prior value area", shared by session resets and value location.
+# `no_prior_session` applies only to value location: a reset exists only where a prior session does.
+UnusableReference = Literal["no_prior_session", "prior_session_not_adjacent", "prior_session_incomplete", "prior_value_area_unavailable"]
+
+
+class ValueLocation(Model):
+    """Where a close sat relative to the previous complete session's volume value area, as known at `as_of`.
+
+    Equality rule: VAL <= price <= VAH is inside value; above is price > VAH, below is price < VAL.
+    """
+    state: Literal["above_value", "inside_value", "below_value", "unavailable"]
+    price: float
+    price_basis: Literal["bar_close"] = "bar_close"
+    as_of: datetime
+    reference_session: str | None = None
+    val: float | None = None
+    vah: float | None = None
+    poc: float | None = None
+    unavailable_reason: UnusableReference | None = None
+
+
 class Evidence(Model):
     id: str
     kind: Literal["observed", "classified"]
@@ -154,6 +175,8 @@ class Evidence(Model):
     coordinates: dict[str, float | str | None] = Field(default_factory=dict)
     measurements: dict[str, float | str | None] = Field(default_factory=dict)
     supporting_evidence: list[str] = Field(default_factory=list)
+    # Context at first_observable_at. None only for snapshots saved before value location existed.
+    value_location: ValueLocation | None = None
 
 
 class Shape(Model):
@@ -218,8 +241,7 @@ class SessionReset(Model):
     state: Literal["indeterminate"] = "indeterminate"
     reference_session: str | None
     reference_usable: bool
-    reference_unavailable_reason: Literal["prior_session_not_adjacent", "prior_session_incomplete",
-                                          "prior_value_area_unavailable"] | None = None
+    reference_unavailable_reason: UnusableReference | None = None
     description: str
 
 
@@ -247,6 +269,8 @@ class Analysis(Model):
     parameters: Parameters
     data_quality: Quality
     market_context: dict[str, str | float | None]
+    # Current context at the last visible bar; None only for snapshots saved before value location existed.
+    value_location: ValueLocation | None = None
     profile_analysis: list[Profile]
     composite_profile: Profile | None = None
     composite_unavailable_reason: str | None = None

@@ -1,5 +1,6 @@
 "use client";
 
+import { locationReason } from "@/lib/location";
 import { ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -115,12 +116,6 @@ export function StateFlow({ states, transitions, selectedTransitionId, onSelect 
 /** The generic "indeterminate" label explains a missing prior session, which is wrong for a reset. */
 const resetStateLabel = (kind: string) => (kind === "indeterminate" ? "Indeterminate" : auctionLabel(kind));
 
-const RESET_REFERENCE_REASONS: Record<string, string> = {
-  prior_session_not_adjacent: "the prior session in the data is not the previous scheduled session",
-  prior_session_incomplete: "the prior session was incomplete",
-  prior_value_area_unavailable: "the prior session has no value area",
-};
-
 /** Session boundaries where the engine restarted auction state. These are not market-driven transitions. */
 export function SessionResets({ resets }: { resets: AuctionReset[] | null | undefined }) {
   if (!resets) {
@@ -139,7 +134,7 @@ export function SessionResets({ resets }: { resets: AuctionReset[] | null | unde
           <p className="mt-0.5 text-muted">
             Auction state restarted from {resetStateLabel(r.previousState)} (session {r.previousSession}) to Indeterminate. {r.referenceUsable && r.referenceSession
               ? `Reference: prior session ${r.referenceSession} value area.`
-              : `No usable prior value: ${RESET_REFERENCE_REASONS[r.referenceUnavailableReason ?? ""] ?? "reference unavailable"}.`}
+              : `No usable prior value: ${locationReason(r.referenceUnavailableReason)}.`}
           </p>
         </li>
       ))}

@@ -39,10 +39,10 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
 
   it("does not invent fields the backend lacks", () => {
     expect(ui.interpretation!.whyItMatters).toBeNull();
-    expect(ui.valueLocation?.relativeTo).toBe("unknown");
+    expect(ui.valueLocation?.relativeTo).toBe(rawAnalysis.value_location!.state);
     expect(ui.profiles["developing"]).toBeUndefined();
     for (const e of ui.vsaEvents) {
-      expect(e.measurements.priceLocation).toBeNull();
+      expect(e.measurements.priceLocation).toBeNull(); // the UI never writes its own location text for backend events
       expect(e.textSource).toBe("catalog");
       expect(e.conditionSource).toBe("instance");
       expect(e.conditions.length).toBeGreaterThan(0);

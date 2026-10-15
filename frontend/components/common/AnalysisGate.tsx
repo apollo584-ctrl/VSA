@@ -2,10 +2,12 @@
 
 import type { ReactNode } from "react";
 import { useMarket } from "@/hooks/data";
+import { useHiddenInstruments } from "@/hooks/hiddenInstruments";
 import { useWorkspace } from "@/hooks/workspace";
 import { Badge, Button, GLOSSARY, KeyValue, Term } from "@/components/ui/primitives";
 import { auctionLabel, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
 import type { Analysis, Level } from "@/types";
+import { LOCATION_LABEL, locationReason } from "@/lib/location";
 import { EmptyChartState, ErrorState, InsufficientDataState, InvalidDataState, LoadingState, NoDatasetState, StateMessage } from "./states";
 import { FlaskConical } from "lucide-react";
 
@@ -14,12 +16,15 @@ export type Market = ReturnType<typeof useMarket>;
 /** Handles the "can we show anything at all" states before a screen renders its content. */
 export function AnalysisGate({ market, children }: { market: Market; children: ReactNode }) {
   const { selectInstrument } = useWorkspace();
+  const [hidden] = useHiddenInstruments();
   if (!market.symbol) {
+    const listed = (market.instruments.data ?? []).filter((i) => !hidden.includes(i.symbol));
     return (
       <NoDatasetState
         action={
           <div className="flex flex-wrap justify-center gap-2">
-            {(market.instruments.data ?? []).map((i) => <Button key={i.symbol} onClick={() => selectInstrument(i.symbol)}>{i.label ?? i.symbol}</Button>)}
+            {listed.map((i) => <Button key={i.symbol} onClick={() => selectInstrument(i.symbol)}>{i.label ?? i.symbol}</Button>)}
+            {market.instruments.isSuccess && market.instruments.data.length > 0 && listed.length === 0 && <span className="text-xs text-muted">List cleared. Search above to load a symbol, or show the cleared ones from the search list.</span>}
             {market.instruments.isSuccess && market.instruments.data.length === 0 && <span className="text-xs text-muted">No datasets yet. <a className="text-accent hover:underline" href="/settings">Upload a CSV in Settings</a>.</span>}
             {market.instruments.isError && <span className="text-xs text-danger">Instrument list unavailable.</span>}
           </div>
@@ -45,11 +50,13 @@ export function AnalysisStatusBanner({ analysis, error }: { analysis: Analysis |
 export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
   const v = analysis.valueLocation;
   if (!v) return <p className="text-xs text-subtle">Value location unavailable.</p>;
-  const label = { above_value: "Above prior value", inside_value: "Inside prior value", below_value: "Below prior value", unknown: "Not classified" }[v.relativeTo];
-  const prof = analysis.profiles.prior;
+  const ctx = v.context;
+  const label = ctx ? LOCATION_LABEL[ctx.state] : "Not classified";
+  // Levels come with the classification when supplied, so they always belong to the reference session used.
+  const prof = ctx ? (ctx.state === "unavailable" ? null : { vah: ctx.vah, poc: ctx.poc, val: ctx.val }) : analysis.profiles.prior;
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2"><Badge tone="neutral">{label}</Badge><span className="text-xs text-subtle">{v.referenceProfile}</span></div>
+      <div className="flex items-center gap-2"><Badge tone={ctx?.state === "unavailable" ? "warn" : "neutral"}>{label}</Badge><span className="text-xs text-subtle">{v.referenceProfile}</span></div>
       <dl className="text-xs">
         <KeyValue k="Last close" v={fmtPrice(v.price)} />
         {prof && (<>
@@ -59,7 +66,7 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
         </>)}
         <KeyValue k="vs prior POC" v={fmtPct(v.distanceFromPocPct)} />
       </dl>
-      <p className="text-xs text-subtle">{v.relativeTo === "unknown" ? "The engine does not classify price location relative to value. The prior value area and last close are shown as supplied." : "Location describes where price is relative to value; it is not a directional signal."}</p>
+      <p className="text-xs text-subtle">{ctx ? (ctx.state === "unavailable" ? `No usable prior value area: ${locationReason(ctx.unavailableReason)}.` : "Inside value includes the VAL and VAH boundaries. Location describes where price is relative to value; it is not a directional signal.") : "This snapshot was saved before price location was recorded, so it is not classified. The last close and prior value area are shown as supplied."}</p>
     </div>
   );
 }

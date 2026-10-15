@@ -6,6 +6,7 @@ import { ClassificationBadge, HypothesisBadge, ObservationBadge, StatusBadge } f
 import { NoPatternsState } from "@/components/common/states";
 import { Badge, KeyValue, SectionLabel, Term } from "@/components/ui/primitives";
 import { fmtDateTime, fmtMultiple, fmtPrice, humanize, patternCode, patternLabel } from "@/lib/formatting";
+import { describeLocation } from "@/lib/location";
 import { cn } from "@/lib/utils";
 import type { DetailLevel, VsaEvent } from "@/types";
 
@@ -75,7 +76,7 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
           <KeyValue k={<Term hint="Bar volume divided by its prior-bar baseline volume.">Relative volume</Term>} v={m.relativeVolume == null ? "not provided" : fmtMultiple(m.relativeVolume)} />
           <KeyValue k={<Term hint="Where the close sits within the bar: 0 = at the low, 1 = at the high.">Close location</Term>} v={<CloseLocation value={m.closeLocation} />} />
           <KeyValue k="Background trend" v={m.priorTrend ? humanize(m.priorTrend) : "not provided"} />
-          <KeyValue k="Price location" v={<span className="font-sans">{m.priceLocation ?? "not provided by the engine"}</span>} />
+          <KeyValue k="Price location" v={<span className="font-sans">{event.valueLocation ? describeLocation(event.valueLocation) : (m.priceLocation ?? "not recorded in this snapshot")}</span>} />
         </dl>
       </section>
 

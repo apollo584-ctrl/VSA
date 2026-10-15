@@ -135,6 +135,19 @@ export const profileSchema = z.object({
   developingTrack: z.array(z.object({ time: z.number(), poc: z.number(), vah: z.number(), val: z.number() })).optional(),
 });
 
+/** Price relative to the previous complete session's value area, as supplied by the backend and frozen at `asOf`. */
+export const locationContextSchema = z.object({
+  state: z.enum(["above_value", "inside_value", "below_value", "unavailable"]),
+  price: z.number(),
+  /** Bar-end time at which this context was known. */
+  asOf: z.number(),
+  referenceSession: z.string().nullable(),
+  val: z.number().nullable(),
+  vah: z.number().nullable(),
+  poc: z.number().nullable(),
+  unavailableReason: z.string().nullable(),
+});
+
 // ---------- VSA ----------
 /** Concept id from the knowledge catalog (open set, e.g. "upthrust", "abnormal_relative_volume"). */
 export const vsaPatternTypeSchema = z.string();
@@ -157,6 +170,8 @@ export const vsaEventSchema = z.object({
   /** Contextual label from the engine; not a trade instruction. */
   direction: z.enum(["strength", "weakness", "neutral"]).optional(),
   description: z.string().optional(),
+  /** Backend-supplied price location at first-observable time; absent for mock data and snapshots saved before it existed. */
+  valueLocation: locationContextSchema.nullable().optional(),
   measurements: z.object({
     spread: z.number().nullable().optional(),
     spreadVsAvg: z.number().nullable().optional().describe("spread ÷ baseline spread"),
@@ -300,6 +315,8 @@ export const valueLocationSchema = z.object({
   relativeTo: z.enum(["above_value", "inside_value", "below_value", "unknown"]),
   referenceProfile: z.string(),
   distanceFromPocPct: z.number().nullable(),
+  /** Backend-supplied context; absent for mock data and snapshots saved before price location existed. */
+  context: locationContextSchema.nullable().optional(),
 });
 
 // ---------- Analysis snapshot ----------

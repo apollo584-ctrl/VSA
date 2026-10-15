@@ -45,6 +45,18 @@ export const rawSessionResetSchema = z.object({
   description: z.string(),
 });
 
+export const rawValueLocationSchema = z.object({
+  state: z.enum(["above_value", "inside_value", "below_value", "unavailable"]),
+  price: z.number(),
+  price_basis: z.literal("bar_close"),
+  as_of: iso,
+  reference_session: z.string().nullable().optional(),
+  val: z.number().nullable().optional(),
+  vah: z.number().nullable().optional(),
+  poc: z.number().nullable().optional(),
+  unavailable_reason: z.string().nullable().optional(),
+});
+
 export const rawDatasetSchema = z.object({
   id: z.string(),
   content_sha256: z.string(),
@@ -94,6 +106,8 @@ export const rawEvidenceSchema = z.object({
   coordinates: z.record(z.string(), scalar),
   measurements: z.record(z.string(), scalar),
   supporting_evidence: z.array(z.string()),
+  // Absent or null in snapshots saved before price location was recorded; never reconstructed.
+  value_location: rawValueLocationSchema.nullable().optional(),
 });
 
 const rawShapeSchema = z.object({
@@ -160,6 +174,7 @@ export const rawAnalysisSchema = z.object({
   parameters: z.record(z.string(), z.unknown()),
   data_quality: rawQualitySchema,
   market_context: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
+  value_location: rawValueLocationSchema.nullable().optional(),
   profile_analysis: z.array(rawProfileSchema),
   composite_profile: rawProfileSchema.nullable().optional(),
   composite_unavailable_reason: z.string().nullable().optional(),
@@ -204,6 +219,7 @@ export type RawSource = z.infer<typeof rawSourceSchema>;
 export type RawQuality = z.infer<typeof rawQualitySchema>;
 export type RawDataset = z.infer<typeof rawDatasetSchema>;
 export type RawBar = z.infer<typeof rawBarSchema>;
+export type RawValueLocation = z.infer<typeof rawValueLocationSchema>;
 export type RawEvidence = z.infer<typeof rawEvidenceSchema>;
 export type RawProfile = z.infer<typeof rawProfileSchema>;
 export type RawAnalysis = z.infer<typeof rawAnalysisSchema>;

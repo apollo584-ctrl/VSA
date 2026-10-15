@@ -17,7 +17,7 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
     for i, bar in enumerate(bars):
         if bar.session != previous_session:
             expected_previous = cal.previous_session(bar.session).strftime("%Y-%m-%d")
-            reference = by_session.get(previous_session) if previous_session == expected_previous and previous_session in complete_sessions else None
+            reference = prior_reference(previous_session, expected_previous, by_session, complete_sessions)
             if previous_session is not None:
                 resets.append(session_reset(bar, previous_session, state, expected_previous, reference, complete_sessions))
             previous_session = bar.session
@@ -73,6 +73,13 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
     current_timestamps = {bar.timestamp for bar in bars if bar.session == bars[-1].session}
     current = [t.id for t in transitions if t.timestamp in current_timestamps]
     return AuctionState(state=state, evidence_ids=current[-1:], transitions=transitions, session_resets=resets)
+
+
+def prior_reference(previous_session, expected_previous, by_session, complete_sessions) -> Profile | None:
+    """The previous scheduled session's profile, only when it is adjacent and complete."""
+    if previous_session == expected_previous and previous_session in complete_sessions:
+        return by_session.get(previous_session)
+    return None
 
 
 def session_reset(bar: Bar, previous_session: str, previous_state: str, expected_previous: str,

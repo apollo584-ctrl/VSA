@@ -647,6 +647,16 @@
             "type": "object",
             "title": "Market Context"
           },
+          "value_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "profile_analysis": {
             "items": {
               "$ref": "#/components/schemas/Profile"
@@ -1450,6 +1460,16 @@
             },
             "type": "array",
             "title": "Supporting Evidence"
+          },
+          "value_location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValueLocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -1960,6 +1980,7 @@
               {
                 "type": "string",
                 "enum": [
+                  "no_prior_session",
                   "prior_session_not_adjacent",
                   "prior_session_incomplete",
                   "prior_value_area_unavailable"
@@ -2235,6 +2256,105 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValueLocation": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "above_value",
+              "inside_value",
+              "below_value",
+              "unavailable"
+            ],
+            "title": "State"
+          },
+          "price": {
+            "type": "number",
+            "title": "Price"
+          },
+          "price_basis": {
+            "type": "string",
+            "const": "bar_close",
+            "title": "Price Basis",
+            "default": "bar_close"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "reference_session": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Session"
+          },
+          "val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Val"
+          },
+          "vah": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vah"
+          },
+          "poc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poc"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "no_prior_session",
+                  "prior_session_not_adjacent",
+                  "prior_session_incomplete",
+                  "prior_value_area_unavailable"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "state",
+          "price",
+          "as_of"
+        ],
+        "title": "ValueLocation",
+        "description": "Where a close sat relative to the previous complete session's volume value area, as known at `as_of`.\n\nEquality rule: VAL <= price <= VAH is inside value; above is price > VAH, below is price < VAL."
       }
     }
   }

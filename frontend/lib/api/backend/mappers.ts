@@ -13,7 +13,8 @@ import type {
   KnowledgeConcept, Level, Profile, Scenario, VsaEvent,
 } from "@/types";
 import { fmtPrice, humanize } from "@/lib/formatting";
-import type { RawAnalysis, RawBar, RawConcept, RawDataset, RawEvidence, RawProfile, RawQuality, RawSource } from "./schemas";
+import { locationReason } from "@/lib/location";
+import type { RawAnalysis, RawBar, RawConcept, RawDataset, RawEvidence, RawProfile, RawQuality, RawSource, RawValueLocation } from "./schemas";
 
 export const epoch = (iso: string): number => Date.parse(iso) / 1000;
 const intervalSec = (s: RawSource) => s.timeframe_minutes * 60;
@@ -130,6 +131,14 @@ function mapStatusHistory(e: RawEvidence, interval: number): VsaEvent["statusHis
   return hist;
 }
 
+export function mapLocation(l: RawValueLocation | null | undefined) {
+  if (!l) return null;
+  return {
+    state: l.state, price: l.price, asOf: epoch(l.as_of), referenceSession: l.reference_session ?? null,
+    val: l.val ?? null, vah: l.vah ?? null, poc: l.poc ?? null, unavailableReason: l.unavailable_reason ?? null,
+  };
+}
+
 export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<string, RawConcept>): VsaEvent {
   const m = e.measurements;
   const c = concepts.get(e.concept_id);
@@ -145,6 +154,7 @@ export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<stri
     kind: e.kind,
     direction: e.direction,
     description: e.description,
+    valueLocation: mapLocation(e.value_location),
     measurements: {
       spread: num(m["spread"]),
       spreadVsAvg: num(m["relative_spread"]),
@@ -385,6 +395,28 @@ export function mapLevels(a: RawAnalysis): Level[] {
 
 // ------------------------------------------------------------------ top level
 
+function mapAnalysisLocation(a: RawAnalysis, lastClose: number | null, priorSession: string | null, ref: { vah: number | null; val: number | null } | undefined): Analysis["valueLocation"] {
+  const context = mapLocation(a.value_location);
+  if (context) {
+    return {
+      price: context.price,
+      relativeTo: context.state === "unavailable" ? "unknown" : context.state,
+      referenceProfile: context.state === "unavailable"
+        ? `Prior value unavailable: ${locationReason(context.unavailableReason)}`
+        : `Prior session ${context.referenceSession} value area ${context.val}–${context.vah} (estimated)`,
+      distanceFromPocPct: null,
+      context,
+    };
+  }
+  if (lastClose === null) return null;
+  return {
+    price: lastClose,
+    relativeTo: "unknown",
+    referenceProfile: ref?.vah != null && ref?.val != null ? `Prior session ${priorSession} value area ${ref.val}–${ref.vah} (estimated)` : "No prior session value area",
+    distanceFromPocPct: null,
+  };
+}
+
 export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[] }): Analysis {
   const storedKnowledge = a.knowledge_snapshot;
   const hasStoredKnowledge = storedKnowledge?.version === a.knowledge_version;
@@ -437,13 +469,8 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[] }): Analysis {
     statusMessage: null,
     quality: mapQuality(a.data_quality, ctx.bars.filter((b) => epoch(b.available_at) <= upTo), a.profile_analysis.some((p) => p.volume.estimated || p.tpo.estimated)),
     profiles,
-    // The backend does not classify price location; the UI shows the two raw numbers and says so.
-    valueLocation: lastClose === null ? null : {
-      price: lastClose,
-      relativeTo: "unknown",
-      referenceProfile: ref?.vah != null && ref?.val != null ? `Prior session ${prior!.session} value area ${ref.val}–${ref.vah} (estimated)` : "No prior session value area",
-      distanceFromPocPct: null,
-    },
+    // Classification comes from the backend; snapshots saved before it existed stay unclassified (never derived here).
+    valueLocation: mapAnalysisLocation(a, lastClose, prior?.session ?? null, ref),
     vsaEvents: a.vsa_observations.map((e) => mapVsaEvent(e, interval, concepts)),
     auctionStates: states,
     auctionTransitions: transitions,

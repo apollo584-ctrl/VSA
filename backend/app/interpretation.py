@@ -2,7 +2,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from app import auction, price_action, vsa
+from app import auction, price_action, value_location, vsa
 from app.data import quality
 from app.features import features
 from app.models import Analysis, AnalyzeRequest, Bar, Dataset, Scenario
@@ -38,6 +38,9 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
     pa_observations = price_action.detect(bars, measurements, p)
     complete = {item.session for item in session_profiles} - set(q.incomplete_sessions)
     auction_state = auction.classify(bars, session_profiles, complete, p)
+    table = value_location.reference_table(bars, session_profiles, complete)
+    for group in (vsa_observations, pa_observations, auction_state.transitions):
+        value_location.annotate(group, bars, table)
     last = session_profiles[-1]
     # Current-session evidence only. Resolve historical lifecycles, retain them in the response.
     current_ids = {bar.timestamp for bar in bars if bar.session == bars[-1].session}
@@ -96,6 +99,7 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
                     created_at=datetime.now(UTC), provenance=dataset.source, parameters=p, data_quality=q,
                     market_context={"background": measurements[-1]["background"], "last_close": bars[-1].close,
                                     "last_session": bars[-1].session, "profile_evidence_id": last.id},
+                    value_location=value_location.locate(bars[-1], table),
                     profile_analysis=session_profiles, composite_profile=composite,
                     composite_unavailable_reason=composite_reason, vsa_observations=vsa_observations,
                     price_action_observations=pa_observations, auction_state=auction_state,
