@@ -32,7 +32,11 @@ export function mapBars(raw: RawBar[]): Bar[] {
 }
 
 export function mapQuality(q: RawQuality, bars: RawBar[], profileEstimated: boolean): DataQuality {
-  const issues: DataQuality["issues"] = q.warnings.map((m) => ({ code: "data_quality_warning", severity: "warning" as const, message: m }));
+  // The backend appends this provenance statement to every dataset. It describes what is not verified, not a defect in
+  // the data, so it is shown as information rather than raising the warning badge on every chart.
+  const issues: DataQuality["issues"] = q.warnings.map((m) => /^Adjustment metadata is uploader-declared/.test(m)
+    ? { code: "adjustment_unverified", severity: "info" as const, message: m }
+    : { code: "data_quality_warning", severity: "warning" as const, message: m });
   if (q.missing_bars > 0) issues.push({ code: "missing_bars", severity: "warning", message: `${q.missing_bars} scheduled bar(s) are missing; gaps are reported, never filled.` });
   if (q.absent_sessions.length) issues.push({ code: "absent_sessions", severity: "warning", message: `Absent sessions: ${q.absent_sessions.join(", ")}.` });
   if (q.incomplete_sessions.length) issues.push({ code: "incomplete_sessions", severity: "info", message: `Incomplete sessions: ${q.incomplete_sessions.join(", ")}.` });

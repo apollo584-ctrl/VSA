@@ -37,12 +37,14 @@ export function ObservationBadge() {
 export function QualityIndicators({ quality, asOf }: { quality: DataQuality | undefined; asOf?: number | null }) {
   if (!quality) return null;
   const warnings = quality.issues.filter((i) => i.severity !== "info");
+  // Informational provenance notes stay one hover away instead of raising a warning badge.
+  const notes = quality.issues.filter((i) => i.severity === "info" && i.code === "adjustment_unverified").map((i) => i.message).join(" ");
   return (
     <div className="flex flex-wrap items-center gap-1.5" aria-label="Data quality">
       {quality.stale
         ? <Badge tone="warn"><Clock size={11} aria-hidden />Stale data</Badge>
         : <Badge tone="neutral" title="Freshness relative to the requested date"><Clock size={11} aria-hidden />Last bar {quality.lastBarAt ? fmtDateTime(quality.lastBarAt) : "—"}</Badge>}
-      <Badge tone="neutral">{quality.barCount} bars</Badge>
+      <Badge tone="neutral" title={notes || undefined}>{quality.barCount} bars</Badge>
       {!quality.hasVolume && <Badge tone="warn"><AlertTriangle size={11} aria-hidden />Volume incomplete</Badge>}
       {quality.profileEstimated && <Badge tone="warn" title="Volume-at-price is not exact.">Estimated profiles</Badge>}
       {warnings.map((w, n) => <Badge key={`${w.code}-${n}`} tone={w.severity === "error" ? "danger" : "warn"} title={w.message}><AlertTriangle size={11} aria-hidden />{w.code.replace(/_/g, " ")}</Badge>)}
