@@ -4,7 +4,7 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { ApiError } from "../errors";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
-  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema,
+  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema,
   type RawAnalysis, type RawBar, type RawConcept, type RawDataset,
 } from "./schemas";
 
@@ -144,6 +144,12 @@ export const backendApi = {
     });
     datasetCache.set(d.id, Promise.resolve(d));
     return { datasetId: d.id, created: true };
+  },
+
+  getScan() { return request("/scan", rawScanSchema); },
+  runScan() { return request("/scan/run", rawScanStatusSchema, { method: "POST" }); },
+  setScanAuto(minutes: number) {
+    return request("/scan/auto", rawScanStatusSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes }) });
   },
 
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {

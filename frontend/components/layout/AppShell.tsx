@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Settings, Waves, type LucideIcon } from "lucide-react";
+import { BookOpen, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Radar, Settings, Waves, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -22,6 +22,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/vsa", label: "VSA Analysis", icon: Waves },
       { href: "/auction", label: "Auction Structure", icon: GitBranch },
       { href: "/interpretation", label: "Interpretation", icon: Lightbulb },
+      { href: "/scan", label: "Scanner", icon: Radar },
     ],
   },
   {

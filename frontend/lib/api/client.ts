@@ -6,6 +6,11 @@ import type { z } from "zod";
 
 export type ApiMode = "mock" | "http";
 
+function scanBackend() {
+  if (API_MODE === "mock") throw new ApiError("not_supported", "The scanner needs the real backend; mock mode has no market data.", 0);
+  return backendApi;
+}
+
 /** "mock": deterministic synthetic fixtures. "http": the Codex backend (docs/API_CONTRACT.md). */
 export const API_MODE: ApiMode =
   (process.env.NEXT_PUBLIC_API_MODE as ApiMode | undefined) ?? (process.env.NODE_ENV === "development" ? "mock" : "http");
@@ -57,6 +62,11 @@ export const api = {
     const { datasetId } = await backendApi.loadSymbol(symbol);
     return { datasetId };
   },
+
+  /** Scanner calls need the real backend: they fetch live market data. */
+  async getScan() { return scanBackend().getScan(); },
+  async runScan() { return scanBackend().runScan(); },
+  async setScanAuto(minutes: number) { return scanBackend().setScanAuto(minutes); },
 
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
     if (API_MODE === "mock") return validated(uploadResultSchema, await (await mock()).uploadDataset({ name: file.name, text: await file.text() }));

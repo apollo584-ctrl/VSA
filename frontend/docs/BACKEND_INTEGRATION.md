@@ -71,6 +71,7 @@ So an observation first observable at the end of the bar starting at `T` is know
 | 16 | Freshness flag | None | `stale` is never asserted. |
 | 17 | `Quality.warnings` severity | Plain strings | Shown as warnings with the backend text; structured counts produce their own facts. |
 | 19 | Typing a symbol | Resolved: `POST /datasets/from-symbol` loads recent delayed bars from Yahoo Finance as a normal dataset | The top-bar search offers "Load SYMBOL from Yahoo Finance" for ticker-like text (real backend only). On success the new dataset is selected and every tab uses it; failures show the backend's message and select nothing. Each refresh with newer bars is a new immutable dataset. Not a real-time feed. |
+| 20 | S&P 500 scanner | Provided: `GET /scan`, `POST /scan/run`, `POST /scan/auto` (see API_CONTRACT.md) | Scanner tab lists flagged symbols with the supplied votes; Open analysis loads the symbol via from-symbol. Real backend only. |
 | 18 | Upload size | 10 MiB / 50 000 bars | Client pre-checks 10 MiB; everything else is the backend's rejection message. |
 
 ## Verification

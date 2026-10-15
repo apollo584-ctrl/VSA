@@ -26,6 +26,24 @@ export function useLoadSymbol() {
   });
 }
 
+export function useScan() {
+  return useQuery({
+    queryKey: ["scan"], queryFn: () => api.getScan(), staleTime: 0,
+    // Poll quickly while a scan is running, slowly otherwise so a background auto-scan shows up.
+    refetchInterval: (q) => (q.state.data?.status.running ? 3_000 : 60_000),
+  });
+}
+
+export function useRunScan() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.runScan(), onSuccess: () => qc.invalidateQueries({ queryKey: ["scan"] }) });
+}
+
+export function useScanAuto() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (minutes: number) => api.setScanAuto(minutes), onSuccess: () => qc.invalidateQueries({ queryKey: ["scan"] }) });
+}
+
 export function useUpload() {
   return useMutation({ mutationFn: (v: { file: File; metadata: Record<string, unknown> }) => api.uploadDataset(v.file, v.metadata) });
 }

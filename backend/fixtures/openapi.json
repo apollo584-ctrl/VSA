@@ -339,6 +339,107 @@
         }
       }
     },
+    "/api/v1/scan": {
+      "get": {
+        "summary": "Scan",
+        "operationId": "scan_api_v1_scan_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanSnapshot"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan/run": {
+      "post": {
+        "summary": "Scan Run",
+        "operationId": "scan_run_api_v1_scan_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ScanRunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scan/auto": {
+      "post": {
+        "summary": "Scan Auto",
+        "operationId": "scan_auto_api_v1_scan_auto_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanAutoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/knowledge/concepts": {
       "get": {
         "summary": "Concepts",
@@ -1864,6 +1965,257 @@
           "incomplete_sessions"
         ],
         "title": "Quality"
+      },
+      "ScanAutoRequest": {
+        "properties": {
+          "minutes": {
+            "type": "integer",
+            "enum": [
+              0,
+              15,
+              30,
+              60
+            ],
+            "title": "Minutes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "minutes"
+        ],
+        "title": "ScanAutoRequest"
+      },
+      "ScanResult": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "sector": {
+            "type": "string",
+            "title": "Sector"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "strength",
+              "weakness",
+              "none"
+            ],
+            "title": "Direction",
+            "default": "none"
+          },
+          "agreeing": {
+            "type": "integer",
+            "title": "Agreeing",
+            "default": 0
+          },
+          "votes": {
+            "items": {
+              "$ref": "#/components/schemas/ScanVote"
+            },
+            "type": "array",
+            "title": "Votes",
+            "default": []
+          },
+          "last_close": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Close"
+          },
+          "last_bar_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Bar At"
+          },
+          "scanned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scanned At"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "symbol",
+          "name",
+          "sector",
+          "status",
+          "scanned_at"
+        ],
+        "title": "ScanResult"
+      },
+      "ScanRunRequest": {
+        "properties": {
+          "symbols": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbols"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ScanRunRequest"
+      },
+      "ScanSnapshot": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ScanStatus"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ScanResult"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "results"
+        ],
+        "title": "ScanSnapshot"
+      },
+      "ScanStatus": {
+        "properties": {
+          "running": {
+            "type": "boolean",
+            "title": "Running"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "done": {
+            "type": "integer",
+            "title": "Done",
+            "default": 0
+          },
+          "auto_minutes": {
+            "type": "integer",
+            "title": "Auto Minutes",
+            "default": 0
+          },
+          "universe_size": {
+            "type": "integer",
+            "title": "Universe Size",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "running"
+        ],
+        "title": "ScanStatus"
+      },
+      "ScanVote": {
+        "properties": {
+          "factor": {
+            "type": "string",
+            "enum": [
+              "value_location",
+              "auction_state",
+              "vsa",
+              "price_action"
+            ],
+            "title": "Factor"
+          },
+          "vote": {
+            "type": "integer",
+            "enum": [
+              -1,
+              0,
+              1
+            ],
+            "title": "Vote"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "factor",
+          "vote",
+          "text"
+        ],
+        "title": "ScanVote"
       },
       "Scenario": {
         "properties": {

@@ -31,7 +31,17 @@ class Store:
                 CREATE TABLE IF NOT EXISTS analyses (
                     id TEXT PRIMARY KEY, dataset_id TEXT NOT NULL REFERENCES datasets(id),
                     snapshot TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS scan_results (
+                    symbol TEXT PRIMARY KEY, scanned_at TEXT NOT NULL, payload TEXT NOT NULL);
             """)
+
+    def save_scan_result(self, result):
+        with self.connect() as db:
+            db.execute("INSERT OR REPLACE INTO scan_results VALUES (?, ?, ?)", (result.symbol, result.scanned_at.isoformat(), result.model_dump_json()))
+
+    def scan_results(self):
+        with self.connect() as db:
+            return [row[0] for row in db.execute("SELECT payload FROM scan_results").fetchall()]
 
     def save_dataset(self, dataset: Dataset, bars: list[Bar], raw: bytes):
         with self.connect() as db:

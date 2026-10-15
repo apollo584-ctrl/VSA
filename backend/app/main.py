@@ -18,6 +18,7 @@ from app.knowledge import load
 from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, Parameters, Profile, Source, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
+from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
 
 logger = logging.getLogger("market_intelligence")
@@ -29,7 +30,7 @@ logger.setLevel(logging.INFO)
 logger.propagate = False
 
 
-def create_app(db_path: Path | None = None, market_fetch=None) -> FastAPI:
+def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: list[dict] | None = None) -> FastAPI:
     fetch = market_fetch or http_fetch
     store = Store(db_path or Path(os.getenv("MSI_DB_PATH", str(Path(__file__).resolve().parents[1] / "data/market.sqlite3"))))
 
@@ -38,9 +39,12 @@ def create_app(db_path: Path | None = None, market_fetch=None) -> FastAPI:
         store.initialize()
         load()
         yield
+        scanner.shutdown()
 
+    scanner = Scanner(store, fetch=fetch, universe=scan_universe)
     app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan)
     app.state.store = store
+    app.state.scanner = scanner
     origins = os.getenv("MSI_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
     app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins],
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"], expose_headers=["X-Request-ID"])
@@ -131,6 +135,28 @@ def create_app(db_path: Path | None = None, market_fetch=None) -> FastAPI:
             return [profile(bars, dataset.source, p, "composite")] if composite else profiles(bars, dataset.source, p)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    def scan_snapshot():
+        results = [ScanResult.model_validate_json(raw) for raw in store.scan_results()]
+        rank = {"strength": 0, "weakness": 0, "none": 1}
+        results.sort(key=lambda r: (r.status == "error", rank[r.direction], -r.agreeing, r.symbol))
+        return {"status": scanner.current_status(), "results": results}
+
+    @app.get("/api/v1/scan", response_model=ScanSnapshot)
+    def scan():
+        return scan_snapshot()
+
+    @app.post("/api/v1/scan/run", response_model=ScanStatus, status_code=202)
+    def scan_run(request: ScanRunRequest | None = None):
+        status, _ = scanner.start(request.symbols if request else None)
+        return status
+
+    @app.post("/api/v1/scan/auto", response_model=ScanStatus)
+    def scan_auto(request: ScanAutoRequest):
+        status = scanner.set_auto(request.minutes)
+        if request.minutes:
+            scanner.start()
+        return scanner.current_status()
 
     @app.get("/api/v1/knowledge/concepts", response_model=list[Concept])
     def concepts(category: str | None = None):

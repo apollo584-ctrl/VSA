@@ -215,6 +215,21 @@ export const rawConceptSchema = z.object({
   detector_status: z.enum(["implemented", "knowledge_only"]),
 });
 
+export const rawScanStatusSchema = z.object({
+  running: z.boolean(), started_at: iso.nullable().optional(), finished_at: iso.nullable().optional(),
+  total: z.number(), done: z.number(), auto_minutes: z.number(), universe_size: z.number(),
+});
+export const rawScanResultSchema = z.object({
+  symbol: z.string(), name: z.string(), sector: z.string(),
+  status: z.enum(["ok", "error"]), direction: z.enum(["strength", "weakness", "none"]), agreeing: z.number(),
+  votes: z.array(z.object({ factor: z.enum(["value_location", "auction_state", "vsa", "price_action"]), vote: z.union([z.literal(-1), z.literal(0), z.literal(1)]), text: z.string() })),
+  last_close: z.number().nullable().optional(), last_bar_at: iso.nullable().optional(), scanned_at: iso, error: z.string().nullable().optional(),
+});
+export const rawScanSchema = z.object({ status: rawScanStatusSchema, results: z.array(rawScanResultSchema) });
+export type RawScan = z.infer<typeof rawScanSchema>;
+export type RawScanResult = z.infer<typeof rawScanResultSchema>;
+export type RawScanStatus = z.infer<typeof rawScanStatusSchema>;
+
 export type RawSource = z.infer<typeof rawSourceSchema>;
 export type RawQuality = z.infer<typeof rawQualitySchema>;
 export type RawDataset = z.infer<typeof rawDatasetSchema>;
