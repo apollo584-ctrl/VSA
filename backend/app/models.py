@@ -157,6 +157,40 @@ class ValueLocation(Model):
     unavailable_reason: UnusableReference | None = None
 
 
+class DevelopingPoint(Model):
+    timestamp: datetime
+    available_at: datetime
+    poc: float
+    vah: float
+    val: float
+
+
+class DevelopingProfile(Model):
+    """Volume POC/VAH/VAL of the latest session as it formed; each point uses only bars closed by its `available_at`."""
+    session: str
+    method: Literal["volume"] = "volume"
+    points: list[DevelopingPoint]
+
+
+class ValueMigrationStep(Model):
+    """How a session's value area relates to the previous scheduled, complete session's.
+
+    higher_value: VAL > prior VAH. lower_value: VAH < prior VAL. Otherwise the areas overlap and the POC direction decides
+    (overlapping_higher / overlapping_lower / overlapping_unchanged). `final` is false while the session is still developing.
+    """
+    session: str
+    previous_session: str | None
+    relationship: Literal["higher_value", "lower_value", "overlapping_higher", "overlapping_lower", "overlapping_unchanged"] | None
+    unavailable_reason: Literal["prior_session_not_adjacent", "prior_session_incomplete", "prior_value_area_unavailable"] | None = None
+    final: bool
+    poc: float | None
+    vah: float | None
+    val: float | None
+    prior_poc: float | None = None
+    prior_vah: float | None = None
+    prior_val: float | None = None
+
+
 class Evidence(Model):
     id: str
     kind: Literal["observed", "classified"]
@@ -271,6 +305,9 @@ class Analysis(Model):
     market_context: dict[str, str | float | None]
     # Current context at the last visible bar; None only for snapshots saved before value location existed.
     value_location: ValueLocation | None = None
+    # None only for snapshots saved before these existed.
+    developing_profile: DevelopingProfile | None = None
+    value_migration: list[ValueMigrationStep] | None = None
     profile_analysis: list[Profile]
     composite_profile: Profile | None = None
     composite_unavailable_reason: str | None = None

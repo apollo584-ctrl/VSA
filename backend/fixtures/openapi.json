@@ -758,6 +758,30 @@
               }
             ]
           },
+          "developing_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DevelopingProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value_migration": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValueMigrationStep"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Migration"
+          },
           "profile_analysis": {
             "items": {
               "$ref": "#/components/schemas/Profile"
@@ -1326,6 +1350,71 @@
           "quality"
         ],
         "title": "Dataset"
+      },
+      "DevelopingPoint": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "available_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Available At"
+          },
+          "poc": {
+            "type": "number",
+            "title": "Poc"
+          },
+          "vah": {
+            "type": "number",
+            "title": "Vah"
+          },
+          "val": {
+            "type": "number",
+            "title": "Val"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp",
+          "available_at",
+          "poc",
+          "vah",
+          "val"
+        ],
+        "title": "DevelopingPoint"
+      },
+      "DevelopingProfile": {
+        "properties": {
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "method": {
+            "type": "string",
+            "const": "volume",
+            "title": "Method",
+            "default": "volume"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/DevelopingPoint"
+            },
+            "type": "array",
+            "title": "Points"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session",
+          "points"
+        ],
+        "title": "DevelopingProfile",
+        "description": "Volume POC/VAH/VAL of the latest session as it formed; each point uses only bars closed by its `available_at`."
       },
       "Distribution": {
         "properties": {
@@ -2707,6 +2796,142 @@
         ],
         "title": "ValueLocation",
         "description": "Where a close sat relative to the previous complete session's volume value area, as known at `as_of`.\n\nEquality rule: VAL <= price <= VAH is inside value; above is price > VAH, below is price < VAL."
+      },
+      "ValueMigrationStep": {
+        "properties": {
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "previous_session": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Session"
+          },
+          "relationship": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "higher_value",
+                  "lower_value",
+                  "overlapping_higher",
+                  "overlapping_lower",
+                  "overlapping_unchanged"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relationship"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "prior_session_not_adjacent",
+                  "prior_session_incomplete",
+                  "prior_value_area_unavailable"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          },
+          "final": {
+            "type": "boolean",
+            "title": "Final"
+          },
+          "poc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poc"
+          },
+          "vah": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vah"
+          },
+          "val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Val"
+          },
+          "prior_poc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Poc"
+          },
+          "prior_vah": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Vah"
+          },
+          "prior_val": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior Val"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "session",
+          "previous_session",
+          "relationship",
+          "final",
+          "poc",
+          "vah",
+          "val"
+        ],
+        "title": "ValueMigrationStep",
+        "description": "How a session's value area relates to the previous scheduled, complete session's.\n\nhigher_value: VAL > prior VAH. lower_value: VAH < prior VAL. Otherwise the areas overlap and the POC direction decides\n(overlapping_higher / overlapping_lower / overlapping_unchanged). `final` is false while the session is still developing."
       }
     }
   }

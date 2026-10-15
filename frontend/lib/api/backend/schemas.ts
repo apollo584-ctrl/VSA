@@ -57,6 +57,18 @@ export const rawValueLocationSchema = z.object({
   unavailable_reason: z.string().nullable().optional(),
 });
 
+export const rawDevelopingProfileSchema = z.object({
+  session: z.string(), method: z.literal("volume"),
+  points: z.array(z.object({ timestamp: iso, available_at: iso, poc: z.number(), vah: z.number(), val: z.number() })),
+});
+export const rawValueMigrationStepSchema = z.object({
+  session: z.string(), previous_session: z.string().nullable(),
+  relationship: z.enum(["higher_value", "lower_value", "overlapping_higher", "overlapping_lower", "overlapping_unchanged"]).nullable(),
+  unavailable_reason: z.string().nullable().optional(), final: z.boolean(),
+  poc: z.number().nullable(), vah: z.number().nullable(), val: z.number().nullable(),
+  prior_poc: z.number().nullable().optional(), prior_vah: z.number().nullable().optional(), prior_val: z.number().nullable().optional(),
+});
+
 export const rawDatasetSchema = z.object({
   id: z.string(),
   content_sha256: z.string(),
@@ -175,6 +187,9 @@ export const rawAnalysisSchema = z.object({
   data_quality: rawQualitySchema,
   market_context: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
   value_location: rawValueLocationSchema.nullable().optional(),
+  // Absent or null in snapshots saved before these were recorded; never reconstructed.
+  developing_profile: rawDevelopingProfileSchema.nullable().optional(),
+  value_migration: z.array(rawValueMigrationStepSchema).nullable().optional(),
   profile_analysis: z.array(rawProfileSchema),
   composite_profile: rawProfileSchema.nullable().optional(),
   composite_unavailable_reason: z.string().nullable().optional(),

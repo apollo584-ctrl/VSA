@@ -6,6 +6,7 @@ import { Badge, GLOSSARY, KeyValue, Panel, SectionLabel, Segmented, Term } from 
 import { useKnowledge } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 import { fmtDate, fmtPrice, humanize } from "@/lib/formatting";
+import { locationReason } from "@/lib/location";
 import type { Analysis, Profile, ProfileKind } from "@/types";
 import { PROFILE_KINDS, ProfileVisual } from "./ProfileVisual";
 
@@ -69,13 +70,19 @@ export function ProfileStats({ profile }: { profile: Profile }) {
   );
 }
 
+const RELATION_LABEL = {
+  higher_value: "Higher value", lower_value: "Lower value", overlapping_higher: "Overlapping, higher",
+  overlapping_lower: "Overlapping, lower", overlapping_unchanged: "Overlapping, unchanged",
+} as const;
+
 export function ValueMigrationTable({ profile }: { profile: Profile }) {
   if (profile.valueMigration.length < 2) return <p className="text-xs text-subtle">Not enough sessions to show value migration.</p>;
   const rows = profile.valueMigration;
+  const hasRelation = rows.some((r) => r.relation !== undefined);
   return (
     <table className="w-full text-xs">
       <caption className="sr-only">Value migration by session</caption>
-      <thead><tr className="text-left text-subtle"><th className="py-1 font-medium">Session</th><th className="font-medium">VAL</th><th className="font-medium">POC</th><th className="font-medium">VAH</th><th className="font-medium">POC Δ</th></tr></thead>
+      <thead><tr className="text-left text-subtle"><th className="py-1 font-medium">Session</th><th className="font-medium">VAL</th><th className="font-medium">POC</th><th className="font-medium">VAH</th><th className="font-medium">POC Δ</th>{hasRelation && <th className="font-medium">Relative to prior value</th>}</tr></thead>
       <tbody>
         {rows.map((r, i) => {
           const d = i ? r.poc - rows[i - 1]!.poc : null;
@@ -83,6 +90,7 @@ export function ValueMigrationTable({ profile }: { profile: Profile }) {
             <tr key={r.date} className="border-t border-border num">
               <td className="py-1 font-sans text-muted">{r.date.slice(5)}</td><td>{fmtPrice(r.val)}</td><td className="text-poc">{fmtPrice(r.poc)}</td><td>{fmtPrice(r.vah)}</td>
               <td>{d === null ? "—" : `${d > 0 ? "▲" : d < 0 ? "▼" : "■"} ${Math.abs(d).toFixed(2)}`}</td>
+              {hasRelation && <td className="font-sans">{r.relation ? `${RELATION_LABEL[r.relation]}${r.final === false ? " (provisional)" : ""}` : r.relation === null ? `Unavailable: ${locationReason(r.relationUnavailableReason)}` : "—"}</td>}
             </tr>
           );
         })}

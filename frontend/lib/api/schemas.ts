@@ -96,6 +96,11 @@ export const migrationPointSchema = z.object({
   poc: z.number(),
   vah: z.number(),
   val: z.number(),
+  /** Backend-supplied relation to the previous complete session's value area; absent for mock data and legacy snapshots. */
+  relation: z.enum(["higher_value", "lower_value", "overlapping_higher", "overlapping_lower", "overlapping_unchanged"]).nullable().optional(),
+  relationUnavailableReason: z.string().nullable().optional(),
+  /** False while the session is still developing. */
+  final: z.boolean().optional(),
 });
 
 export const profileSchema = z.object({

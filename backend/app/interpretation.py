@@ -2,7 +2,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from app import auction, price_action, value_location, vsa
+from app import auction, price_action, value_location, value_path, vsa
 from app.data import quality
 from app.features import features
 from app.models import Analysis, AnalyzeRequest, Bar, Dataset, Scenario
@@ -100,6 +100,8 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
                     market_context={"background": measurements[-1]["background"], "last_close": bars[-1].close,
                                     "last_session": bars[-1].session, "profile_evidence_id": last.id},
                     value_location=value_location.locate(bars[-1], table),
+                    developing_profile=value_path.developing_profile(bars, dataset.source, p),
+                    value_migration=value_path.value_migration(session_profiles, complete),
                     profile_analysis=session_profiles, composite_profile=composite,
                     composite_unavailable_reason=composite_reason, vsa_observations=vsa_observations,
                     price_action_observations=pa_observations, auction_state=auction_state,

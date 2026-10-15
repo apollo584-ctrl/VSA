@@ -196,7 +196,7 @@ function sessionExtremes(bars: RawBar[], session: string, upTo: number, composit
 /** Free-text label for the classification string (the backend's own words, humanized). */
 export const shapeLabel = (c: string) => c.replace(/_/g, " "); // keep case: P / b / D / B are meaningful
 
-export function mapProfile(p: RawProfile, kind: "tpo" | "volume" | "prior" | "composite", bars: RawBar[], upTo: number, label: string, concepts: Map<string, RawConcept>): Profile | null {
+export function mapProfile(p: RawProfile, kind: "tpo" | "volume" | "developing" | "prior" | "composite", bars: RawBar[], upTo: number, label: string, concepts: Map<string, RawConcept>): Profile | null {
   const weightDist = kind === "tpo" ? p.tpo : p.volume;
   if (weightDist.poc === null || weightDist.vah === null || weightDist.val === null) return null; // e.g. zero volume: levels are null
   const ex = sessionExtremes(bars, p.session, Math.min(upTo, epoch(p.as_of)), p.scope === "composite");
@@ -433,11 +433,23 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[] }): Analysis {
     put("volume", mapProfile(cur, "volume", ctx.bars, upTo, `Volume — session ${cur.session}`, concepts));
   }
   if (prior) put("prior", mapProfile(prior, "prior", ctx.bars, upTo, `Prior session ${prior.session}`, concepts));
+  if (cur && a.developing_profile && a.developing_profile.session === cur.session) {
+    const developing = mapProfile(cur, "developing", ctx.bars, upTo, `Developing — session ${cur.session}`, concepts);
+    if (developing) developing.developingTrack = a.developing_profile.points.map((t) => ({ time: epoch(t.timestamp), poc: t.poc, vah: t.vah, val: t.val }));
+    put("developing", developing);
+  }
   if (a.composite_profile) put("composite", mapProfile(a.composite_profile, "composite", ctx.bars, upTo, "Composite — all visible sessions", concepts));
 
   // Per-session value values (facts from each session's profile) – not a migration classification.
+  const steps = new Map((a.value_migration ?? []).map((s) => [s.session, s]));
   const migration = sessions.slice(-8).filter((p) => p.volume.poc !== null && p.volume.vah !== null && p.volume.val !== null)
-    .map((p) => ({ date: p.session, poc: p.volume.poc!, vah: p.volume.vah!, val: p.volume.val! }));
+    .map((p) => {
+      const step = steps.get(p.session);
+      return {
+        date: p.session, poc: p.volume.poc!, vah: p.volume.vah!, val: p.volume.val!,
+        ...(step ? { relation: step.relationship, relationUnavailableReason: step.unavailable_reason ?? null, final: step.final } : {}),
+      };
+    });
   for (const p of Object.values(profiles)) p.valueMigration = migration;
 
   const { states, transitions } = mapAuction(a, ctx.bars, interval);
