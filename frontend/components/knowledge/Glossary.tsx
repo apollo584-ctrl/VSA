@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ErrorState, LoadingState, StateMessage } from "@/components/common/states";
 import { Badge } from "@/components/ui/primitives";
@@ -76,18 +76,7 @@ export function GlossaryBrowser() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow)] sm:flex sm:items-center sm:justify-between sm:gap-5">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent"><BookOpen size={19} aria-hidden /></span>
-          <div>
-            <h2 className="font-semibold">Market structure reference</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted">Search abbreviations, profile measurements and the strategy concepts used by the analysis engine. Pattern definitions describe local rules; they do not make trading recommendations.</p>
-          </div>
-        </div>
-        <Badge tone="info" className="mt-3 shrink-0 sm:mt-0">{allItems.length} entries</Badge>
-      </section>
-
-      <section aria-label="Glossary search and filters" className="grid gap-3 rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow)] md:grid-cols-[minmax(15rem,1fr)_auto]">
+      <section aria-label="Glossary search and filters" className="grid gap-3 rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow)] md:grid-cols-[minmax(15rem,1fr)_auto_auto] md:items-center">
         <label className="relative block">
           <span className="sr-only">Search terms</span>
           <Search size={16} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
@@ -96,6 +85,7 @@ export function GlossaryBrowser() {
         <div role="group" aria-label="Filter glossary category" className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-surface-2 p-1">
           {groups.map((item) => <button key={item} type="button" aria-pressed={group === item} onClick={() => setGroup(item)} className={cn("shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors", group === item ? "bg-accent-soft text-accent" : "text-muted hover:text-fg")}>{item}</button>)}
         </div>
+        <Badge tone="info" className="justify-self-start md:justify-self-end">{filtered.length === allItems.length ? `${allItems.length} entries` : `${filtered.length} of ${allItems.length}`}</Badge>
       </section>
 
       {filtered.length === 0 ? <StateMessage icon={Search} title="No matching terms">Try another word or clear the category filter.</StateMessage> : (
@@ -109,7 +99,7 @@ export function GlossaryBrowser() {
           </div>)}
         </dl>
       )}
-      <p className="text-xs text-subtle">The concept catalog is loaded from the same versioned knowledge source used by the analysis. Definitions and detector thresholds are operational explanations, not independently validated predictive rules.</p>
+      <p className="text-xs text-subtle">Pattern definitions describe local rules and make no trading recommendations. The concept catalog is loaded from the same versioned knowledge source used by the analysis. Definitions and detector thresholds are operational explanations, not independently validated predictive rules.</p>
     </div>
   );
 }

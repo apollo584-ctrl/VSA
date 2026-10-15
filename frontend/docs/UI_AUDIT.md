@@ -59,3 +59,12 @@ Audited every tab at 1280x720, 1440x900 and 1920x1080 against the live backend (
 | Knowledge, History, Settings | Unchanged; already ordered by use. |
 
 Remaining: Interpretation scrolls about 1.2 screens at 1440x900 (it is a reading page). At 1280x720 the Overview chart is short (about 200px) and the page scrolls slightly.
+
+### Follow-up: Overview chart height, card overlap and Glossary (2026-10-15)
+
+| # | Finding | Fix |
+|---|---|---|
+| L4 | Overview chart squeezed to about 220px because the fit layout gave it only the leftover height; the right-hand Interpretation card's text ran under the Details card. | The Overview no longer forces one screen. The chart has an explicit height (26rem on wide screens, about 410px at 1440x900), the right-hand cards clip their contents and scroll inside themselves, and the page scrolls about 1.2 screens. |
+| G1 | Glossary led with a large intro card that repeated the page header, with search second. | Search and category filters come first, with the entry count beside them; the "no recommendations" note moved to the footer line. |
+
+Checked at 1440x900 and 1920x1080: no overlapping panels on any tab. Chart heights at 1440x900: Overview 410px, Chart 422px, VSA 462px. Glossary and Knowledge are long reference lists and scroll by design.
