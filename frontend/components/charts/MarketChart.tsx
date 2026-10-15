@@ -236,19 +236,14 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     if (!series) return;
     if (!layers.vsa) { series.setMarkers([]); return; }
     const markers: SeriesMarker<Time>[] = [];
-    const neutralDots = new Map<string, SeriesMarker<Time>>();
     for (const e of events) {
       if (e.type in BAR_TINT) continue;
       const t = barTimeContaining(bars, e.barTime);
       if (t === null) continue;
       const sel = e.id === selectedEventId;
       const position = placeAbove(e) ? "aboveBar" : "belowBar";
-      if (!sel && e.direction !== "strength" && e.direction !== "weakness") {
-        // Neutral measurements (compression, relative volume, ...): one small unlabelled dot per bar and side.
-        const key = `${t}|${position}`;
-        if (!neutralDots.has(key)) neutralDots.set(key, { time: t as UTCTimestamp, position, shape: "circle", color: withAlpha(palette.vsa, 0.5), size: 0.6 });
-        continue;
-      }
+      // Neutral measurements (compression, relative volume, ...) draw nothing unless selected.
+      if (!sel && e.direction !== "strength" && e.direction !== "weakness") continue;
       markers.push({
         time: t as UTCTimestamp,
         position,
@@ -258,7 +253,6 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
         size: sel ? 1.6 : 1,
       });
     }
-    markers.push(...neutralDots.values());
     markers.sort((a, b) => (a.time as number) - (b.time as number));
     series.setMarkers(markers);
   }, [events, bars, layers.vsa, selectedEventId, palette]);
