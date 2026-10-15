@@ -122,7 +122,7 @@ export function TopBar() {
   const dates = inst ? [...inst.availableDates].sort().reverse() : [];
 
   return (
-    <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur max-sm:gap-y-2 max-sm:px-4">
+    <header className="relative z-40 flex min-h-16 shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur max-sm:gap-y-2 max-sm:px-4">
       <InstrumentSearch instruments={instruments} current={state.symbol} onSelect={selectInstrument} />
 
       <div className="ml-auto flex flex-wrap items-center gap-3 max-sm:ml-0 max-sm:gap-2">
