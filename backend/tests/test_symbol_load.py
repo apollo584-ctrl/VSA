@@ -122,3 +122,68 @@ def test_provider_rejects_weekend_stamps_and_empty_results():
         YahooChartProvider("ZZZZ", fetch=fetcher({"chart": {"result": None, "error": {"code": "Not Found"}}})).read()
     with pytest.raises(ProviderUnavailable):
         YahooChartProvider("SPY", fetch=lambda url: b"{").read()
+
+
+def assert_provider_rejected_without_storage(make_client, payload):
+    client = make_client(fetcher(payload))
+    response = client.post("/api/v1/datasets/from-symbol", json={"symbol": "SPY"})
+    assert response.status_code == 502, response.text
+    assert "unreadable response" in response.json()["detail"]
+    with client.app.state.store.connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM datasets").fetchone()[0] == 0
+        assert db.execute("SELECT COUNT(*) FROM analyses").fetchone()[0] == 0
+
+
+def test_mismatched_symbol_is_rejected_before_storage(make_client):
+    assert_provider_rejected_without_storage(make_client, chart(symbol="QQQ"))
+
+
+def test_symbol_identity_is_case_insensitive(make_client):
+    client = make_client(fetcher(chart(symbol="spy")))
+    response = client.post("/api/v1/datasets/from-symbol", json={"symbol": "SPY"})
+    assert response.status_code == 201
+    assert response.json()["source"]["instrument"] == "SPY"
+
+
+@pytest.mark.parametrize("column", ["open", "high", "low", "close", "volume"])
+@pytest.mark.parametrize("change", ["short", "long"])
+def test_misaligned_columns_are_rejected_before_storage(make_client, column, change):
+    payload = chart()
+    values = payload["chart"]["result"][0]["indicators"]["quote"][0][column]
+    if change == "short":
+        del values[13:]
+    else:
+        values.append(values[-1])
+    assert_provider_rejected_without_storage(make_client, payload)
+
+
+@pytest.mark.parametrize("payload", [
+    None, [], {}, {"chart": None}, {"chart": []}, {"chart": {}},
+    {"chart": {"result": None, "error": {"code": "Rate Limited"}}},
+    {"chart": {"result": []}}, {"chart": {"result": {"timestamp": []}}},
+    {"chart": {"result": [None]}}, {"chart": {"result": [7]}},
+    {"chart": {"result": [[]]}},
+])
+def test_malformed_response_shapes_are_502_without_storage(make_client, payload):
+    assert_provider_rejected_without_storage(make_client, payload)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("meta", None), ("meta", {}), ("meta", {"symbol": 7}),
+    ("timestamp", None), ("timestamp", "not an array"),
+    ("timestamp", [None]), ("timestamp", [True]),
+    ("timestamp", [float("nan")]), ("timestamp", [float("inf")]),
+    ("timestamp", [10**100]), ("indicators", None),
+    ("indicators", {"quote": []}), ("indicators", {"quote": [None]}),
+])
+def test_malformed_result_fields_are_502_without_storage(make_client, field, value):
+    payload = chart()
+    payload["chart"]["result"][0][field] = value
+    assert_provider_rejected_without_storage(make_client, payload)
+
+
+def test_empty_valid_series_remains_no_bars_rejection(make_client):
+    client = make_client(fetcher(chart(days=[])))
+    response = client.post("/api/v1/datasets/from-symbol", json={"symbol": "SPY"})
+    assert response.status_code == 422 and "No bars returned" in response.json()["detail"]
+    assert client.get("/api/v1/instruments").json()["items"] == []

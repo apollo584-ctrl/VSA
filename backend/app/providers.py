@@ -2,6 +2,7 @@
 import csv
 import io
 import json
+import math
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -71,23 +72,43 @@ class YahooChartProvider:
         url = YAHOO_CHART_URL.format(symbol=urllib.parse.quote(self.symbol, safe=""), interval=self.minutes, period=self.period)
         try:
             payload = json.loads(self.fetch(url))["chart"]
-        except (ValueError, KeyError, TypeError) as exc:
-            raise ProviderUnavailable("Market data provider returned an unreadable response") from exc
-        result = (payload.get("result") or [None])[0]
-        if result is None:
-            raise SymbolNotFound(f"No market data found for symbol {self.symbol}")
-        if not result.get("timestamp"):
-            raise ValueError(f"No bars returned for {self.symbol}")
-        try:
+            if not isinstance(payload, dict):
+                raise ValueError("chart must be an object")
+            results = payload["result"]
+            if results is None or results == []:
+                error = payload.get("error")
+                if isinstance(error, dict) and error.get("code") == "Not Found":
+                    raise SymbolNotFound(f"No market data found for symbol {self.symbol}")
+                raise ValueError("missing chart result")
+            if not isinstance(results, list) or len(results) != 1 or payload.get("error") is not None:
+                raise ValueError("expected one successful chart result")
+            result = results[0]
+            returned_symbol = result["meta"]["symbol"]
+            # No undocumented aliases: an upstream identity mismatch must never relabel bars.
+            if not isinstance(returned_symbol, str) or returned_symbol.strip().upper() != self.symbol.strip().upper():
+                raise ValueError("returned symbol does not match requested symbol")
+            timestamps = result["timestamp"]
+            if not isinstance(timestamps, list) or any(
+                type(t) not in (int, float) or not math.isfinite(t) for t in timestamps
+            ):
+                raise ValueError("timestamps must be finite numeric epoch seconds")
             quote = result["indicators"]["quote"][0]
             columns = [quote[name] for name in ("open", "high", "low", "close", "volume")]
-        except (KeyError, IndexError, TypeError) as exc:
+            if any(not isinstance(column, list) or len(column) != len(timestamps) for column in columns):
+                raise ValueError("OHLCV arrays must align with timestamps")
+            if any(value is not None and type(value) not in (int, float) for column in columns for value in column):
+                raise ValueError("OHLCV values must be numeric or null")
+            stamps = [pd.Timestamp(t, unit="s", tz="UTC") for t in timestamps]
+            days = [s.tz_convert("America/New_York").strftime("%Y-%m-%d") for s in stamps]
+        except SymbolNotFound:
+            raise
+        except (ValueError, KeyError, IndexError, TypeError, OverflowError) as exc:
             raise ProviderUnavailable("Market data provider returned an unreadable response") from exc
+        if not timestamps:
+            raise ValueError(f"No bars returned for {self.symbol}")
         source = self.source()
         step = pd.Timedelta(minutes=self.minutes)
         now = pd.Timestamp(self.now())
-        stamps = [pd.Timestamp(t, unit="s", tz="UTC") for t in result["timestamp"]]
-        days = [s.tz_convert("America/New_York").strftime("%Y-%m-%d") for s in stamps]
         cal = calendar(min(days), max(days))
         windows: dict[str, tuple] = {}
         output = io.StringIO(newline="")
