@@ -50,6 +50,8 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(earlier.asOf).toBe(cursor);
     for (const e of earlier.vsaEvents) expect(e.detectedAt).toBeLessThanOrEqual(cursor);
     for (const t of earlier.auctionTransitions) expect(t.detectedAt).toBeLessThanOrEqual(cursor);
+    expect(earlier.auctionResets).not.toBeNull();
+    for (const r of earlier.auctionResets!) expect(r.at).toBeLessThanOrEqual(cursor);
     expect(earlier.persisted).toBe(false);
     expect(earlier.snapshot).toBeUndefined();
     expect(earlier.datasetId).toBe(id);
@@ -68,6 +70,8 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(a.profiles["composite"]!.sessionHigh).toBe(Math.max(...bars.bars.map((b) => b.h)));
     expect(a.profiles["composite"]!.sessionLow).toBe(Math.min(...bars.bars.map((b) => b.l)));
     expect(reopened).toEqual(a); // includes the preserved composite
+    expect(reopened.auctionResets).toEqual(a.auctionResets);
+    expect(a.auctionResets!.length).toBeGreaterThan(0);
     expect(reopened.vsaEvents.every((e) => e.textSource === "catalog")).toBe(true);
 
     // 6. rejection path: as_of before the first bar completes → withheld analysis, not a crash

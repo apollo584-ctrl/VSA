@@ -9,7 +9,7 @@
  *  - Every mismatch is documented in docs/BACKEND_INTEGRATION.md.
  */
 import type {
-  Analysis, AuctionState, AuctionTransition, Bar, BarsResponse, DataQuality, DatasetSource, EvidenceItem, Instrument, Interpretation,
+  Analysis, AuctionReset, AuctionState, AuctionTransition, Bar, BarsResponse, DataQuality, DatasetSource, EvidenceItem, Instrument, Interpretation,
   KnowledgeConcept, Level, Profile, Scenario, VsaEvent,
 } from "@/types";
 import { humanize } from "@/lib/formatting";
@@ -268,6 +268,19 @@ export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { 
   return { states, transitions };
 }
 
+/** Recorded session resets only. Snapshots saved before resets existed yield null; nothing is reconstructed. */
+export function mapAuctionResets(a: RawAnalysis): AuctionReset[] | null {
+  const resets = a.auction_state.session_resets;
+  if (!resets) return null;
+  return resets.map((r) => ({
+    id: r.id, session: r.session, previousSession: r.previous_session,
+    at: epoch(r.timestamp), observableAt: epoch(r.first_observable_at),
+    previousState: r.previous_state, referenceUsable: r.reference_usable,
+    referenceSession: r.reference_session, referenceUnavailableReason: r.reference_unavailable_reason ?? null,
+    description: r.description,
+  }));
+}
+
 // ------------------------------------------------------------------ interpretation
 
 function evidenceIndex(a: RawAnalysis, concepts: Map<string, RawConcept>) {
@@ -422,6 +435,7 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[] }): Analysis {
     vsaEvents: a.vsa_observations.map((e) => mapVsaEvent(e, interval, concepts)),
     auctionStates: states,
     auctionTransitions: transitions,
+    auctionResets: mapAuctionResets(a),
     levels: mapLevels(a),
     interpretation,
   };

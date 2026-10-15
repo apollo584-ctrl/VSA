@@ -222,6 +222,22 @@ export const auctionTransitionSchema = z.object({
   evidence: z.array(evidenceItemSchema),
 });
 
+/** A session boundary at which auction state restarts. Distinct from a market-driven transition. */
+export const auctionResetSchema = z.object({
+  id: z.string(),
+  session: z.string(),
+  previousSession: z.string(),
+  /** First bar of the new session (bar start). */
+  at: z.number(),
+  /** When the backend says that bar became observable (bar end); never earlier. */
+  observableAt: z.number(),
+  previousState: z.string(),
+  referenceUsable: z.boolean(),
+  referenceSession: z.string().nullable(),
+  referenceUnavailableReason: z.string().nullable(),
+  description: z.string(),
+});
+
 // ---------- Levels ----------
 export const levelSchema = z.object({
   id: z.string(),
@@ -309,6 +325,8 @@ export const analysisSchema = z.object({
   vsaEvents: z.array(vsaEventSchema),
   auctionStates: z.array(auctionStateSchema),
   auctionTransitions: z.array(auctionTransitionSchema),
+  /** Recorded session resets. Null/absent = the snapshot did not record them (legacy or mock); an empty array = none occurred. */
+  auctionResets: z.array(auctionResetSchema).nullable().optional(),
   levels: z.array(levelSchema),
   interpretation: interpretationSchema.nullable(),
 });

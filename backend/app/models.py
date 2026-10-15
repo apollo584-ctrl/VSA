@@ -189,10 +189,31 @@ class Scenario(Model):
     invalidation_conditions: list[str]
 
 
+class SessionReset(Model):
+    """A session boundary at which auction state restarts. Not a market-driven transition and not Evidence."""
+    id: str
+    kind: Literal["session_reset"] = "session_reset"
+    reason: Literal["new_session"] = "new_session"
+    session: str
+    previous_session: str
+    # First bar of the new session and when that bar became observable; neither is earlier than the data supports.
+    timestamp: datetime
+    first_observable_at: datetime
+    previous_state: str
+    state: Literal["indeterminate"] = "indeterminate"
+    reference_session: str | None
+    reference_usable: bool
+    reference_unavailable_reason: Literal["prior_session_not_adjacent", "prior_session_incomplete",
+                                          "prior_value_area_unavailable"] | None = None
+    description: str
+
+
 class AuctionState(Model):
     state: str
     evidence_ids: list[str]
     transitions: list[Evidence]
+    # None only for snapshots saved before resets were recorded; new analyses always provide a list.
+    session_resets: list[SessionReset] | None = None
 
 
 class Analysis(Model):

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { clipBars, knownEvents } from "@/lib/replay";
+import { clipBars, knownEvents, knownResets } from "@/lib/replay";
 import { analysisSchema, barsResponseSchema, knowledgeListSchema } from "@/lib/api/schemas";
 import { mapAnalysis, mapConcept, mapProfile, mapVsaEvent, barsResponse } from "@/lib/api/backend/mappers";
 import { rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema } from "@/lib/api/backend/schemas";
@@ -116,6 +116,39 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
     expect(mapped.auctionStates[0]!.endTime).toBe(Date.parse(subset[77]!.timestamp) / 1000);
     expect(mapped.auctionStates.at(-1)!.detectedAt).toBe(Date.parse(latestBar.timestamp) / 1000);
     expect(mapped.auctionTransitions).toHaveLength(1); // no invented reset transition
+  });
+
+  it("maps recorded session resets separately from transitions, with the backend's own times", () => {
+    const raw = rawAnalysis.auction_state.session_resets!;
+    expect(raw.length).toBeGreaterThan(0);
+    expect(ui.auctionResets).toHaveLength(raw.length);
+    ui.auctionResets!.forEach((r, i) => {
+      expect(r.at).toBe(Date.parse(raw[i]!.timestamp) / 1000);
+      expect(r.observableAt).toBe(Date.parse(raw[i]!.first_observable_at) / 1000);
+      expect(r.observableAt).toBeGreaterThan(r.at);
+    });
+    expect(ui.auctionTransitions).toHaveLength(rawAnalysis.auction_state.transitions.length);
+    expect(ui.auctionTransitions.some((t) => t.id.includes("auction_reset"))).toBe(false);
+    expect(ui.auctionStates.some((s) => s.id.includes("auction_reset"))).toBe(false);
+  });
+
+  it("does not fabricate resets for a legacy snapshot, and leaves the rest of the timeline unchanged", () => {
+    const legacy = structuredClone(rawAnalysis);
+    delete legacy.auction_state.session_resets;
+    const mapped = mapAnalysis(rawAnalysisSchema.parse(legacy), { bars });
+    expect(mapped.auctionResets).toBeNull();
+    expect(mapped.auctionStates).toEqual(ui.auctionStates);
+    expect(mapped.auctionTransitions).toEqual(ui.auctionTransitions);
+    expect(analysisSchema.safeParse(mapped).success).toBe(true);
+    expect(mapAnalysis({ ...legacy, auction_state: { ...legacy.auction_state, session_resets: null } }, { bars }).auctionResets).toBeNull();
+  });
+
+  it("hides a reset until its first bar is in view", () => {
+    const resets = ui.auctionResets!;
+    const r = resets[resets.length - 1]!;
+    expect(knownResets(resets, r.at - 1)).not.toContainEqual(r);
+    expect(knownResets(resets, r.at)).toContainEqual(r);
+    expect(knownResets(null, r.at)).toBeNull();
   });
 
   it("uses preserved knowledge and explicitly withholds legacy or mismatched catalog text", () => {

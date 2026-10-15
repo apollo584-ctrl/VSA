@@ -17,6 +17,7 @@ export type DetectionStatus = z.infer<typeof s.detectionStatusSchema>;
 export type AuctionState = z.infer<typeof s.auctionStateSchema>;
 export type AuctionStateKind = z.infer<typeof s.auctionStateKindSchema>;
 export type AuctionTransition = z.infer<typeof s.auctionTransitionSchema>;
+export type AuctionReset = z.infer<typeof s.auctionResetSchema>;
 export type EvidenceItem = z.infer<typeof s.evidenceItemSchema>;
 export type Level = z.infer<typeof s.levelSchema>;
 export type Interpretation = z.infer<typeof s.interpretationSchema>;

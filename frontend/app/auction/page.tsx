@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnalysisBody, AnalysisGate } from "@/components/common/AnalysisGate";
-import { AcceptanceExplainer, StateFlow, StateStrip, TransitionDetail } from "@/components/auction/AuctionPanels";
+import { AcceptanceExplainer, SessionResets, StateFlow, StateStrip, TransitionDetail } from "@/components/auction/AuctionPanels";
 import { DetailLevelSwitch } from "@/components/interpretation/InterpretationPanel";
 import { Panel } from "@/components/ui/primitives";
 import { ReplayControls } from "@/components/charts/ChartControls";
@@ -30,6 +30,7 @@ export default function AuctionPage() {
               <Panel title="Auction evolution" bodyClassName="max-h-[40rem] overflow-auto"><StateFlow states={states} transitions={transitions} selectedTransitionId={selectedId} onSelect={setSelectedId} /></Panel>
               <div className="flex flex-col gap-3">
                 <Panel title="Transition evidence" actions={<DetailLevelSwitch />}><TransitionDetail transition={tr} from={from} to={to} level={state.detailLevel} /></Panel>
+                <Panel title="Session resets" collapsible><SessionResets resets={a?.auctionResets} /></Panel>
                 <Panel title="Excursion vs. acceptance" collapsible><AcceptanceExplainer /></Panel>
               </div>
             </div>

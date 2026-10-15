@@ -13490,6 +13490,38 @@
           "profile:session:2025-03-04:2025-03-04"
         ]
       }
+    ],
+    "session_resets": [
+      {
+        "id": "auction_reset:2025-03-04",
+        "kind": "session_reset",
+        "reason": "new_session",
+        "session": "2025-03-04",
+        "previous_session": "2025-03-03",
+        "timestamp": "2025-03-04T14:30:00Z",
+        "first_observable_at": "2025-03-04T14:35:00Z",
+        "previous_state": "indeterminate",
+        "state": "indeterminate",
+        "reference_session": "2025-03-03",
+        "reference_usable": true,
+        "reference_unavailable_reason": null,
+        "description": "New session 2025-03-04: auction state restarts from indeterminate to indeterminate. Prior value from 2025-03-03 is available."
+      },
+      {
+        "id": "auction_reset:2025-03-05",
+        "kind": "session_reset",
+        "reason": "new_session",
+        "session": "2025-03-05",
+        "previous_session": "2025-03-04",
+        "timestamp": "2025-03-05T14:30:00Z",
+        "first_observable_at": "2025-03-05T14:35:00Z",
+        "previous_state": "higher_price_acceptance",
+        "state": "indeterminate",
+        "reference_session": "2025-03-04",
+        "reference_usable": true,
+        "reference_unavailable_reason": null,
+        "description": "New session 2025-03-05: auction state restarts from higher_price_acceptance to indeterminate. Prior value from 2025-03-04 is available."
+      }
     ]
   },
   "supporting_evidence": [

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
 import { endOfDate } from "@/lib/formatting";
-import { clipBars, knownEvents, knownStates, knownTransitions } from "@/lib/replay";
+import { clipBars, knownEvents, knownResets, knownStates, knownTransitions } from "@/lib/replay";
 import { useWorkspace } from "./workspace";
 import type { Analysis } from "@/types";
 
@@ -73,6 +73,7 @@ export function useMarket() {
       vsaEvents: knownEvents(a.vsaEvents, cut),
       auctionStates: knownStates(a.auctionStates, cut),
       auctionTransitions: knownTransitions(a.auctionTransitions, cut),
+      auctionResets: knownResets(a.auctionResets, cut),
     };
   }, [analysisQuery.data, analysisQuery.isError, barsQuery.data, cursorSettled, timeframe, session, symbol, replayTime, windowEnd]);
 

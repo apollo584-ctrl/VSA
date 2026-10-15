@@ -779,6 +779,20 @@
             },
             "type": "array",
             "title": "Transitions"
+          },
+          "session_resets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SessionReset"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Resets"
           }
         },
         "additionalProperties": false,
@@ -1831,6 +1845,104 @@
           "invalidation_conditions"
         ],
         "title": "Scenario"
+      },
+      "SessionReset": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "const": "session_reset",
+            "title": "Kind",
+            "default": "session_reset"
+          },
+          "reason": {
+            "type": "string",
+            "const": "new_session",
+            "title": "Reason",
+            "default": "new_session"
+          },
+          "session": {
+            "type": "string",
+            "title": "Session"
+          },
+          "previous_session": {
+            "type": "string",
+            "title": "Previous Session"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "first_observable_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Observable At"
+          },
+          "previous_state": {
+            "type": "string",
+            "title": "Previous State"
+          },
+          "state": {
+            "type": "string",
+            "const": "indeterminate",
+            "title": "State",
+            "default": "indeterminate"
+          },
+          "reference_session": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Session"
+          },
+          "reference_usable": {
+            "type": "boolean",
+            "title": "Reference Usable"
+          },
+          "reference_unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "prior_session_not_adjacent",
+                  "prior_session_incomplete",
+                  "prior_value_area_unavailable"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Unavailable Reason"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "session",
+          "previous_session",
+          "timestamp",
+          "first_observable_at",
+          "previous_state",
+          "reference_session",
+          "reference_usable",
+          "description"
+        ],
+        "title": "SessionReset",
+        "description": "A session boundary at which auction state restarts. Not a market-driven transition and not Evidence."
       },
       "Shape": {
         "properties": {

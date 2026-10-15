@@ -7,7 +7,7 @@ import { StateMessage } from "@/components/common/states";
 import { Badge, SectionLabel } from "@/components/ui/primitives";
 import { auctionLabel, fmtDateTime, fmtPrice, humanize } from "@/lib/formatting";
 import { cn } from "@/lib/utils";
-import type { AuctionState, AuctionTransition, DetailLevel } from "@/types";
+import type { AuctionReset, AuctionState, AuctionTransition, DetailLevel } from "@/types";
 import { Workflow } from "lucide-react";
 
 /** Proportional strip of the chronological state sequence. */
@@ -75,6 +75,38 @@ export function StateFlow({ states, transitions, selectedTransitionId, onSelect 
           </Fragment>
         );
       })}
+    </ol>
+  );
+}
+
+const RESET_REFERENCE_REASONS: Record<string, string> = {
+  prior_session_not_adjacent: "the prior session in the data is not the previous scheduled session",
+  prior_session_incomplete: "the prior session was incomplete",
+  prior_value_area_unavailable: "the prior session has no value area",
+};
+
+/** Session boundaries where the engine restarted auction state. These are not market-driven transitions. */
+export function SessionResets({ resets }: { resets: AuctionReset[] | null | undefined }) {
+  if (!resets) {
+    return <p className="text-xs text-subtle">This saved analysis did not record session resets. None are inferred.</p>;
+  }
+  if (!resets.length) return <p className="text-xs text-subtle">No session boundary occurs within the analysed bars.</p>;
+  return (
+    <ol className="space-y-1.5" aria-label="Auction session resets">
+      {resets.map((r) => (
+        <li key={r.id} className="rounded border border-dashed border-border-strong bg-surface-2 px-2.5 py-1.5 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="neutral">Session reset</Badge>
+            <span className="font-semibold">{r.session}</span>
+            <span className="text-[11px] text-subtle">first bar {fmtDateTime(r.at, true)} · observable {fmtDateTime(r.observableAt, true)}</span>
+          </div>
+          <p className="mt-0.5 text-muted">
+            Auction state restarted from {auctionLabel(r.previousState)} (session {r.previousSession}) to {auctionLabel("indeterminate")}. {r.referenceUsable && r.referenceSession
+              ? `Reference: prior session ${r.referenceSession} value area.`
+              : `No usable prior value: ${RESET_REFERENCE_REASONS[r.referenceUnavailableReason ?? ""] ?? "reference unavailable"}.`}
+          </p>
+        </li>
+      ))}
     </ol>
   );
 }

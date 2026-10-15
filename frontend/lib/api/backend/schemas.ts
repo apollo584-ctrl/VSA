@@ -29,6 +29,22 @@ export const rawQualitySchema = z.object({
   split_suspected: z.boolean(),
 });
 
+export const rawSessionResetSchema = z.object({
+  id: z.string(),
+  kind: z.literal("session_reset"),
+  reason: z.literal("new_session"),
+  session: z.string(),
+  previous_session: z.string(),
+  timestamp: iso,
+  first_observable_at: iso,
+  previous_state: z.string(),
+  state: z.string(),
+  reference_session: z.string().nullable(),
+  reference_usable: z.boolean(),
+  reference_unavailable_reason: z.string().nullable().optional(),
+  description: z.string(),
+});
+
 export const rawDatasetSchema = z.object({
   id: z.string(),
   content_sha256: z.string(),
@@ -149,7 +165,8 @@ export const rawAnalysisSchema = z.object({
   composite_unavailable_reason: z.string().nullable().optional(),
   vsa_observations: z.array(rawEvidenceSchema),
   price_action_observations: z.array(rawEvidenceSchema),
-  auction_state: z.object({ state: z.string(), evidence_ids: z.array(z.string()), transitions: z.array(rawEvidenceSchema) }),
+  // Absent or null in snapshots saved before resets were recorded; never reconstructed.
+  auction_state: z.object({ state: z.string(), evidence_ids: z.array(z.string()), transitions: z.array(rawEvidenceSchema), session_resets: z.array(rawSessionResetSchema).nullable().optional() }),
   supporting_evidence: z.array(z.string()),
   contradicting_evidence: z.array(z.string()),
   interpretations: z.array(rawScenarioSchema),

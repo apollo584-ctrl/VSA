@@ -1,5 +1,5 @@
 """Transitions use a frozen previous complete session, never its future bars."""
-from app.models import AuctionState, Bar, Evidence, Parameters, Profile
+from app.models import AuctionState, Bar, Evidence, Parameters, Profile, SessionReset
 from app.data import calendar
 from app.evidence import check, initial_status
 
@@ -8,6 +8,7 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
     by_session = {item.session: item for item in session_profiles}
     cal = calendar(bars[0].session, bars[-1].session)
     transitions = []
+    resets = []
     previous_session = None
     reference = None
     state = "indeterminate"
@@ -17,6 +18,8 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
         if bar.session != previous_session:
             expected_previous = cal.previous_session(bar.session).strftime("%Y-%m-%d")
             reference = by_session.get(previous_session) if previous_session == expected_previous and previous_session in complete_sessions else None
+            if previous_session is not None:
+                resets.append(session_reset(bar, previous_session, state, expected_previous, reference, complete_sessions))
             previous_session = bar.session
             state = "indeterminate"
             above = below = 0
@@ -69,4 +72,22 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
                                         supporting_evidence=[reference.id], conditions_met=conditions)))
     current_timestamps = {bar.timestamp for bar in bars if bar.session == bars[-1].session}
     current = [t.id for t in transitions if t.timestamp in current_timestamps]
-    return AuctionState(state=state, evidence_ids=current[-1:], transitions=transitions)
+    return AuctionState(state=state, evidence_ids=current[-1:], transitions=transitions, session_resets=resets)
+
+
+def session_reset(bar: Bar, previous_session: str, previous_state: str, expected_previous: str,
+                  reference: Profile | None, complete_sessions: set[str]) -> SessionReset:
+    """Record the boundary using only the first bar of the new session and the already-finished prior session."""
+    reason = None
+    if previous_session != expected_previous:
+        reason = "prior_session_not_adjacent"
+    elif previous_session not in complete_sessions:
+        reason = "prior_session_incomplete"
+    elif reference is None or reference.volume.vah is None:
+        reason = "prior_value_area_unavailable"
+    detail = f"Prior value from {reference.session} is available." if reason is None else f"No usable prior value ({reason.replace('_', ' ')})."
+    return SessionReset(id=f"auction_reset:{bar.session}", session=bar.session, previous_session=previous_session,
+                        timestamp=bar.timestamp, first_observable_at=bar.available_at, previous_state=previous_state,
+                        reference_session=reference.session if reason is None and reference is not None else None,
+                        reference_usable=reason is None, reference_unavailable_reason=reason,
+                        description=f"New session {bar.session}: auction state restarts from {previous_state} to indeterminate. {detail}")

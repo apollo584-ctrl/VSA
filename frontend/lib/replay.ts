@@ -5,7 +5,7 @@
  * defensive second layer in the UI: anything detected after `asOf` is dropped, and statuses that were
  * assigned after `asOf` are rolled back, so future-confirmed information is never presented as known.
  */
-import type { AuctionState, AuctionTransition, Bar, VsaEvent } from "@/types";
+import type { AuctionReset, AuctionState, AuctionTransition, Bar, VsaEvent } from "@/types";
 
 export function clipBars(bars: Bar[], asOf: number | null): Bar[] {
   if (asOf === null) return bars;
@@ -36,6 +36,12 @@ export function knownStates(states: AuctionState[], asOf: number | null): Auctio
 export function knownTransitions(transitions: AuctionTransition[], asOf: number | null): AuctionTransition[] {
   if (asOf === null) return transitions;
   return transitions.filter((t) => t.detectedAt <= asOf);
+}
+
+/** A reset is known once its first bar is in view (the cursor is a bar start, as for transitions). */
+export function knownResets(resets: AuctionReset[] | null | undefined, asOf: number | null): AuctionReset[] | null {
+  if (!resets) return null;
+  return asOf === null ? resets : resets.filter((r) => r.at <= asOf);
 }
 
 /** Map an event/state time onto the bar that contains it (for charts whose timeframe is coarser than the engine's). */
