@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Power, Search, Sun } from "lucide-react";
+import { Moon, Power, Search, Sun, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
 import { API_MODE } from "@/lib/api/client";
@@ -67,7 +67,20 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
         }}
         className="h-10 w-full rounded-xl border border-border bg-surface-2 pl-10 pr-10 text-sm placeholder:text-subtle focus:border-accent/60 focus:bg-surface focus:outline-none"
       />
-      <kbd aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border px-1.5 text-xs text-subtle">/</kbd>
+      {query ? (
+        <button
+          type="button"
+          aria-label="Clear search"
+          title="Clear search"
+          // mousedown keeps focus in the box, so the list stays open after clearing
+          onMouseDown={(e) => { e.preventDefault(); setQuery(""); setActive(0); setOpen(true); inputRef.current?.focus(); }}
+          className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-subtle hover:bg-surface-3 hover:text-fg"
+        >
+          <X size={15} aria-hidden />
+        </button>
+      ) : (
+        <kbd aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border px-1.5 text-xs text-subtle">/</kbd>
+      )}
       {open && (
         <ul id={listId} role="listbox" className="absolute left-0 top-12 z-50 max-h-96 w-full min-w-80 overflow-auto rounded-xl border border-border-strong bg-surface p-1.5 shadow-2xl">
           {canLoad && (
