@@ -9,19 +9,19 @@
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b0e13;
-  --surface: #11151c;
-  --surface-2: #171c25;
-  --surface-3: #1e2430;
-  --border: #252c38;
-  --border-strong: #343d4d;
-  --fg: #e6e9ef;
-  --fg-muted: #9aa4b4;
-  --fg-subtle: #6c7686;
-  --accent: #5b9dff;
-  --accent-soft: rgba(91, 157, 255, 0.14);
-  --up: #2bb8a3;
-  --down: #ef6b5f;
+  --bg: #0b0d12;
+  --surface: #12151c;
+  --surface-2: #181c25;
+  --surface-3: #20252f;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --fg: #eceef3;
+  --fg-muted: #a6aebb;
+  --fg-subtle: #767f8e;
+  --accent: #6ea8ff;
+  --accent-soft: rgba(110, 168, 255, 0.13);
+  --up: #2fbf9f;
+  --down: #f06a5f;
   --poc: #f2b84b;
   --value: #a98bff;
   --hvn: #4cc3e6;
@@ -29,27 +29,28 @@
   --ib: #ee8fc0;
   --vsa: #c9d1e0;
   --hyp: #b48cff;
-  --hyp-soft: rgba(180, 140, 255, 0.1);
+  --hyp-soft: rgba(180, 140, 255, 0.09);
   --warn: #e8b04a;
-  --danger: #ef6b5f;
+  --danger: #f06a5f;
   --ok: #3cc4a4;
   --focus: #8ab8ff;
-  --chart-grid: rgba(255, 255, 255, 0.05);
+  --chart-grid: rgba(255, 255, 255, 0.045);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f4f6f9;
+  --bg: #f5f6f8;
   --surface: #ffffff;
-  --surface-2: #f0f3f7;
-  --surface-3: #e6eaf0;
-  --border: #d9dee6;
-  --border-strong: #bcc4d0;
-  --fg: #151a22;
-  --fg-muted: #4b5666;
-  --fg-subtle: #6f7a8a;
-  --accent: #1f6feb;
-  --accent-soft: rgba(31, 111, 235, 0.1);
+  --surface-2: #f2f4f7;
+  --surface-3: #e8ebf0;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --fg: #12161d;
+  --fg-muted: #4b5564;
+  --fg-subtle: #6b7584;
+  --accent: #2563eb;
+  --accent-soft: rgba(37, 99, 235, 0.09);
   --up: #0d8f7c;
   --down: #d1453b;
   --poc: #b97a00;
@@ -59,12 +60,13 @@
   --ib: #c2467f;
   --vsa: #3a4458;
   --hyp: #7a4fd6;
-  --hyp-soft: rgba(122, 79, 214, 0.08);
+  --hyp-soft: rgba(122, 79, 214, 0.07);
   --warn: #a86a00;
   --danger: #c23b30;
   --ok: #0d8f7c;
-  --focus: #1f6feb;
-  --chart-grid: rgba(0, 0, 0, 0.06);
+  --focus: #2563eb;
+  --chart-grid: rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
 }
 
 @theme inline {
@@ -92,8 +94,14 @@
   --color-warn: var(--warn);
   --color-danger: var(--danger);
   --color-ok: var(--ok);
-  --font-sans: ui-sans-serif, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  /* A roomier type scale: nothing renders below 12px. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --shadow-card: var(--shadow);
 }
 
 html, body { height: 100%; }
@@ -101,16 +109,19 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
 }
 
-.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+/* Tabular figures in the UI font; monospace is reserved for codes (.mono). */
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); }
 
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
 
-/* Thin, unobtrusive scrollbars for dense panels */
+/* Thin, unobtrusive scrollbars */
 * { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 
 .hypothesis {
@@ -127,5 +138,5 @@ body {
   background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.6s linear infinite;
-  border-radius: 4px;
+  border-radius: 8px;
 }

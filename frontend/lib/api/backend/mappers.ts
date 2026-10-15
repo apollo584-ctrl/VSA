@@ -12,7 +12,7 @@ import type {
   Analysis, AuctionReset, AuctionState, AuctionTransition, Bar, BarsResponse, DataQuality, DatasetSource, EvidenceItem, Instrument, Interpretation,
   KnowledgeConcept, Level, Profile, Scenario, VsaEvent,
 } from "@/types";
-import { humanize } from "@/lib/formatting";
+import { fmtPrice, humanize } from "@/lib/formatting";
 import type { RawAnalysis, RawBar, RawConcept, RawDataset, RawEvidence, RawProfile, RawQuality, RawSource } from "./schemas";
 
 export const epoch = (iso: string): number => Date.parse(iso) / 1000;
@@ -152,7 +152,7 @@ export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<stri
     },
     conditions: e.conditions_met?.length ? e.conditions_met.map((condition) => ({
       ...condition,
-      detail: `${condition.metric}: ${JSON.stringify(condition.actual)} ${condition.operator} ${JSON.stringify(condition.expected)}${condition.reference ? ` (${condition.reference})` : ""}`,
+      detail: `${condition.metric}: ${conditionValue(condition.actual)} ${condition.operator} ${conditionValue(condition.expected)}${condition.reference ? ` (${condition.reference})` : ""}`,
     })) : (c?.observable_conditions ?? []).map((label) => ({ label, met: null, detail: "" })),
     conditionSource: e.conditions_met?.length ? "instance" : c ? "catalog" : "unavailable",
     implications: c?.possible_interpretations ?? [],
@@ -225,6 +225,12 @@ export function mapProfile(p: RawProfile, kind: "tpo" | "volume" | "prior" | "co
 
 // ------------------------------------------------------------------ auction
 
+/** Measured values in a condition receipt, to three decimals (thresholds such as 0.65 stay exact). Display only. */
+const conditionValue = (v: unknown) => (typeof v === "number" && !Number.isInteger(v) ? String(Number(v.toFixed(3))) : JSON.stringify(v));
+
+/** Display form of a backend value: whole numbers as-is, other numbers to two decimals. Never changes stored data. */
+const readable = (v: unknown) => (typeof v === "number" && !Number.isInteger(v) ? v.toFixed(2) : String(v));
+
 export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { states: AuctionState[]; transitions: AuctionTransition[] } {
   const states: AuctionState[] = [];
   const transitions: AuctionTransition[] = [];
@@ -259,8 +265,8 @@ export function mapAuction(a: RawAnalysis, bars: RawBar[], interval: number): { 
       detectedAt: epoch(t.first_observable_at) - interval,
       rationale: `${from ? humanize(from) : "?"} → ${to ? humanize(to) : "?"}. Classified from completed closes relative to the prior session's value area.`,
       evidence: [
-        ...closes.map(([k, v], n) => ({ id: `${t.id}-c${n}`, kind: "structure" as const, nature: "observed" as const, text: `${humanize(k)}: ${v}` })),
-        ...Object.entries(t.measurements).map(([k, v], n) => ({ id: `${t.id}-m${n}`, kind: "auction" as const, nature: "classified" as const, text: `${humanize(k)}: ${v}` })),
+        ...closes.map(([k, v], n) => ({ id: `${t.id}-c${n}`, kind: "structure" as const, nature: "observed" as const, text: `${humanize(k)}: ${readable(v)}` })),
+        ...Object.entries(t.measurements).map(([k, v], n) => ({ id: `${t.id}-m${n}`, kind: "auction" as const, nature: "classified" as const, text: `${humanize(k)}: ${readable(v)}` })),
         ...t.supporting_evidence.map((sid, n) => ({ id: `${t.id}-s${n}`, kind: "profile" as const, text: `Reference: ${sid}` })),
       ],
     });
@@ -323,6 +329,8 @@ export function mapInterpretation(a: RawAnalysis, concepts: Map<string, RawConce
   const watchNext = [...byText.values()].map((w, n) => ({ id: `w${n + 1}`, text: w.text, strengthens: [...w.strengthens], weakens: [...w.weakens] }));
 
   const mc = a.market_context;
+  // Prices are rounded for reading; the backend value is kept unrounded in the snapshot.
+  const lastCloseText = typeof mc["last_close"] === "number" ? fmtPrice(mc["last_close"]) : (mc["last_close"] ?? "n/a");
   const sentenceEnd = a.plain_english_summary.split(/\.(?:\s|$)/)[0] ?? a.plain_english_summary;
   const uncertainty: Interpretation["uncertainty"] = a.uncertainties.map((text) => ({ kind: "other" as const, text }));
   if (a.profile_analysis.some((p) => p.tpo.estimated || p.volume.estimated)) {
@@ -334,12 +342,12 @@ export function mapInterpretation(a: RawAnalysis, concepts: Map<string, RawConce
   const volShape = last?.volume.shape;
   return {
     asOf: epoch(a.analysis_timestamp) - interval,
-    whatIsHappening: { quick: sentenceEnd, standard: a.plain_english_summary, deep: [`Background: ${mc["background"] ?? "n/a"}; last close ${mc["last_close"] ?? "n/a"} (session ${mc["last_session"] ?? "n/a"}).`, `Engine ${a.engine_version}, knowledge ${a.knowledge_version}.`] },
+    whatIsHappening: { quick: sentenceEnd, standard: a.plain_english_summary, deep: [`Background: ${mc["background"] ?? "n/a"}; last close ${lastCloseText} (session ${mc["last_session"] ?? "n/a"}).`, `Engine ${a.engine_version}, knowledge ${a.knowledge_version}.`] },
     whyItMatters: null, // not authored by the backend
     context: { quick: `Background trend: ${mc["background"] ?? "n/a"}. Auction: ${humanize(a.auction_state.state)}.`, standard: `Measured background trend is “${mc["background"] ?? "n/a"}”. The auction classification is “${humanize(a.auction_state.state)}”, derived from closes relative to the prior complete session's value area.`, deep: a.auction_state.transitions.slice(-3).map((t) => `${t.timestamp}: ${t.description}`) },
     profile: volShape ? { quick: `${shapeLabel(volShape.classification)} (${volShape.ambiguity} ambiguity, estimated).`, standard: `${volShape.interpretation} Alternative classification(s): ${volShape.alternatives.map(humanize).join(", ") || "none"}. ${volShape.limitations[0] ?? ""}`, deep: [...Object.entries(volShape.features).map(([k, v]) => `${humanize(k)}: ${Number(v.toPrecision(4))}`), ...volShape.limitations] } : null,
     vsa: { quick: `${sessionVsa.length} VSA observation(s) in the latest session.`, standard: sessionVsa.length ? `Observations: ${[...new Set(sessionVsa.map((o) => concepts.get(o.concept_id)?.name ?? humanize(o.concept_id)))].join(", ")}.` : "No VSA observations in the latest session.", deep: sessionVsa.map((o) => `${o.timestamp} — ${o.concept_id} (${o.status}, ${o.direction})`) },
-    priceAction: { quick: `${a.price_action_observations.length} price-action observation(s) in the analysed history.`, standard: `Latest last close ${mc["last_close"] ?? "n/a"}. Observed concepts: ${[...new Set(a.price_action_observations.map((o) => o.concept_id))].map(humanize).join(", ") || "none"}.`, deep: a.price_action_observations.slice(-8).map((o) => `${o.timestamp} — ${o.concept_id}: ${o.description}`) },
+    priceAction: { quick: `${a.price_action_observations.length} price-action observation(s) in the analysed history.`, standard: `Latest close ${lastCloseText}. Observed concepts: ${[...new Set(a.price_action_observations.map((o) => o.concept_id))].map(humanize).join(", ") || "none"}.`, deep: a.price_action_observations.slice(-8).map((o) => `${o.timestamp} — ${o.concept_id}: ${o.description}`) },
     supporting: resolve(a.supporting_evidence),
     contradicting: resolve(a.contradicting_evidence),
     scenarios,

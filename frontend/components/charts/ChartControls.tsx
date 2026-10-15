@@ -21,7 +21,7 @@ const LAYER_DEFS: { key: LayerKey; label: string; swatch?: string; dashed?: bool
 export function LayerControls({ only }: { only?: LayerKey[] }) {
   const { state, toggleLayer } = useWorkspace();
   return (
-    <div role="group" aria-label="Chart layers" className="flex flex-wrap items-center gap-1">
+    <div role="group" aria-label="Chart layers" className="flex flex-wrap items-center gap-2">
       {LAYER_DEFS.filter((l) => !only || only.includes(l.key)).map((l) => (
         <Toggle key={l.key} label={l.label} swatch={l.swatch} dashed={l.dashed} checked={state.layers[l.key]} onChange={() => toggleLayer(l.key)} />
       ))}
@@ -42,20 +42,20 @@ export function ReplayControls({ allBars }: { allBars: Bar[] }) {
   };
   const bar = allBars[cursorIdx]!;
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-surface-2 px-2 py-1.5" role="group" aria-label="Analysis timeline">
-      <History size={14} aria-hidden className="text-subtle" />
-      <Button variant="ghost" size="icon" aria-label="Previous bar" onClick={() => go(cursorIdx - 1)} disabled={cursorIdx <= 0}><ChevronLeft size={15} aria-hidden /></Button>
+    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-surface-2 px-3 py-2" role="group" aria-label="Analysis timeline">
+      <span className="flex items-center gap-2 text-xs font-medium text-muted"><History size={16} aria-hidden className="text-subtle" />Replay</span>
+      <Button variant="ghost" size="icon" aria-label="Previous bar" onClick={() => go(cursorIdx - 1)} disabled={cursorIdx <= 0}><ChevronLeft size={18} aria-hidden /></Button>
       <input
         type="range" min={0} max={allBars.length - 1} value={cursorIdx}
         aria-label="Replay position" aria-valuetext={fmtDateTime(bar.t, true)}
         onChange={(e) => go(Number(e.target.value))}
-        className="h-1 min-w-32 flex-1 accent-[var(--accent)]"
+        className="h-1.5 min-w-40 flex-1 cursor-pointer accent-[var(--accent)]"
       />
-      <Button variant="ghost" size="icon" aria-label="Next bar" onClick={() => go(cursorIdx + 1)} disabled={cursorIdx >= allBars.length - 1}><ChevronRight size={15} aria-hidden /></Button>
-      <Button variant="ghost" size="sm" aria-label="Jump to latest" onClick={() => set({ replayTime: null })} disabled={state.replayTime === null}><ChevronsRight size={14} aria-hidden />Latest</Button>
+      <Button variant="ghost" size="icon" aria-label="Next bar" onClick={() => go(cursorIdx + 1)} disabled={cursorIdx >= allBars.length - 1}><ChevronRight size={18} aria-hidden /></Button>
+      <Button variant="ghost" size="sm" aria-label="Jump to latest" onClick={() => set({ replayTime: null })} disabled={state.replayTime === null}><ChevronsRight size={16} aria-hidden />Latest</Button>
       {state.replayTime !== null
         ? <Badge tone="info" title="Only information available at this bar is shown. Later confirmations are hidden.">Historical analysis · as of {fmtDateTime(bar.t, true)}</Badge>
-        : <span className="text-[11px] text-subtle num">{fmtDateTime(bar.t, true)} · bar {cursorIdx + 1}/{allBars.length}</span>}
+        : <span className="num text-xs text-subtle">{fmtDateTime(bar.t, true)} · bar {cursorIdx + 1} of {allBars.length}</span>}
     </div>
   );
 }

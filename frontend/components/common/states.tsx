@@ -81,7 +81,7 @@ export const MixedEvidenceNotice = () => (
 );
 
 export const NoRealtimeBadge = () => (
-  <span className="text-[11px] text-subtle" title="This application reads historical or fixture data only.">No real-time connection</span>
+  <span className="text-xs text-subtle" title="This application reads historical or fixture data only.">No real-time connection</span>
 );
 
 export function LinkButton({ href, children }: { href: string; children: ReactNode }) {

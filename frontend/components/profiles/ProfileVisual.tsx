@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 export function ProfileVisual({ profile, weight, currentPrice, className, compact = false }: {
   profile: Profile; weight: "tpo" | "volume"; currentPrice?: number | null; className?: string; compact?: boolean;
 }) {
-  const W = compact ? 260 : 460;
-  const rowH = compact ? 5 : 7;
+  const W = compact ? 340 : 480;
+  const rowH = compact ? 6 : 8;
   const bins = useMemo(() => [...profile.bins].sort((a, b) => b.price - a.price), [profile.bins]);
   const H = Math.max(120, bins.length * rowH + 24);
-  const labelW = 46;
-  const plotX = labelW, plotW = W - labelW - (compact ? 40 : 70);
+  const labelW = 64;
+  // Right gutter fits "VAH 1234.56" at the label font size, so level labels are never clipped.
+  const plotX = labelW, plotW = W - labelW - 96;
   const max = Math.max(...bins.map((b) => b[weight]), 1);
   const yOf = (price: number) => 12 + (bins.findIndex((b) => b.price <= price) === -1 ? bins.length : bins.findIndex((b) => b.price <= price)) * rowH;
   const lines: { price: number; label: string; color: string; dash?: string }[] = [
@@ -39,25 +40,25 @@ export function ProfileVisual({ profile, weight, currentPrice, className, compac
       {profile.shape.distributions.length > 1 && profile.shape.distributions.map((d, i) => (
         <g key={i}>
           <rect x={plotX - 4} y={yOf(d.high)} width={2} height={Math.max(2, yOf(d.low) - yOf(d.high))} fill="var(--hvn)" />
-          {!compact && <text x={plotX - 7} y={(yOf(d.high) + yOf(d.low)) / 2 + 3} fontSize={8} fill="var(--hvn)" textAnchor="end">D{i + 1}</text>}
+          {!compact && <text x={plotX - 7} y={(yOf(d.high) + yOf(d.low)) / 2 + 3} fontSize={10} fill="var(--hvn)" textAnchor="end">D{i + 1}</text>}
         </g>
       ))}
       {lines.map((l) => (
         <g key={l.label}>
           <line x1={plotX} x2={plotX + plotW} y1={yOf(l.price)} y2={yOf(l.price)} stroke={l.color} strokeWidth={1} strokeDasharray={l.dash} />
-          <text x={plotX + plotW + 4} y={yOf(l.price) + 3} fontSize={9} fill={l.color}>{l.label} {fmtPrice(l.price)}</text>
+          <text x={plotX + plotW + 4} y={yOf(l.price) + 3} fontSize={11} fill={l.color}>{l.label} {fmtPrice(l.price)}</text>
         </g>
       ))}
-      {!compact && profile.hvns.map((p) => <text key={`h${p}`} x={plotX + plotW + 4} y={yOf(p) + 12} fontSize={8} fill="var(--hvn)">HVN {fmtPrice(p)}</text>)}
-      {!compact && profile.lvns.map((p) => <text key={`l${p}`} x={plotX + plotW + 4} y={yOf(p) + 3} fontSize={8} fill="var(--lvn)">LVN {fmtPrice(p)}</text>)}
+      {!compact && profile.hvns.map((p) => <text key={`h${p}`} x={plotX + plotW + 4} y={yOf(p) + 12} fontSize={10} fill="var(--hvn)">HVN {fmtPrice(p)}</text>)}
+      {!compact && profile.lvns.map((p) => <text key={`l${p}`} x={plotX + plotW + 4} y={yOf(p) + 3} fontSize={10} fill="var(--lvn)">LVN {fmtPrice(p)}</text>)}
       {currentPrice != null && currentPrice >= profile.sessionLow - profile.binSize && currentPrice <= profile.sessionHigh + profile.binSize && (
         <g>
           <line x1={2} x2={plotX + 6} y1={yOf(currentPrice)} y2={yOf(currentPrice)} stroke="var(--fg)" strokeWidth={1.2} />
-          <text x={2} y={yOf(currentPrice) - 3} fontSize={9} fill="var(--fg)">Last {fmtPrice(currentPrice)}</text>
+          <text x={2} y={yOf(currentPrice) - 3} fontSize={11} fill="var(--fg)">Last {fmtPrice(currentPrice)}</text>
         </g>
       )}
       {[profile.sessionHigh, profile.sessionLow].map((p, i) => (
-        <text key={i} x={plotX} y={yOf(p) + (i ? 11 : -2)} fontSize={8} fill="var(--fg-muted)">{i ? "Low" : "High"} {fmtPrice(p)}</text>
+        <text key={i} x={plotX} y={yOf(p) + (i ? 11 : -2)} fontSize={10} fill="var(--fg-muted)">{i ? "Low" : "High"} {fmtPrice(p)}</text>
       ))}
     </svg>
   );

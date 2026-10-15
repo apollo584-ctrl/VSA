@@ -1,7 +1,6 @@
 "use client";
 
-import { Moon, Power, Search, Settings, Sun } from "lucide-react";
-import Link from "next/link";
+import { Moon, Power, Search, Sun } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
 import { API_MODE } from "@/lib/api/client";
@@ -45,8 +44,8 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
   const offset = canLoad ? 1 : 0;
 
   return (
-    <div className="relative w-56 max-md:w-full">
-      <Search size={13} aria-hidden className="pointer-events-none absolute left-2 top-2 text-subtle" />
+    <div className="relative w-full max-w-md">
+      <Search size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
       <input
         ref={inputRef}
         role="combobox"
@@ -54,7 +53,7 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
         aria-controls={listId}
         aria-autocomplete="list"
         aria-label="Search instruments (press / to focus)"
-        placeholder={current ? `${currentLabel} — search…` : "Search symbol…  ( / )"}
+        placeholder={current ? `Search or load a symbol — now ${currentLabel}` : "Search or load a symbol, e.g. AAPL"}
         value={query}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); setActive(0); }}
         onFocus={() => setOpen(true)}
@@ -66,25 +65,26 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
           else if (e.key === "Enter" && results[active - offset]) choose(results[active - offset]!);
           else if (e.key === "Escape") setOpen(false);
         }}
-        className="h-8 w-full rounded-md border border-border bg-surface-2 pl-7 pr-2 text-xs placeholder:text-subtle"
+        className="h-10 w-full rounded-xl border border-border bg-surface-2 pl-10 pr-10 text-sm placeholder:text-subtle focus:border-accent/60 focus:bg-surface focus:outline-none"
       />
+      <kbd aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border px-1.5 text-xs text-subtle">/</kbd>
       {open && (
-        <ul id={listId} role="listbox" className="absolute left-0 top-9 z-50 max-h-72 w-80 overflow-auto rounded-md border border-border-strong bg-surface-2 p-1 shadow-xl">
+        <ul id={listId} role="listbox" className="absolute left-0 top-12 z-50 max-h-96 w-full min-w-80 overflow-auto rounded-xl border border-border-strong bg-surface p-1.5 shadow-2xl">
           {canLoad && (
-            <li role="option" aria-selected={active === 0} onMouseDown={(e) => { e.preventDefault(); loadSymbol(); }} className={cn("cursor-pointer rounded px-2 py-1.5", active === 0 && "bg-surface-3")}>
+            <li role="option" aria-selected={active === 0} onMouseDown={(e) => { e.preventDefault(); loadSymbol(); }} className={cn("cursor-pointer rounded-lg px-3 py-2.5", active === 0 && "bg-surface-2")}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold">{load.isPending ? `Loading ${typed}…` : `Load ${typed} from Yahoo Finance`}</span>
                 <Badge tone="info">30m · 1 month</Badge>
               </div>
-              <div className="text-[11px] text-muted">Recent completed regular-session bars, delayed. Not a live feed.</div>
-              {load.isError && <div role="alert" className="mt-0.5 text-[11px] text-danger">{load.error instanceof Error ? load.error.message : "Could not load this symbol."}</div>}
+              <div className="mt-0.5 text-xs text-muted">Recent completed regular-session bars, delayed. Not a live feed.</div>
+              {load.isError && <div role="alert" className="mt-0.5 text-xs text-danger">{load.error instanceof Error ? load.error.message : "Could not load this symbol."}</div>}
             </li>
           )}
-          {results.length === 0 && !canLoad && <li className="px-2 py-2 text-xs text-muted">No matching datasets. Upload one in Settings.</li>}
+          {results.length === 0 && !canLoad && <li className="px-3 py-3 text-sm text-muted">No matching datasets. Type a ticker to load one, or upload a CSV in Settings.</li>}
           {results.map((i, n) => (
-            <li key={i.symbol} role="option" aria-selected={n + offset === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded px-2 py-1.5", n + offset === active && "bg-surface-3")}>
-              <div className="flex items-center justify-between gap-2"><span className="num font-semibold">{i.label ?? i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
-              <div className="text-[11px] text-muted">{i.name}</div>
+            <li key={i.symbol} role="option" aria-selected={n + offset === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded-lg px-3 py-2.5", n + offset === active && "bg-surface-2")}>
+              <div className="flex items-center justify-between gap-2"><span className="font-semibold">{i.label ?? i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
+              <div className="mt-0.5 text-xs text-muted">{i.name}</div>
             </li>
           ))}
         </ul>
@@ -109,8 +109,8 @@ function QuitButton() {
   if (status === "stopped") return <span role="status" className="text-xs text-muted">Stopped. You can close this tab.</span>;
   if (status === "unavailable") return <span role="status" className="text-xs text-danger">Quit needs start.bat. Stop the servers manually.</span>;
   return (
-    <Button variant="ghost" size="sm" onClick={quit} disabled={status === "stopping"} title="Stop the frontend and backend (same as stop.bat)">
-      <Power size={14} aria-hidden /> {status === "stopping" ? "Stopping…" : "Quit"}
+    <Button variant="ghost" onClick={quit} disabled={status === "stopping"} title="Stop the frontend and backend (same as stop.bat)">
+      <Power size={16} aria-hidden /> <span className="max-sm:sr-only">{status === "stopping" ? "Stopping…" : "Quit"}</span>
     </Button>
   );
 }
@@ -122,24 +122,10 @@ export function TopBar() {
   const dates = inst ? [...inst.availableDates].sort().reverse() : [];
 
   return (
-    <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-surface px-3 py-2">
-      <Link href="/" className="flex items-center gap-2 pr-1 font-semibold tracking-tight">
-        <span aria-hidden className="grid h-6 w-6 place-items-center rounded bg-accent-soft text-[11px] font-bold text-accent">MS</span>
-        <span className="max-sm:sr-only">Market Structure <span className="text-subtle">Terminal</span></span>
-      </Link>
-
+    <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur max-sm:gap-y-2 max-sm:px-4">
       <InstrumentSearch instruments={instruments} current={state.symbol} onSelect={selectInstrument} />
 
-      <div className="min-w-0 max-md:order-last max-md:w-full">
-        {inst ? (
-          <div className="flex items-center gap-2" aria-live="polite">
-            <span className="num text-sm font-semibold">{inst.label ?? inst.symbol}</span>
-            <span className="truncate text-xs text-muted max-w-72">{inst.name}</span>
-          </div>
-        ) : <span className="text-xs text-subtle">No instrument selected</span>}
-      </div>
-
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ml-auto flex flex-wrap items-center gap-3 max-sm:ml-0 max-sm:gap-2">
         <Segmented
           label="Timeframe"
           value={state.timeframe}
@@ -152,29 +138,24 @@ export function TopBar() {
           onChange={(v) => set({ session: v, replayTime: null })}
           options={["RTH", "ETH", "ALL"].map((s) => ({ value: s, label: s, disabled: !!inst && !inst.sessions.includes(s), title: inst && !inst.sessions.includes(s) ? "Not available for this dataset" : undefined }))}
         />
-        <label className="flex items-center gap-1.5 text-xs text-muted">
+        <label className="flex items-center gap-2 text-sm text-muted">
           <span className="max-lg:sr-only">As of</span>
           <select
             aria-label="Historical date"
             disabled={!inst}
             value={state.date ?? ""}
             onChange={(e) => set({ date: e.target.value || null, replayTime: null, selectedEventId: null })}
-            className="h-8 rounded-md border border-border bg-surface-2 px-2 text-xs disabled:opacity-50"
+            className="h-9 rounded-lg border border-border bg-surface-2 px-3 text-sm text-fg disabled:opacity-50"
           >
             <option value="">Latest available</option>
             {dates.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </label>
-        {inst && (
-          <Badge tone={inst.source.kind === "fixture" ? "warn" : inst.source.kind === "live" ? "ok" : "info"} title={inst.source.note}>
-            {inst.source.kind === "fixture" ? "Fixture data" : inst.source.kind === "live" ? "Live" : "Historical"} · {inst.source.name}
-          </Badge>
-        )}
-        <Link href="/settings" aria-label="Settings" className="inline-grid h-7 w-7 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"><Settings size={15} aria-hidden /></Link>
-        <QuitButton />
+        <span aria-hidden className="h-6 w-px bg-border max-sm:hidden" />
         <Button variant="ghost" size="icon" aria-label={state.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => set({ theme: state.theme === "dark" ? "light" : "dark" })}>
-          {state.theme === "dark" ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
+          {state.theme === "dark" ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
         </Button>
+        <QuitButton />
       </div>
     </header>
   );

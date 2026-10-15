@@ -15,14 +15,14 @@ export function StatusBar() {
   const inst = data?.find((i) => i.symbol === state.symbol);
   const fetching = useIsFetching();
   return (
-    <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-surface px-3 py-1 text-[11px] text-subtle">
+    <footer className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-5 gap-y-1 border-t border-border bg-surface px-6 py-1.5 text-xs text-subtle max-sm:px-4">
       {API_MODE === "mock" && (
         <Badge tone="warn" title="Responses come from deterministic synthetic fixtures, not the backend."><FlaskConical size={11} aria-hidden /> MOCK DATA</Badge>
       )}
-      <span>Source: {inst ? `${inst.source.name} (${inst.source.kind})` : "—"}</span>
-      <span>No real-time connection — all timestamps are historical, exchange time (ET)</span>
+      <span className="truncate max-sm:max-w-[60vw]">Source: {inst ? `${inst.source.name} (${inst.source.kind})` : "—"}</span>
+      <span className="max-md:hidden">No real-time connection — all timestamps are historical, exchange time (ET)</span>
       {state.replayTime !== null && <Badge tone="info">Replay: {fmtDateTime(state.replayTime, true)}</Badge>}
-      <span className="ml-auto" aria-live="polite">{fetching > 0 ? "Updating…" : "Up to date"}</span>
+      <span className="ml-auto flex items-center gap-2" aria-live="polite"><span aria-hidden className={`h-2 w-2 rounded-full ${fetching > 0 ? "animate-pulse bg-warn" : "bg-ok"}`} />{fetching > 0 ? "Updating…" : "Up to date"}</span>
     </footer>
   );
 }

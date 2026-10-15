@@ -16,6 +16,8 @@ import { ChartOverlay } from "./ChartOverlay";
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
 /** Volume expansion/contraction recolour their candle instead of carrying a text marker (the chart gets crowded otherwise). */
 const BAR_TINT: Record<string, string> = { volume_expansion: "#22e07a", volume_contraction: "#8b1a1a" };
+/** Stable empty list: a fresh [] each render would re-run the data effect, whose redraw re-renders (an update loop). */
+const NO_EVENTS: VsaEvent[] = [];
 const STATUS_MARK = { observed: "", provisional: "?", confirmed: "✓", invalidated: "×", expired: "~", historical: "" } as const;
 
 /** Marker placement only anchors the label to the bar; engine direction (when given) picks the side. */
@@ -68,7 +70,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
 
   const profile = analysis?.profiles[profileKind] ?? analysis?.profiles.volume ?? null;
   const tpoProfile = analysis?.profiles.tpo ?? null;
-  const events = analysis?.vsaEvents ?? [];
+  const events = analysis?.vsaEvents ?? NO_EVENTS;
   const selected = events.find((e) => e.id === selectedEventId) ?? null;
   const onSelectRef = useRef(onSelectEvent);
   onSelectRef.current = onSelectEvent;
@@ -247,7 +249,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
         />
       )}
       {display && (
-        <div className="pointer-events-none absolute left-2 top-1 flex gap-3 rounded bg-surface/80 px-1.5 py-0.5 text-[11px] backdrop-blur-sm" style={{ top: layers.auction ? 38 : 4 }}>
+        <div className="pointer-events-none absolute left-2 top-1 flex max-w-[calc(100%-4.5rem)] flex-wrap gap-x-3 rounded-md bg-surface/80 px-2 py-0.5 text-xs backdrop-blur-sm" style={{ top: layers.auction ? 38 : 4 }}>
           <span className="text-muted">{fmtDateTime(display.t, true)}</span>
           <span className="num">O {fmtPrice(display.o)}</span><span className="num">H {fmtPrice(display.h)}</span>
           <span className="num">L {fmtPrice(display.l)}</span>

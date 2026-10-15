@@ -46,7 +46,7 @@ function EvidenceList({ items, tone }: { items: EvidenceItem[]; tone: "support" 
           {tone === "support" ? <ArrowUpRight size={13} aria-label="Supports" className="mt-0.5 shrink-0 text-muted" /> : <ArrowDownRight size={13} aria-label="Contradicts" className="mt-0.5 shrink-0 text-warn" />}
           <span>
             {e.text} {e.measurement && <span className="num text-subtle">[{e.measurement}]</span>}
-            <span className="ml-1 text-[10px] uppercase tracking-wide text-subtle">{humanize(e.kind)}</span>
+            <span className="ml-1 text-xs text-subtle">{humanize(e.kind)}</span>
             {e.nature === "classified" && <span className="ml-1 align-middle"><ClassificationBadge /></span>}
           </span>
         </li>
@@ -78,7 +78,7 @@ export function InterpretationSummary({ analysis, level }: { analysis: Analysis;
       <Block title="What should I watch next?">
         <ul className="list-disc space-y-1 pl-4">{i.watchNext.map((w) => <li key={w.id}>{w.text}</li>)}</ul>
       </Block>
-      <p className="text-[11px] text-subtle">As of {fmtDateTime(i.asOf, true)} · {i.uncertainty.length} stated limitations</p>
+      <p className="text-xs text-subtle">As of {fmtDateTime(i.asOf, true)} · {i.uncertainty.length} stated limitations</p>
     </div>
   );
 }
@@ -144,7 +144,7 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
           {i.watchNext.map((w) => (
             <li key={w.id} className="rounded-md border border-border bg-surface-2 p-2">
               <p>{w.text}</p>
-              <p className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
+              <p className="mt-1 flex flex-wrap gap-1.5 text-xs">
                 {w.strengthens.map((s) => <Badge key={`s${s}`} tone="neutral">↑ strengthens: {scenarioName(i, s)}</Badge>)}
                 {w.weakens.map((s) => <Badge key={`w${s}`} tone="neutral">↓ weakens: {scenarioName(i, s)}</Badge>)}
               </p>

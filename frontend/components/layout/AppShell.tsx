@@ -11,66 +11,101 @@ import { TopBar } from "./TopBar";
 import { CapabilitySync } from "./CapabilitySync";
 import { HistoryRecorder } from "./HistoryRecorder";
 
-export const NAV: { href: string; label: string; icon: LucideIcon; match?: (p: string) => boolean }[] = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/chart", label: "Chart & Profile", icon: LineChart },
-  { href: "/vsa", label: "VSA Analysis", icon: Waves },
-  { href: "/auction", label: "Auction Structure", icon: GitBranch },
-  { href: "/interpretation", label: "Interpretation", icon: Lightbulb },
-  { href: "/knowledge", label: "Knowledge Explorer", icon: BookOpen, match: (p) => p.startsWith("/knowledge") },
-  { href: "/history", label: "Analysis History", icon: History },
-  { href: "/settings", label: "Settings", icon: Settings },
+type NavItem = { href: string; label: string; icon: LucideIcon; match?: (p: string) => boolean };
+
+export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Analysis",
+    items: [
+      { href: "/", label: "Overview", icon: LayoutDashboard },
+      { href: "/chart", label: "Chart & Profile", icon: LineChart },
+      { href: "/vsa", label: "VSA Analysis", icon: Waves },
+      { href: "/auction", label: "Auction Structure", icon: GitBranch },
+      { href: "/interpretation", label: "Interpretation", icon: Lightbulb },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { href: "/knowledge", label: "Knowledge Explorer", icon: BookOpen, match: (p) => p.startsWith("/knowledge") },
+      { href: "/history", label: "Analysis History", icon: History },
+    ],
+  },
 ];
+const SETTINGS: NavItem = { href: "/settings", label: "Settings", icon: Settings };
+export const NAV: NavItem[] = [...NAV_GROUPS.flatMap((g) => g.items), SETTINGS];
+
+function NavLink({ item, collapsed, pathname }: { item: NavItem; collapsed: boolean; pathname: string }) {
+  const { href, label, icon: Icon, match } = item;
+  const active = match ? match(pathname) : pathname === href;
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      title={label}
+      className={cn(
+        "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+        active ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2 hover:text-fg",
+        collapsed && "justify-center px-0",
+      )}
+    >
+      <Icon size={18} aria-hidden className="shrink-0" />
+      <span className={cn(collapsed && "sr-only", "max-md:sr-only")}>{label}</span>
+    </Link>
+  );
+}
 
 function Sidebar() {
   const pathname = usePathname();
   const { state, set } = useWorkspace();
   const collapsed = state.navCollapsed;
   return (
-    <nav aria-label="Primary" className={cn("flex shrink-0 flex-col border-r border-border bg-surface py-2 transition-[width] max-md:w-12", collapsed ? "w-12" : "w-52")}>
-      <ul className="flex flex-1 flex-col gap-0.5 px-1.5">
-        {NAV.map(({ href, label, icon: Icon, match }) => {
-          const active = match ? match(pathname) : pathname === href;
-          return (
-            <li key={href}>
-              <Link
-                href={href}
-                aria-current={active ? "page" : undefined}
-                title={label}
-                className={cn(
-                  "flex h-8 items-center gap-2.5 rounded-md px-2 text-xs font-medium transition-colors",
-                  active ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2 hover:text-fg",
-                )}
-              >
-                <Icon size={16} aria-hidden className="shrink-0" />
-                <span className={cn(collapsed && "sr-only", "max-md:sr-only")}>{label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-      <button
-        type="button"
-        onClick={() => set({ navCollapsed: !collapsed })}
-        aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-        aria-expanded={!collapsed}
-        className="mx-1.5 flex h-8 items-center gap-2.5 rounded-md px-2 text-xs text-subtle hover:bg-surface-2 hover:text-fg max-md:hidden"
-      >
-        {collapsed ? <ChevronsRight size={16} aria-hidden /> : <><ChevronsLeft size={16} aria-hidden /><span>Collapse</span></>}
-      </button>
+    <nav aria-label="Primary" className={cn("relative flex shrink-0 flex-col border-r border-border bg-surface transition-[width] max-md:w-16", collapsed ? "w-16" : "w-64")}>
+      <Link href="/" className={cn("flex h-16 shrink-0 items-center gap-3 px-4", collapsed && "justify-center px-0")}>
+        <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-value text-sm font-bold text-white shadow-sm">MS</span>
+        <span className={cn("leading-tight", collapsed && "sr-only", "max-md:sr-only")}>
+          <span className="block text-sm font-semibold text-fg">Market Structure</span>
+          <span className="block text-xs text-subtle">Analysis terminal</span>
+        </span>
+      </Link>
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 pt-4">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className={cn("mb-2 px-3 text-xs font-medium text-subtle", collapsed && "sr-only", "max-md:sr-only")}>{group.label}</p>
+            <ul className="flex flex-col gap-1">
+              {group.items.map((item) => <li key={item.href}><NavLink item={item} collapsed={collapsed} pathname={pathname} /></li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-1 border-t border-border p-3">
+        <NavLink item={SETTINGS} collapsed={collapsed} pathname={pathname} />
+        <button
+          type="button"
+          onClick={() => set({ navCollapsed: !collapsed })}
+          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+          aria-expanded={!collapsed}
+          className={cn("flex h-10 items-center gap-3 rounded-lg px-3 text-sm text-subtle hover:bg-surface-2 hover:text-fg max-md:hidden", collapsed && "justify-center px-0")}
+        >
+          {collapsed ? <ChevronsRight size={18} aria-hidden /> : <><ChevronsLeft size={18} aria-hidden /><span>Collapse</span></>}
+        </button>
+      </div>
     </nav>
   );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-dvh flex-col">
-      <TopBar />
-      <div className="flex min-h-0 flex-1">
-        <Sidebar />
-        <main id="main" className="min-w-0 flex-1 overflow-auto p-3" tabIndex={-1}>{children}</main>
+    <div className="flex h-dvh overflow-hidden">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar />
+        {/* relative: contains absolutely positioned descendants (sr-only text, tooltips), which would otherwise extend the window scroll. */}
+        <main id="main" className="relative min-h-0 min-w-0 flex-1 overflow-auto" tabIndex={-1}>
+          <div className="mx-auto w-full max-w-[1680px] px-6 py-6 max-sm:px-4">{children}</div>
+        </main>
+        <StatusBar />
       </div>
-      <StatusBar />
       <CapabilitySync />
       <HistoryRecorder />
     </div>

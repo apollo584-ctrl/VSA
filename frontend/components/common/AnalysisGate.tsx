@@ -49,7 +49,7 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
   const prof = analysis.profiles.prior;
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2"><Badge tone="neutral">{label}</Badge><span className="text-[11px] text-subtle">{v.referenceProfile}</span></div>
+      <div className="flex items-center gap-2"><Badge tone="neutral">{label}</Badge><span className="text-xs text-subtle">{v.referenceProfile}</span></div>
       <dl className="text-xs">
         <KeyValue k="Last close" v={fmtPrice(v.price)} />
         {prof && (<>
@@ -59,7 +59,7 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
         </>)}
         <KeyValue k="vs prior POC" v={fmtPct(v.distanceFromPocPct)} />
       </dl>
-      <p className="text-[11px] text-subtle">{v.relativeTo === "unknown" ? "The engine does not classify price location relative to value. The prior value area and last close are shown as supplied." : "Location describes where price is relative to value; it is not a directional signal."}</p>
+      <p className="text-xs text-subtle">{v.relativeTo === "unknown" ? "The engine does not classify price location relative to value. The prior value area and last close are shown as supplied." : "Location describes where price is relative to value; it is not a directional signal."}</p>
     </div>
   );
 }
@@ -86,7 +86,7 @@ export function KeyLevelsTable({ levels }: { levels: Level[] }) {
           <tr key={l.id} className="border-t border-border first:border-0" title={l.note}>
             <td className="py-0.5 text-muted">{l.label}</td>
             <td className="num text-right">{fmtPrice(l.price)}</td>
-            <td className="pl-2 text-[10px] uppercase tracking-wide text-subtle">{humanize(l.kind)}</td>
+            <td className="pl-2 text-xs text-subtle">{humanize(l.kind)}</td>
           </tr>
         ))}
       </tbody>

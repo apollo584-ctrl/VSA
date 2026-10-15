@@ -72,7 +72,7 @@ export function Schematic({ concept }: { concept: Pick<KnowledgeConcept, "schema
       </svg>
     );
   }
-  return <div className="grid h-32 w-40 place-items-center rounded border border-dashed border-border text-[11px] text-subtle">No schematic</div>;
+  return <div className="grid h-32 w-40 place-items-center rounded border border-dashed border-border text-xs text-subtle">No schematic</div>;
 }
 
 // ---------- browser ----------
@@ -89,19 +89,19 @@ export function KnowledgeBrowser() {
   const present = [...new Set(data.map((c) => c.category))];
   const categories = [...Object.keys(CATEGORY_LABELS).filter((c) => present.includes(c)), ...present.filter((c) => !(c in CATEGORY_LABELS))];
   return (
-    <div className="grid gap-3 lg:grid-cols-[14rem_1fr]">
-      <aside className="space-y-3">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_1fr]">
+      <aside className="space-y-4">
         <div className="relative">
-          <Search size={13} aria-hidden className="absolute left-2 top-2 text-subtle" />
-          <input aria-label="Search concepts" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search concepts…" className="h-8 w-full rounded-md border border-border bg-surface-2 pl-7 pr-2 text-xs" />
+          <Search size={16} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
+          <input aria-label="Search concepts" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search concepts…" className="h-10 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm focus:border-accent/60 focus:outline-none" />
         </div>
         <nav aria-label="Categories">
-          <ul className="space-y-0.5">
+          <ul className="space-y-1">
             {(["all", ...categories] as const).map((c) => (
               <li key={c}>
-                <button type="button" onClick={() => setCat(c)} aria-pressed={cat === c} className={cn("flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs", cat === c ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2 hover:text-fg")}>
+                <button type="button" onClick={() => setCat(c)} aria-pressed={cat === c} className={cn("flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm", cat === c ? "bg-accent-soft text-accent" : "text-muted hover:bg-surface-2 hover:text-fg")}>
                   {c === "all" ? "All concepts" : categoryLabel(c)}
-                  <span className="num text-[10px] text-subtle">{c === "all" ? data!.length : data!.filter((x) => x.category === c).length}</span>
+                  <span className="num text-xs text-subtle">{c === "all" ? data!.length : data!.filter((x) => x.category === c).length}</span>
                 </button>
               </li>
             ))}
@@ -110,13 +110,13 @@ export function KnowledgeBrowser() {
       </aside>
       <div>
         {filtered.length === 0 ? <StateMessage icon={Search} title="No matching concepts">Try a different search or category.</StateMessage> : (
-          <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((c) => (
               <li key={c.slug}>
-                <Link href={`/knowledge/${c.slug}`} className="block h-full rounded-lg border border-border bg-surface p-3 transition-colors hover:border-border-strong hover:bg-surface-2">
-                  <span className="flex flex-wrap gap-1"><Badge>{categoryLabel(c.category)}</Badge>{c.detectorStatus === "knowledge_only" && <Badge tone="warn" title="Explained in the catalog but no detector exists; it never appears as an observation.">knowledge only</Badge>}</span>
-                  <h3 className="mt-1.5 text-sm font-semibold">{c.name}</h3>
-                  <p className="mt-0.5 text-xs text-muted">{c.summary}</p>
+                <Link href={`/knowledge/${c.slug}`} className="block h-full rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow)] transition-colors hover:border-border-strong hover:bg-surface-2">
+                  <span className="flex flex-wrap gap-1.5"><Badge>{categoryLabel(c.category)}</Badge>{c.detectorStatus === "knowledge_only" && <Badge tone="warn" title="Explained in the catalog but no detector exists; it never appears as an observation.">knowledge only</Badge>}</span>
+                  <h3 className="mt-3 text-base font-semibold">{c.name}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{c.summary}</p>
                 </Link>
               </li>
             ))}
@@ -186,8 +186,8 @@ export function ConceptDetail({ slug }: { slug: string }) {
       </div>
 
       <section aria-labelledby="rel">
-        <h2 id="rel" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Related concepts</h2>
-        <p className="mb-2 text-[11px] text-subtle">Contextual relationships, not guaranteed causal chains.</p>
+        <h2 id="rel" className="mb-1 text-xs font-semibold text-muted">Related concepts</h2>
+        <p className="mb-2 text-xs text-subtle">Contextual relationships, not guaranteed causal chains.</p>
         <ul className="grid gap-1.5 sm:grid-cols-2">
           {concept.related.map((r) => (
             <li key={`${r.relation}-${r.slug}`}>
@@ -195,17 +195,17 @@ export function ConceptDetail({ slug }: { slug: string }) {
                 <Badge tone={r.relation === "contradicts" ? "warn" : "neutral"}>{RELATION_LABELS[r.relation]}</Badge>
                 <span className="text-xs font-medium">{by.get(r.slug)?.name ?? humanize(r.slug)}</span>
               </Link>
-              {r.note && <p className="mt-0.5 px-1 text-[11px] text-muted">{r.note}</p>}
+              {r.note && <p className="mt-0.5 px-1 text-xs text-muted">{r.note}</p>}
             </li>
           ))}
         </ul>
-        {incoming.length > 0 && <p className="mt-2 text-[11px] text-subtle">Referenced by: {incoming.map((c, i) => <span key={c.slug}>{i > 0 && ", "}<Link className="text-accent hover:underline" href={`/knowledge/${c.slug}`}>{c.name}</Link></span>)}</p>}
+        {incoming.length > 0 && <p className="mt-2 text-xs text-subtle">Referenced by: {incoming.map((c, i) => <span key={c.slug}>{i > 0 && ", "}<Link className="text-accent hover:underline" href={`/knowledge/${c.slug}`}>{c.name}</Link></span>)}</p>}
       </section>
 
       {chain.length > 1 && (
         <section aria-labelledby="chain" className="rounded-lg border border-border bg-surface p-3">
-          <h2 id="chain" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Relationship path</h2>
-          <p className="mb-2 text-[11px] text-subtle">One possible contextual path following “may lead to” and “contradicts” links. Any step may fail to occur.</p>
+          <h2 id="chain" className="mb-1 text-xs font-semibold text-muted">Relationship path</h2>
+          <p className="mb-2 text-xs text-subtle">One possible contextual path following “may lead to” and “contradicts” links. Any step may fail to occur.</p>
           <ol className="flex flex-wrap items-center gap-1.5">
             {chain.map((s, i) => (
               <li key={s} className="flex items-center gap-1.5">
@@ -217,7 +217,7 @@ export function ConceptDetail({ slug }: { slug: string }) {
         </section>
       )}
 
-      <section aria-labelledby="src"><h2 id="src" className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Sources and provenance</h2>
+      <section aria-labelledby="src"><h2 id="src" className="mb-1 text-xs font-semibold text-muted">Sources and provenance</h2>
         <ul className="list-disc pl-4 text-xs text-muted">{concept.sources.length ? concept.sources.map((s, i) => <li key={i}>{s.title}{s.note && ` — ${s.note}`}</li>) : <li>No sources recorded.</li>}</ul>
       </section>
     </article>

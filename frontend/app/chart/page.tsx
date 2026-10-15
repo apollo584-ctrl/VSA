@@ -6,6 +6,7 @@ import { ChartSection } from "@/components/charts/ChartSection";
 import { ProfileExplanation, ProfileKindTabs, ProfileStats, ValueMigrationTable } from "@/components/profiles/ProfileWorkspace";
 import { ProfileVisual } from "@/components/profiles/ProfileVisual";
 import { Panel, SectionLabel } from "@/components/ui/primitives";
+import { AnalysisPageHeader } from "@/components/layout/InstrumentHeader";
 import { useMarket } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 
@@ -16,15 +17,17 @@ export default function ChartProfilePage() {
   const profile = a?.status === "ok" ? (a.profiles[state.profileKind] ?? null) : null;
   return (
     <AnalysisGate market={market}>
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_26rem]">
-        <div className="flex min-h-[38rem] min-w-0 flex-col"><ChartSection market={market} /></div>
-        <aside className="flex min-w-0 flex-col gap-3" aria-label="Market Profile workspace">
+      <div className="flex flex-col gap-6">
+      <AnalysisPageHeader title="Chart & Profile" description="Candles with the session's estimated volume or TPO profile, value area and structural levels." market={market} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
+        <div className="flex min-h-[42rem] min-w-0 flex-col"><ChartSection market={market} /></div>
+        <aside className="flex min-w-0 flex-col gap-6" aria-label="Market Profile workspace">
           <Panel title="Market Profile" actions={<>{profile?.estimated && <EstimatedBadge profile={profile} />}</>}>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <ProfileKindTabs available={a?.status === "ok" ? Object.keys(a.profiles) : undefined} />
               <AnalysisBody analysis={a} error={market.error}>{() => profile ? (
                 <>
-                  <p className="text-[11px] text-subtle">{profile.label}{profile.estimated && profile.estimationMethod ? ` — ${profile.estimationMethod}` : ""}</p>
+                  <p className="text-xs text-subtle">{profile.label}{profile.estimated && profile.estimationMethod ? ` — ${profile.estimationMethod}` : ""}</p>
                   <ProfileVisual profile={profile} weight={state.profileKind === "tpo" ? "tpo" : "volume"} currentPrice={a?.valueLocation?.price} />
                   <ProfileStats profile={profile} />
                 </>
@@ -39,6 +42,7 @@ export default function ChartProfilePage() {
             </Panel>
           )}
         </aside>
+      </div>
       </div>
     </AnalysisGate>
   );

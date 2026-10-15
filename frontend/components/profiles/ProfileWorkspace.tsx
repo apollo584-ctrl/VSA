@@ -100,7 +100,7 @@ export function MiniProfile({ analysis, kind }: { analysis: Analysis; kind: Prof
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone="neutral">{shapeName(profile.shape.type)}</Badge>
         {profile.estimated && <EstimatedBadge profile={profile} />}
-        <span className="text-[11px] text-subtle">{profile.label} · {fmtDate(profile.endTime)}</span>
+        <span className="text-xs text-subtle">{profile.label} · {fmtDate(profile.endTime)}</span>
       </div>
       <ProfileVisual profile={profile} weight={kind === "tpo" ? "tpo" : "volume"} currentPrice={analysis.valueLocation?.price} compact />
     </div>

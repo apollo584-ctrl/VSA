@@ -5,7 +5,7 @@ import { FileUp } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
-import { Badge, Button, KeyValue, Panel, Segmented } from "@/components/ui/primitives";
+import { Badge, Button, KeyValue, PageHeader, Panel, Segmented } from "@/components/ui/primitives";
 import { useUpload } from "@/hooks/data";
 import { useWorkspace, type Theme } from "@/hooks/workspace";
 import { API_BASE, API_MODE } from "@/lib/api/client";
@@ -33,14 +33,14 @@ const DEFAULT_META: Meta = {
 
 function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <label className="flex flex-col gap-1 text-xs">
-      <span className="text-muted">{label}</span>
+    <label className="flex flex-col gap-1.5 text-sm">
+      <span className="font-medium text-muted">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-subtle">{hint}</span>}
+      {hint && <span className="text-xs text-subtle">{hint}</span>}
     </label>
   );
 }
-const inputCls = "h-8 rounded-md border border-border bg-surface-2 px-2 text-xs";
+const inputCls = "h-10 rounded-lg border border-border bg-surface-2 px-3 text-sm text-fg focus:border-accent/60 focus:outline-none";
 
 function UploadPanel() {
   const upload = useUpload();
@@ -76,12 +76,12 @@ function UploadPanel() {
   const err = upload.error ? toApiError(upload.error) : null;
   const result = upload.data;
   return (
-    <Panel title="Upload dataset">
-      <p className="mb-3 text-xs text-muted">
-        UTF-8 CSV with the exact header <code className="num">timestamp,open,high,low,close,volume</code>; each row is one completed bar. Nothing is resampled or filled.
+    <Panel title="Upload a CSV" description="For data you export yourself. To fetch recent bars for a ticker, type it in the search bar instead.">
+      <p className="mb-5 text-sm text-muted">
+        UTF-8 CSV with the exact header <code className="mono break-all text-fg">timestamp,open,high,low,close,volume</code>; each row is one completed bar. Nothing is resampled or filled.
         Source and adjustment details are <b>uploader-declared</b> and are not independently verified.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Instrument"><input aria-label="Instrument" className={inputCls} value={meta.instrument} onChange={(e) => set("instrument", e.target.value)} placeholder="DEMO" /></Field>
         <Field label="Bar interval (minutes)">
           <select aria-label="Bar interval" className={inputCls} value={meta.timeframe_minutes} onChange={(e) => set("timeframe_minutes", Number(e.target.value))}>{[1, 5, 15, 30, 60].map((n) => <option key={n} value={n}>{n}</option>)}</select>
@@ -101,12 +101,12 @@ function UploadPanel() {
         </Field>
         <Field label="Source name"><input aria-label="Source name" className={inputCls} value={meta.source_name} onChange={(e) => set("source_name", e.target.value)} placeholder="e.g. vendor export" /></Field>
       </div>
-      <label className="mt-3 flex items-center gap-2 text-xs"><input type="checkbox" checked={meta.is_demo} onChange={(e) => set("is_demo", e.target.checked)} />This is demo / synthetic data</label>
+      <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={meta.is_demo} onChange={(e) => set("is_demo", e.target.checked)} />This is demo / synthetic data</label>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-5 flex flex-wrap items-center gap-3">
         <input ref={input} type="file" accept=".csv,.txt,text/csv" className="sr-only" aria-label="Choose dataset file" onChange={(e) => choose(e.target.files?.[0])} />
-        <Button onClick={() => input.current?.click()} disabled={upload.isPending}><FileUp size={13} aria-hidden />Choose file</Button>
-        <span className="text-xs text-muted">{file ? `${file.name} (${(file.size / 1024).toFixed(1)} KB)` : "No file selected"}</span>
+        <Button onClick={() => input.current?.click()} disabled={upload.isPending}><FileUp size={16} aria-hidden />Choose file</Button>
+        <span className="text-sm text-muted">{file ? `${file.name} (${(file.size / 1024).toFixed(1)} KB)` : "No file selected"}</span>
         <Button variant="primary" onClick={submit} disabled={!file || upload.isPending}>{upload.isPending ? "Uploading…" : "Upload"}</Button>
       </div>
 
@@ -134,23 +134,26 @@ function UploadPanel() {
 export default function SettingsPage() {
   const { state, set } = useWorkspace();
   return (
-    <div className="mx-auto grid max-w-5xl gap-3 md:grid-cols-2">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <PageHeader title="Settings" description="Appearance, the analysis backend connection and dataset uploads." />
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <Panel title="Appearance & reading">
-        <div className="space-y-3 text-xs">
-          <div className="flex items-center justify-between gap-3"><span>Theme</span><Segmented<Theme> label="Theme" value={state.theme} onChange={(theme) => set({ theme })} options={[{ value: "dark", label: "Dark" }, { value: "light", label: "Light" }]} /></div>
-          <div className="flex items-center justify-between gap-3"><span>Default explanation depth</span><Segmented<DetailLevel> label="Explanation depth" value={state.detailLevel} onChange={(detailLevel) => set({ detailLevel })} options={[{ value: "quick", label: "Quick" }, { value: "standard", label: "Standard" }, { value: "deep", label: "Deep" }]} /></div>
+        <div className="space-y-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3"><span>Theme</span><Segmented<Theme> label="Theme" value={state.theme} onChange={(theme) => set({ theme })} options={[{ value: "dark", label: "Dark" }, { value: "light", label: "Light" }]} /></div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><span>Default explanation depth</span><Segmented<DetailLevel> label="Explanation depth" value={state.detailLevel} onChange={(detailLevel) => set({ detailLevel })} options={[{ value: "quick", label: "Quick" }, { value: "standard", label: "Standard" }, { value: "deep", label: "Deep" }]} /></div>
           <p className="text-muted">Depth changes how much is shown, not what the engine found.</p>
         </div>
       </Panel>
       <Panel title="Data connection">
-        <dl className="text-xs">
+        <dl className="text-sm">
           <KeyValue k="API mode" v={<Badge tone={API_MODE === "mock" ? "warn" : "info"}>{API_MODE}</Badge>} />
           <KeyValue k="Backend URL" v={API_MODE === "mock" ? "— (fixtures)" : API_BASE || "not configured"} />
           <KeyValue k="Real-time feed" v="Not connected" />
         </dl>
-        <p className="mt-2 text-xs text-muted">Set <code className="num">NEXT_PUBLIC_API_MODE</code> and <code className="num">NEXT_PUBLIC_API_BASE_URL</code> (including <code className="num">/api/v1</code>) in <code className="num">.env.local</code>. Saved analyses are listed under <Link href="/history" className="text-accent hover:underline">Analysis History</Link>.</p>
+        <p className="mt-3 text-xs leading-relaxed text-muted">Set <code className="mono break-all text-fg">NEXT_PUBLIC_API_MODE</code> and <code className="mono break-all text-fg">NEXT_PUBLIC_API_BASE_URL</code> (including <code className="mono break-all text-fg">/api/v1</code>) in <code className="mono break-all text-fg">.env.local</code>. Saved analyses are listed under <Link href="/history" className="text-accent hover:underline">Analysis History</Link>.</p>
       </Panel>
       <div className="md:col-span-2"><UploadPanel /></div>
+    </div>
     </div>
   );
 }

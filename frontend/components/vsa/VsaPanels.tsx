@@ -22,10 +22,10 @@ export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { eve
             aria-pressed={e.id === selectedId}
             className={cn("flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors", e.id === selectedId ? "border-accent bg-accent-soft" : "border-border bg-surface-2 hover:bg-surface-3")}
           >
-            <span aria-hidden className="num grid h-5 w-7 shrink-0 place-items-center rounded border border-border-strong text-[10px] text-vsa">{patternCode(e.type)}</span>
+            <span aria-hidden className="num grid h-5 w-7 shrink-0 place-items-center rounded border border-border-strong text-xs text-vsa">{patternCode(e.type)}</span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-xs font-medium">{patternLabel(e.type)}</span>
-              <span className="block text-[11px] text-subtle">{fmtDateTime(e.barTime)} · vol {fmtMultiple(e.measurements.relativeVolume)}</span>
+              <span className="block text-xs text-subtle">{fmtDateTime(e.barTime)} · vol {fmtMultiple(e.measurements.relativeVolume)}</span>
             </span>
             <StatusBadge status={e.status} />
           </button>
@@ -82,7 +82,7 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
       {level !== "quick" && (
         <section>
           <SectionLabel>{catalogConditions ? "Rule conditions (from the knowledge catalog)" : "Why the engine identified it"}</SectionLabel>
-          {catalogConditions && <p className="mb-1 text-[11px] text-subtle">This snapshot has no per-observation rule results. These are the preserved catalog's generic conditions for the concept.</p>}
+          {catalogConditions && <p className="mb-1 text-xs text-subtle">This snapshot has no per-observation rule results. These are the preserved catalog's generic conditions for the concept.</p>}
           <ul className="space-y-1">
             {event.conditions.map((c, i) => (
               <li key={i} className="flex items-start gap-1.5">
@@ -97,7 +97,7 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
       <section>
         <div className="mb-1 flex items-center gap-2"><SectionLabel>What it may imply</SectionLabel><HypothesisBadge /></div>
         {event.implications.length ? list(level === "quick" ? event.implications.slice(0, 1) : event.implications) : <p className="text-subtle">No interpretations supplied.</p>}
-        {event.textSource === "catalog" && level !== "quick" && <p className="mt-1 text-[11px] text-subtle">Generic for this concept (knowledge catalog); not specific to this bar.</p>}
+        {event.textSource === "catalog" && level !== "quick" && <p className="mt-1 text-xs text-subtle">Generic for this concept (knowledge catalog); not specific to this bar.</p>}
       </section>
 
       {level !== "quick" && (
@@ -119,7 +119,7 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
                 <li key={i}><StatusBadge status={h.status} /> <span className="text-subtle">{fmtDateTime(h.at, true)}</span>{h.reason && <span className="text-muted"> — {h.reason}</span>}</li>
               ))}
             </ol>
-            <p className="mt-1 text-[11px] text-subtle">Only status changes known at the analysis time are shown.</p>
+            <p className="mt-1 text-xs text-subtle">Only status changes known at the analysis time are shown.</p>
           </section>
           {event.measurements.raw && (
             <section>
