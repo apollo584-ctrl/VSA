@@ -31,6 +31,19 @@ describe("VsaDetailPanel", () => {
     rerender(<VsaDetailPanel event={ev} level="deep" />);
     expect(screen.getByText(/Detection status history/i)).toBeInTheDocument();
   });
+
+  it("shows measured rule conditions while keeping catalog hypotheses generic", async () => {
+    const event = await upthrust();
+    event.conditionSource = "instance";
+    event.textSource = "catalog";
+    event.conditions = [{ label: "Elevated relative volume", met: true, detail: "relative_volume: 2.5 >= 1.8 (parameters.high_volume)" }];
+    render(<VsaDetailPanel event={event} level="standard" />);
+    expect(screen.getByText("Why the engine identified it")).toBeInTheDocument();
+    expect(screen.getByText(/relative_volume: 2.5/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Condition met")).toBeInTheDocument();
+    expect(screen.getByText(/Generic for this concept/)).toBeInTheDocument();
+    expect(screen.queryByText(/no per-observation rule results/)).not.toBeInTheDocument();
+  });
 });
 
 describe("VsaEventList", () => {

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
@@ -128,14 +128,18 @@ def create_app(db_path: Path | None = None) -> FastAPI:
         found = concept(concept_id)
         return [c for c in load().concepts if c.id in found.related_patterns]
 
-    @app.post("/api/v1/analyze", response_model=Analysis, status_code=201)
-    def analyze(request: AnalyzeRequest):
+    @app.post("/api/v1/analyze", response_model=Analysis, status_code=201,
+              responses={200: {"model": Analysis, "description": "Non-persisted preview (persist=false)"}})
+    def analyze(request: AnalyzeRequest, response: Response):
         dataset, bars = dataset_or_404(request.dataset_id)
         try:
             result = interpret(dataset, bars, request)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
-        store.save_analysis(result)
+        if request.persist:
+            store.save_analysis(result)
+        else:
+            response.status_code = 200
         return result
 
     @app.get("/api/v1/analyses/{analysis_id}", response_model=Analysis)

@@ -115,11 +115,12 @@ function priorTrend(v: unknown): "up" | "down" | "sideways" | "unknown" {
 }
 
 function mapStatusHistory(e: RawEvidence, interval: number): VsaEvent["statusHistory"] {
+  if (e.status_history?.length) return e.status_history.map((h) => ({ ...h, at: epoch(h.at) - interval }));
   const first = epoch(e.first_observable_at) - interval;
   const hist: VsaEvent["statusHistory"] = [{ status: e.status === "observed" ? "observed" : "provisional", at: first, reason: "First observable once the bar completed." }];
   if (e.confirmed_at) hist.push({ status: "confirmed", at: epoch(e.confirmed_at) - interval, reason: "Subsequent same-session close beyond the candidate's extreme." });
   else if (e.status === "invalidated" || e.status === "expired") {
-    const r = e.measurements["resolved_at"];
+    const r = (e.status === "invalidated" ? e.invalidated_at : e.expired_at) ?? e.resolved_at ?? e.measurements["resolved_at"];
     if (typeof r === "string") hist.push({ status: e.status, at: epoch(r) - interval, reason: e.status === "invalidated" ? "A close through the opposite extreme." : "Confirmation horizon elapsed without follow-through." });
   }
   return hist;
@@ -149,8 +150,11 @@ export function mapVsaEvent(e: RawEvidence, interval: number, concepts: Map<stri
       priceLocation: null,
       raw,
     },
-    // Catalog text is generic for the concept; the engine reports no per-observation rule results.
-    conditions: (c?.observable_conditions ?? []).map((label) => ({ label, met: null, detail: "" })),
+    conditions: e.conditions_met?.length ? e.conditions_met.map((condition) => ({
+      ...condition,
+      detail: `${condition.metric}: ${JSON.stringify(condition.actual)} ${condition.operator} ${JSON.stringify(condition.expected)}${condition.reference ? ` (${condition.reference})` : ""}`,
+    })) : (c?.observable_conditions ?? []).map((label) => ({ label, met: null, detail: "" })),
+    conditionSource: e.conditions_met?.length ? "instance" : c ? "catalog" : "unavailable",
     implications: c?.possible_interpretations ?? [],
     alternatives: c?.alternative_explanations ?? [],
     confirmation: c?.confirmation_conditions ?? [],
@@ -356,7 +360,7 @@ export function mapLevels(a: RawAnalysis): Level[] {
 
 // ------------------------------------------------------------------ top level
 
-export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; composite?: RawProfile | null }): Analysis {
+export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[] }): Analysis {
   const storedKnowledge = a.knowledge_snapshot;
   const hasStoredKnowledge = storedKnowledge?.version === a.knowledge_version;
   const concepts = new Map(hasStoredKnowledge ? storedKnowledge!.concepts.map((c) => [c.id, c]) : []);
@@ -372,7 +376,7 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; composite?: R
     put("volume", mapProfile(cur, "volume", ctx.bars, upTo, `Volume — session ${cur.session}`, concepts));
   }
   if (prior) put("prior", mapProfile(prior, "prior", ctx.bars, upTo, `Prior session ${prior.session}`, concepts));
-  if (ctx.composite) put("composite", mapProfile(ctx.composite, "composite", ctx.bars, upTo, "Composite — all visible sessions", concepts));
+  if (a.composite_profile) put("composite", mapProfile(a.composite_profile, "composite", ctx.bars, upTo, "Composite — all visible sessions", concepts));
 
   // Per-session value values (facts from each session's profile) – not a migration classification.
   const migration = sessions.slice(-8).filter((p) => p.volume.poc !== null && p.volume.vah !== null && p.volume.val !== null)
@@ -395,13 +399,15 @@ export function mapAnalysis(a: RawAnalysis, ctx: { bars: RawBar[]; composite?: R
   if (!hasStoredKnowledge) interpretation.uncertainty.push({ kind: "other", text: "This saved analysis has no matching preserved knowledge catalog. Generic concept explanations are unavailable; current catalog text has not been substituted." });
   return {
     symbol: a.instrument,
+    datasetId: a.dataset_id,
+    persisted: a.persisted,
     timeframe: a.timeframe,
     session: a.provenance.session_mode === "regular" ? "RTH" : "ETH",
     asOf: lastBarStart,
     generatedAt: a.created_at,
     source: mapSource(a.provenance),
     analysisTimeframe: a.timeframe,
-    snapshot: { id: a.id, engineVersion: a.engine_version, knowledgeVersion: a.knowledge_version, createdAt: a.created_at, datasetId: a.dataset_id },
+    snapshot: a.persisted && a.id !== null ? { id: a.id, engineVersion: a.engine_version, knowledgeVersion: a.knowledge_version, createdAt: a.created_at, datasetId: a.dataset_id } : undefined,
     status: "ok",
     statusMessage: null,
     quality: mapQuality(a.data_quality, ctx.bars.filter((b) => epoch(b.available_at) <= upTo), a.profile_analysis.some((p) => p.volume.estimated || p.tpo.estimated)),

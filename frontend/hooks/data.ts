@@ -65,7 +65,7 @@ export function useMarket() {
     // Withhold the entire previous analysis, including during the debounce interval.
     if (!a || !cursorSettled || analysisQuery.isError || !barsQuery.data) return null;
     if (a.timeframe !== timeframe || a.session !== session) return null;
-    if ((a.snapshot?.datasetId ?? a.symbol) !== symbol) return null;
+    if ((a.datasetId ?? a.snapshot?.datasetId ?? a.symbol) !== symbol) return null;
     const cut = replayTime ?? windowEnd ?? null;
     if (cut !== null && a.asOf > cut) return null;
     return {

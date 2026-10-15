@@ -58,6 +58,20 @@ export const rawEvidenceSchema = z.object({
   timestamp: iso,
   first_observable_at: iso,
   confirmed_at: iso.nullable().optional(),
+  invalidated_at: iso.nullable().optional(),
+  expired_at: iso.nullable().optional(),
+  resolved_at: iso.nullable().optional(),
+  status_history: z.array(z.object({
+    status: z.enum(["observed", "provisional", "confirmed", "invalidated", "expired"]),
+    at: iso, reason: z.string(),
+  })).optional(),
+  conditions_met: z.array(z.object({
+    id: z.string(), label: z.string(), metric: z.string(),
+    actual: z.union([z.number(), z.string(), z.boolean(), z.null()]),
+    operator: z.enum([">", ">=", "<", "<=", "==", "in"]),
+    expected: z.union([z.number(), z.string(), z.boolean(), z.array(z.string()), z.null()]),
+    reference: z.string().nullable().optional(), met: z.boolean().nullable(),
+  })).optional(),
   status: z.enum(["observed", "provisional", "confirmed", "invalidated", "expired"]),
   direction: z.enum(["strength", "weakness", "neutral"]),
   description: z.string(),
@@ -115,7 +129,8 @@ const rawScenarioSchema = z.object({
 });
 
 export const rawAnalysisSchema = z.object({
-  id: z.string(),
+  id: z.string().nullable(),
+  persisted: z.boolean().default(true),
   engine_version: z.string(),
   knowledge_version: z.string(),
   // Legacy persisted snapshots predate this optional field.
@@ -130,6 +145,8 @@ export const rawAnalysisSchema = z.object({
   data_quality: rawQualitySchema,
   market_context: z.record(z.string(), z.union([z.string(), z.number(), z.null()])),
   profile_analysis: z.array(rawProfileSchema),
+  composite_profile: rawProfileSchema.nullable().optional(),
+  composite_unavailable_reason: z.string().nullable().optional(),
   vsa_observations: z.array(rawEvidenceSchema),
   price_action_observations: z.array(rawEvidenceSchema),
   auction_state: z.object({ state: z.string(), evidence_ids: z.array(z.string()), transitions: z.array(rawEvidenceSchema) }),
@@ -141,6 +158,8 @@ export const rawAnalysisSchema = z.object({
   invalidation_conditions: z.array(z.string()),
   uncertainties: z.array(z.string()),
   plain_english_summary: z.string(),
+}).superRefine((a, ctx) => {
+  if (a.persisted !== (a.id !== null)) ctx.addIssue({ code: "custom", path: ["id"], message: "Saved analyses require an id; previews require a null id" });
 });
 
 export const rawConceptSchema = z.object({

@@ -19,6 +19,8 @@ If the host's `venv` cannot bootstrap pip, use `python -m venv --without-pip bac
 
 Open `http://127.0.0.1:8000/docs`. Upload `backend/fixtures/demo.csv` with the JSON string from `upload_metadata.json`, then POST `/api/v1/analyze` with the returned dataset ID. `scripts.demo` regenerates CSV, representative frontend JSON and OpenAPI fixtures using a temporary database. It does not populate the development database. Its fixture IDs are fixed mocks.
 
+Analysis saves by default. Send `persist=false` for a write-free replay/preview (HTTP 200, null ID); saved analyses return HTTP 201 and preserve their composite profile. `preview_request.json` and `preview_response.json` illustrate the preview contract. Existing snapshots are not backfilled.
+
 `MSI_DB_PATH` overrides the default `backend/data/market.sqlite3`; `MSI_CORS_ORIGINS` overrides allowed frontend origins. Uvicorn logs requests as JSON via the `market_intelligence` logger; configure that logger at INFO when embedding the app. CSV data is retained in SQLite together with parsed bars, so the database contains uploaded data. Dataset writes and analysis writes are atomic and append-only.
 
 ## Checks and reproducibility

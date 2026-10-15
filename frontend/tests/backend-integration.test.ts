@@ -39,6 +39,8 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(a.status).toBe("ok");
     expect(a.snapshot?.id).toBeTruthy();
     expect(a.vsaEvents.length).toBeGreaterThan(0);
+    expect(a.vsaEvents.every((e) => e.conditionSource === "instance" && e.conditions.length > 0 && e.conditions.every((c) => c.met === true))).toBe(true);
+    expect(a.vsaEvents.every((e) => e.statusHistory.at(-1)!.status === e.status)).toBe(true);
     expect(Object.values(a.profiles).every((p) => p.estimated)).toBe(true);
 
     // 4. as-of causality: asking at an earlier bar must not contain later observations
@@ -48,19 +50,24 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(earlier.asOf).toBe(cursor);
     for (const e of earlier.vsaEvents) expect(e.detectedAt).toBeLessThanOrEqual(cursor);
     for (const t of earlier.auctionTransitions) expect(t.detectedAt).toBeLessThanOrEqual(cursor);
-    expect(earlier.snapshot!.id).not.toBe(a.snapshot!.id);
+    expect(earlier.persisted).toBe(false);
+    expect(earlier.snapshot).toBeUndefined();
+    expect(earlier.datasetId).toBe(id);
+    const savedEarlier = await backendApi.getAnalysis({ symbol: id, asOf: cursor, persist: true });
+    expect(savedEarlier.persisted).toBe(true);
+    expect(await backendApi.getSnapshot(savedEarlier.snapshot!.id)).toEqual(savedEarlier);
+    const { snapshot: _previewId, persisted: _previewMode, generatedAt: _previewTime, ...previewContent } = earlier;
+    const { snapshot: _savedId, persisted: _savedMode, generatedAt: _savedTime, ...savedContent } = savedEarlier;
+    expect(previewContent).toEqual(savedContent);
 
     // 5. saved snapshot reopens identically (immutable; not recomputed)
     const reopened = await backendApi.getSnapshot(a.snapshot!.id);
-    // The composite profile comes from GET /profiles (recomputed), not from the stored snapshot, so it is excluded.
     expect(a.profiles["composite"]).toBeDefined();
     expect(a.profiles["composite"]!.startTime).toBe(bars.bars[0]!.t);
     expect(a.profiles["composite"]!.endTime).toBe(bars.bars.at(-1)!.t);
     expect(a.profiles["composite"]!.sessionHigh).toBe(Math.max(...bars.bars.map((b) => b.h)));
     expect(a.profiles["composite"]!.sessionLow).toBe(Math.min(...bars.bars.map((b) => b.l)));
-    expect(reopened.profiles["composite"]).toBeUndefined();
-    const { composite: _omit, ...liveProfiles } = a.profiles;
-    expect({ ...a, profiles: liveProfiles }).toEqual(reopened);
+    expect(reopened).toEqual(a); // includes the preserved composite
     expect(reopened.vsaEvents.every((e) => e.textSource === "catalog")).toBe(true);
 
     // 6. rejection path: as_of before the first bar completes → withheld analysis, not a crash
@@ -94,7 +101,6 @@ describe.skipIf(!live)("live backend integration", () => {
     expect(analysis.profiles.volume!.startTime).toBe(Date.parse("2025-03-10T04:00:00-04:00") / 1000);
     expect(analysis.profiles.composite!.endTime).toBe(Date.parse("2025-03-10T05:00:00-04:00") / 1000);
     const reopened = await backendApi.getSnapshot(analysis.snapshot!.id);
-    const { composite: _composite, ...profiles } = analysis.profiles;
-    expect(reopened).toEqual({ ...analysis, profiles });
+    expect(reopened).toEqual(analysis);
   });
 });

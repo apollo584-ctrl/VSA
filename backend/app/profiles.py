@@ -7,6 +7,10 @@ import pandas as pd
 from app.models import Bar, Distribution, Parameters, Profile, Shape, Source
 
 
+class ProfileLimitError(ValueError):
+    """A valid price range exceeds the configured profile resource bound."""
+
+
 def shape(weights: np.ndarray, bars: list[Bar], p: Parameters) -> Shape:
     total = float(weights.sum())
     features = {"total": total, "weighted_skewness": 0.0, "mode_count": 0.0,
@@ -107,7 +111,7 @@ def profile(bars: list[Bar], source: Source, p: Parameters, scope="session") -> 
     lower_index = bin_index(min(b.low for b in bars))
     upper_index = bin_index(max(b.high for b in bars))
     if upper_index - lower_index + 1 > 2000:
-        raise ValueError("Profile exceeds 2000 bins; increase bin_size")
+        raise ProfileLimitError("Profile exceeds 2000 bins; increase bin_size")
     lowers = np.arange(lower_index, upper_index + 1, dtype=float) * p.bin_size
     centers = lowers + p.bin_size / 2
     volumes = np.zeros(len(lowers))

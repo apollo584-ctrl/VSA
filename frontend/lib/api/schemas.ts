@@ -168,7 +168,14 @@ export const vsaEventSchema = z.object({
     raw: z.record(z.string(), z.union([z.number(), z.string(), z.null()])).optional(),
   }),
   /** `met` is null when the source (knowledge catalog) lists a rule but the instance does not report per-rule results. */
-  conditions: z.array(z.object({ label: z.string(), met: z.boolean().nullable(), detail: z.string() })),
+  conditions: z.array(z.object({
+    label: z.string(), met: z.boolean().nullable(), detail: z.string(),
+    id: z.string().optional(), metric: z.string().optional(), operator: z.string().optional(),
+    actual: z.union([z.number(), z.string(), z.boolean(), z.null()]).optional(),
+    expected: z.union([z.number(), z.string(), z.boolean(), z.array(z.string()), z.null()]).optional(),
+    reference: z.string().nullable().optional(),
+  })),
+  conditionSource: z.enum(["instance", "catalog", "unavailable"]).optional(),
   /** "instance" = text written for this observation; "catalog" = generic text from the knowledge catalog for this concept. */
   textSource: z.enum(["instance", "catalog", "unavailable"]).optional(),
   implications: z.array(z.string()),
@@ -289,6 +296,8 @@ export const analysisSchema = z.object({
   source: datasetSourceSchema,
   /** Timeframe the engine actually analysed (may differ from the displayed chart timeframe). */
   analysisTimeframe: z.string().optional(),
+  datasetId: z.string().optional(),
+  persisted: z.boolean().optional(),
   /** Persisted immutable snapshot identity (real backend). */
   snapshot: z.object({ id: z.string(), engineVersion: z.string(), knowledgeVersion: z.string(), createdAt: z.string(), datasetId: z.string() }).optional(),
   /** Server-side state: ok, or why analysis could not be produced. */

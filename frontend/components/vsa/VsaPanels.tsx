@@ -54,6 +54,7 @@ const list = (items: string[], muted = false) => (
 /** Detail panel for a single VSA event; depth follows the global explanation mode. */
 export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; level: DetailLevel; onClose?: () => void }) {
   const m = event.measurements;
+  const catalogConditions = (event.conditionSource ?? event.textSource) === "catalog";
   return (
     <article className="space-y-3 text-xs leading-relaxed" aria-label={`${patternLabel(event.type)} details`}>
       <header className="flex flex-wrap items-center gap-2">
@@ -80,8 +81,8 @@ export function VsaDetailPanel({ event, level, onClose }: { event: VsaEvent; lev
 
       {level !== "quick" && (
         <section>
-          <SectionLabel>{event.textSource === "catalog" ? "Rule conditions (from the knowledge catalog)" : "Why the engine identified it"}</SectionLabel>
-          {event.textSource === "catalog" && <p className="mb-1 text-[11px] text-subtle">The engine does not report which individual conditions were satisfied for this observation. These are the catalog's generic conditions for the concept.</p>}
+          <SectionLabel>{catalogConditions ? "Rule conditions (from the knowledge catalog)" : "Why the engine identified it"}</SectionLabel>
+          {catalogConditions && <p className="mb-1 text-[11px] text-subtle">This snapshot has no per-observation rule results. These are the preserved catalog's generic conditions for the concept.</p>}
           <ul className="space-y-1">
             {event.conditions.map((c, i) => (
               <li key={i} className="flex items-start gap-1.5">

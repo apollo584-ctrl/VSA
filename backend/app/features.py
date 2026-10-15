@@ -25,7 +25,7 @@ def features(bars: list[Bar], p: Parameters):
         progress = history[-1].close - history[0].close if len(history) >= p.minimum_history else None
         relative_volume = bar.volume / mean_volume if mean_volume else None
         relative_spread = spread / mean_spread if mean_spread else None
-        result.append({"spread": spread, "close_location": close_location,
+        result.append({"baseline_bars": float(len(history)), "spread": spread, "close_location": close_location,
                        "volume_ma": mean_volume, "relative_volume": relative_volume,
                        "relative_spread": relative_spread, "tod_relative_volume": bar.volume / tod_mean if tod_mean else None,
                        "tod_prior_sessions": float(len(prior_slots)),

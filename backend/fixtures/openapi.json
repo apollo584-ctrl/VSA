@@ -448,6 +448,16 @@
               }
             }
           },
+          "200": {
+            "description": "Non-persisted preview (persist=false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Analysis"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -506,8 +516,20 @@
       "Analysis": {
         "properties": {
           "id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Id"
+          },
+          "persisted": {
+            "type": "boolean",
+            "title": "Persisted",
+            "default": true
           },
           "engine_version": {
             "type": "string",
@@ -583,6 +605,27 @@
             },
             "type": "array",
             "title": "Profile Analysis"
+          },
+          "composite_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Profile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "composite_unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Composite Unavailable Reason"
           },
           "vsa_observations": {
             "items": {
@@ -703,6 +746,11 @@
           },
           "parameters": {
             "$ref": "#/components/schemas/Parameters"
+          },
+          "persist": {
+            "type": "boolean",
+            "title": "Persist",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -954,6 +1002,108 @@
         ],
         "title": "Concept"
       },
+      "ConditionResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "metric": {
+            "type": "string",
+            "title": "Metric"
+          },
+          "actual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual"
+          },
+          "operator": {
+            "type": "string",
+            "enum": [
+              ">",
+              ">=",
+              "<",
+              "<=",
+              "==",
+              "in"
+            ],
+            "title": "Operator"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "met": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Met"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "metric",
+          "actual",
+          "operator",
+          "expected",
+          "met"
+        ],
+        "title": "ConditionResult"
+      },
       "Dataset": {
         "properties": {
           "id": {
@@ -1122,6 +1272,56 @@
               }
             ],
             "title": "Confirmed At"
+          },
+          "invalidated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invalidated At"
+          },
+          "expired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expired At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status_history": {
+            "items": {
+              "$ref": "#/components/schemas/StatusChange"
+            },
+            "type": "array",
+            "title": "Status History"
+          },
+          "conditions_met": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionResult"
+            },
+            "type": "array",
+            "title": "Conditions Met"
           },
           "status": {
             "type": "string",
@@ -1769,6 +1969,38 @@
           "source_name"
         ],
         "title": "Source"
+      },
+      "StatusChange": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "provisional",
+              "confirmed",
+              "invalidated",
+              "expired"
+            ],
+            "title": "Status"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "at",
+          "reason"
+        ],
+        "title": "StatusChange"
       },
       "ValidationError": {
         "properties": {

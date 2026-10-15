@@ -58,10 +58,17 @@ def generate():
             result = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]})
             result.raise_for_status()
             analysis = result.json()
+            preview_request = {"dataset_id": dataset["id"], "as_of": "2025-03-05T18:15:00Z", "persist": False}
+            preview_result = client.post("/api/v1/analyze", json=preview_request)
+            preview_result.raise_for_status()
+            preview = preview_result.json()
             dataset.update(id=new_id, created_at="2025-03-10T20:00:00Z")
             analysis.update(id="00000000-0000-0000-0000-000000000002", dataset_id=new_id, created_at="2025-03-10T20:00:00Z")
+            preview.update(dataset_id=new_id, created_at="2025-03-10T20:00:00Z")
+            preview_request["dataset_id"] = new_id
             for filename, value in [("dataset_response.json", dataset), ("analysis_response.json", analysis),
                                     ("analyze_request.json", {"dataset_id": new_id}),
+                                    ("preview_request.json", preview_request), ("preview_response.json", preview),
                                     ("bars_response.json", client.get("/api/v1/market/bars", params={"dataset_id": uploaded.json()["id"]}).json()),
                                     ("openapi.json", client.get("/openapi.json").json())]:
                 (FIXTURES / filename).write_text(json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8")

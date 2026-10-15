@@ -64,6 +64,7 @@ class AnalyzeRequest(Model):
     dataset_id: str
     as_of: datetime | None = None
     parameters: Parameters = Field(default_factory=Parameters)
+    persist: bool = True
 
     @field_validator("as_of")
     @classmethod
@@ -103,6 +104,23 @@ class Dataset(Model):
     quality: Quality
 
 
+class ConditionResult(Model):
+    id: str
+    label: str
+    metric: str
+    actual: float | str | bool | None
+    operator: Literal[">", ">=", "<", "<=", "==", "in"]
+    expected: float | str | bool | list[str] | None
+    reference: str | None = None
+    met: bool | None
+
+
+class StatusChange(Model):
+    status: Literal["observed", "provisional", "confirmed", "invalidated", "expired"]
+    at: datetime
+    reason: str
+
+
 class Evidence(Model):
     id: str
     kind: Literal["observed", "classified"]
@@ -110,6 +128,11 @@ class Evidence(Model):
     timestamp: datetime
     first_observable_at: datetime
     confirmed_at: datetime | None = None
+    invalidated_at: datetime | None = None
+    expired_at: datetime | None = None
+    resolved_at: datetime | None = None
+    status_history: list[StatusChange] = Field(default_factory=list)
+    conditions_met: list[ConditionResult] = Field(default_factory=list)
     status: Literal["observed", "provisional", "confirmed", "invalidated", "expired"]
     direction: Literal["strength", "weakness", "neutral"] = "neutral"
     description: str
@@ -173,7 +196,8 @@ class AuctionState(Model):
 
 
 class Analysis(Model):
-    id: str
+    id: str | None
+    persisted: bool = True
     engine_version: str = "0.1.0"
     knowledge_version: str = "1.0.0"
     # Optional only for snapshots created before catalogs were preserved.
@@ -188,6 +212,8 @@ class Analysis(Model):
     data_quality: Quality
     market_context: dict[str, str | float | None]
     profile_analysis: list[Profile]
+    composite_profile: Profile | None = None
+    composite_unavailable_reason: str | None = None
     vsa_observations: list[Evidence]
     price_action_observations: list[Evidence]
     auction_state: AuctionState
@@ -199,6 +225,12 @@ class Analysis(Model):
     invalidation_conditions: list[str]
     uncertainties: list[str]
     plain_english_summary: str
+
+    @model_validator(mode="after")
+    def snapshot_identity(self):
+        if self.persisted != (self.id is not None):
+            raise ValueError("Saved analyses require an id; previews must have a null id")
+        return self
 
 
 class Concept(Model):

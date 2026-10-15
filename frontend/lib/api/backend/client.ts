@@ -4,7 +4,7 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { ApiError } from "../errors";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
-  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawProfileSchema,
+  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema,
   type RawAnalysis, type RawBar, type RawConcept, type RawDataset,
 } from "./schemas";
 
@@ -78,9 +78,9 @@ function asOfIso(bars: RawBar[], asOf: number | undefined): string | undefined {
   return bar ? bar.available_at : new Date(asOf * 1000).toISOString();
 }
 
-async function snapshotToUi(raw: RawAnalysis, composite: z.infer<typeof rawProfileSchema> | null): Promise<Analysis> {
+async function snapshotToUi(raw: RawAnalysis): Promise<Analysis> {
   const bars = await getAllBars(raw.dataset_id);
-  return mapAnalysis(raw, { bars, composite });
+  return mapAnalysis(raw, { bars });
 }
 
 export const backendApi = {
@@ -103,18 +103,20 @@ export const backendApi = {
     return barsResponse(d, sel);
   },
 
-  async getAnalysis(p: { symbol: string; asOf?: number }): Promise<Analysis> {
+  async getAnalysis(p: { symbol: string; asOf?: number; persist?: boolean }): Promise<Analysis> {
     const [d, bars] = await Promise.all([getDataset(p.symbol), getAllBars(p.symbol)]);
     const as_of = asOfIso(bars, p.asOf);
+    const persist = p.persist ?? (p.asOf === undefined);
     let raw: RawAnalysis;
     try {
-      raw = await request("/analyze", rawAnalysisSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataset_id: p.symbol, parameters: { tpo_minutes: Math.max(30, d.source.timeframe_minutes) }, ...(as_of ? { as_of } : {}) }) });
+      raw = await request("/analyze", rawAnalysisSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dataset_id: p.symbol, persist, parameters: { tpo_minutes: Math.max(30, d.source.timeframe_minutes) }, ...(as_of ? { as_of } : {}) }) });
+      if (raw.persisted !== persist) throw new ApiError("invalid_response", "The service did not honor the requested analysis persistence mode.", 200);
     } catch (e) {
       if (e instanceof ApiError && e.code === "rejected") {
         // Domain rejection (no bars at as_of, split suspected, …): the chart stays viewable, analysis is withheld.
         const insufficient = /no completed bars/i.test(e.message);
         return {
-          symbol: d.source.instrument, timeframe: `${d.source.timeframe_minutes}m`, session: d.source.session_mode === "regular" ? "RTH" : "ETH",
+          symbol: d.source.instrument, datasetId: d.id, timeframe: `${d.source.timeframe_minutes}m`, session: d.source.session_mode === "regular" ? "RTH" : "ETH",
           asOf: p.asOf ?? epoch(d.last_available_at), generatedAt: d.created_at, source: mapSource(d.source),
           status: insufficient ? "insufficient_data" : "invalid_data", statusMessage: e.message,
           quality: mapQuality(d.quality, bars, true), profiles: {}, valueLocation: null, vsaEvents: [], auctionStates: [], auctionTransitions: [], levels: [], interpretation: null,
@@ -122,17 +124,13 @@ export const backendApi = {
       }
       throw e;
     }
-    let composite = null;
-    try {
-      composite = (await request(`/profiles?dataset_id=${encodeURIComponent(p.symbol)}&composite=true${as_of ? `&as_of=${encodeURIComponent(as_of)}` : ""}&bin_size=${raw.parameters["bin_size"] ?? 0.25}`, z.array(rawProfileSchema)))[0] ?? null;
-    } catch { /* composite is optional context; its absence is shown as an unavailable profile type */ }
-    return snapshotToUi(raw, composite);
+    return snapshotToUi(raw);
   },
 
   /** Reopen an immutable persisted snapshot (GET /analyses/{id}). Nothing is recomputed. */
   async getSnapshot(id: string): Promise<Analysis> {
     const raw = await request(`/analyses/${encodeURIComponent(id)}`, rawAnalysisSchema);
-    return snapshotToUi(raw, null);
+    return snapshotToUi(raw);
   },
 
   async listKnowledge(): Promise<KnowledgeConcept[]> {

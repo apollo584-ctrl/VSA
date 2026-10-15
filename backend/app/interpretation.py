@@ -7,7 +7,7 @@ from app.data import quality
 from app.features import features
 from app.models import Analysis, AnalyzeRequest, Bar, Dataset, Scenario
 from app.knowledge import load
-from app.profiles import profiles
+from app.profiles import ProfileLimitError, profile, profiles
 
 
 def visible(bars: list[Bar], as_of):
@@ -26,6 +26,13 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
     if q.split_suspected:
         raise ValueError("Possible split or large discontinuity: analysis blocked until a consistent dataset is supplied")
     session_profiles = profiles(bars, dataset.source, p)
+    composite = None
+    composite_reason = None
+    try:
+        composite = profile(bars, dataset.source, p, "composite")
+    except ProfileLimitError as exc:
+        # A wide multi-session range must not disable otherwise valid session analysis.
+        composite_reason = str(exc)
     measurements = features(bars, p)
     vsa_observations = vsa.detect(bars, measurements, p)
     pa_observations = price_action.detect(bars, measurements, p)
@@ -42,6 +49,8 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
     uncertainties = ["OHLCV cannot establish participant identity, institutional intent, aggressor flow, or exact volume-at-price.",
                      "Rule thresholds and shape ambiguity are heuristic; no predictive accuracy has been established.",
                      "Follow-through confirmation describes price behavior, not proof of an accumulation/distribution hypothesis."]
+    if composite_reason:
+        uncertainties.append(f"Composite profile unavailable: {composite_reason}")
     shape_label = last.volume.shape.classification
     profile_up = shape_label in ("P_upper_heavy", "upward_elongated")
     profile_down = shape_label in ("b_lower_heavy", "downward_elongated")
@@ -80,13 +89,15 @@ def interpret(dataset: Dataset, bars: list[Bar], request: AnalyzeRequest) -> Ana
     state_text = "Mixed evidence" if contradiction else "Potential local strength" if strengths else "Potential local weakness" if weaknesses else "No significant directional pattern"
     summary = f"{state_text}. Estimated volume profile: {shape_label}. Auction classification: {auction_state.state}. {scenarios[0].description}"
     knowledge = load().model_copy(deep=True)
-    return Analysis(id=str(uuid4()), knowledge_version=knowledge.version, knowledge_snapshot=knowledge,
+    return Analysis(id=str(uuid4()) if request.persist else None, persisted=request.persist,
+                    knowledge_version=knowledge.version, knowledge_snapshot=knowledge,
                     dataset_id=dataset.id, instrument=dataset.source.instrument,
                     timeframe=f"{dataset.source.timeframe_minutes}m", analysis_timestamp=bars[-1].available_at,
                     created_at=datetime.now(UTC), provenance=dataset.source, parameters=p, data_quality=q,
                     market_context={"background": measurements[-1]["background"], "last_close": bars[-1].close,
                                     "last_session": bars[-1].session, "profile_evidence_id": last.id},
-                    profile_analysis=session_profiles, vsa_observations=vsa_observations,
+                    profile_analysis=session_profiles, composite_profile=composite,
+                    composite_unavailable_reason=composite_reason, vsa_observations=vsa_observations,
                     price_action_observations=pa_observations, auction_state=auction_state,
                     supporting_evidence=evidence + strengths + weaknesses,
                     contradicting_evidence=evidence + strengths + weaknesses if contradiction else [],

@@ -13,7 +13,7 @@ export const API_MODE: ApiMode =
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
 
 export interface BarsParams { symbol: string; timeframe: string; session: string; to?: number; limit?: number }
-export interface AnalysisParams { symbol: string; timeframe: string; session: string; asOf?: number }
+export interface AnalysisParams { symbol: string; timeframe: string; session: string; asOf?: number; persist?: boolean }
 
 async function mock() {
   return (await import("@/fixtures/api")).mockApi;

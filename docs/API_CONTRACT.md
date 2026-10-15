@@ -15,7 +15,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/knowledge/concepts` | optional category | Concept array |
 | GET | `/knowledge/concepts/{id}` | concept ID | Concept |
 | GET | `/knowledge/concepts/{id}/related` | concept ID | related Concept array |
-| POST | `/analyze` | AnalyzeRequest JSON | 201 Analysis |
+| POST | `/analyze` | AnalyzeRequest JSON; persist defaults to true | 201 saved Analysis; 200 preview |
 | GET | `/analyses/{id}` | analysis UUID | persisted Analysis |
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
@@ -53,7 +53,9 @@ The Dataset response contains `id`, `content_sha256` (original bytes), `source`,
 }
 ```
 
-`as_of` and `parameters` are optional. An offset is mandatory when `as_of` is supplied. Only bars whose `available_at <= as_of` are used. Without it, the latest supplied completed bar is used; this does not imply live/current data. The result's `analysis_timestamp` is the last visible bar's completion. `created_at` is the actual calculation time. Repeated POSTs create separate immutable snapshots, with no trading side effects. Canonical behavior is reproducible after excluding snapshot IDs and creation times.
+`as_of`, `parameters` and `persist` are optional. An offset is mandatory when `as_of` is supplied. Only bars whose `available_at <= as_of` are used. Without it, the latest supplied completed bar is used; this does not imply live/current data. The result's `analysis_timestamp` is the last visible bar's completion. `created_at` is the actual calculation time. With `persist=true` (the default), each successful POST creates a separate immutable snapshot and returns HTTP 201, `persisted=true` and a non-null UUID `id`. Canonical behavior is reproducible after excluding snapshot IDs and creation times.
+
+For replay, send `"persist": false` with the same request. Successful previews return HTTP 200, `persisted=false`, `id=null` and the same analytical content for the same input/parameters/cutoff. They insert no dataset or analysis records, cannot be fetched by analysis ID, and must not be displayed as saved snapshots. Failed requests create no snapshot in either mode. Existing callers that omit `persist` retain the original save behavior. Example requests/responses for both modes are in `backend/fixtures/` (`preview_request.json`, `preview_response.json`).
 
 All parameter defaults and bounds are in `Parameters` in OpenAPI. Major controls include lookback/minimum history, relative-volume/spread thresholds, wick/close fractions, confirmation horizon, pivot confirmation bars, acceptance close count, shape skew/node/valley criteria and split-gap ratio. Shape TPO occupancy uses 30-minute periods by default (60-minute bar input requires `parameters.tpo_minutes=60`). Initial balance must be an exact multiple of the bar interval. Bin size must be at least 0.000001; ingestion caps prices at 1e9 and volume at 1e15 for numerical safety.
 
@@ -67,11 +69,15 @@ TPO method is `estimated_tpo_range_occupancy`: unique touched bins per session/T
 
 VSA, price-action and auction observations share Evidence: `id`, `kind` (`observed` or `classified`), `concept_id`, original bar `timestamp`, `first_observable_at`, optional `confirmed_at`, `status`, `direction`, `description`, chart `coordinates`, numerical `measurements`, and `supporting_evidence` IDs. Stable IDs are scoped to a dataset and parameter set; do not merge IDs across datasets/configurations. `direction` is a contextual strength/weakness/neutral label, not a trade instruction.
 
-Neutral VSA measurements have `observed` status. Directional candidates start `provisional`; a later contiguous same-session close beyond the candidate's high/low confirms price follow-through, while a close through the opposite extreme invalidates it. The first resolving close wins. `resolved_at` in measurements covers both outcomes. Unresolved candidates expire after the configured contiguous horizon; a gap/session boundary leaves an unresolved candidate provisional. Pivots are emitted only at their right-bar confirmation time and cannot appear earlier. VSA baselines use prior completed bars across sessions; time-of-day volume compares prior sessions' same local slot.
+New Evidence includes `conditions_met`: evaluated detector comparisons with `id`, `label`, `metric`, `actual`, `operator`, `expected`, optional `reference`, and nullable boolean `met`. The same comparisons drive detection; these are instance measurements, separate from generic catalog explanations. Missing inputs are unevaluated (`met=null`).
+
+Neutral VSA measurements have `observed` status. Directional candidates start `provisional`; a later contiguous same-session close beyond the candidate's high/low confirms price follow-through, while a close through the opposite extreme invalidates it. The first resolving close wins. Typed `resolved_at` and the corresponding `confirmed_at`, `invalidated_at`, or `expired_at` record that outcome; `measurements.resolved_at` is retained for compatibility. `status_history` records each observable status with `at` and `reason`. Unresolved candidates expire at the configured contiguous horizon's completion; a gap/session boundary leaves an unresolved candidate provisional. Pivots are emitted confirmed only at their right-bar confirmation time and cannot appear earlier. VSA baselines use prior completed bars across sessions; time-of-day volume compares prior sessions' same local slot. Legacy snapshots default to empty conditions/history and nullable resolution fields, without rewriting or inventing historical facts.
 
 ## Explanation and frontend wiring
 
 Analysis fields: `id`, `engine_version`, `knowledge_version`, `dataset_id`, `instrument`, `timeframe`, `analysis_timestamp`, `created_at`, `provenance`, `parameters`, `data_quality`, `market_context`, `profile_analysis`, `vsa_observations`, `price_action_observations`, `auction_state`, `supporting_evidence`, `contradicting_evidence`, `interpretations`, `alternative_scenarios`, `confirmation_conditions`, `invalidation_conditions`, `uncertainties`, `plain_english_summary`.
+
+Additional fields: `persisted`, `composite_profile` and `composite_unavailable_reason`. The separate composite field preserves `profile_analysis` as session profiles. New saved and preview results calculate the composite from exactly their visible bars and full parameters, including TPO interval and value-area percentage. Saved results preserve that object alongside the session profiles; GET `/analyses/{id}` reads it without recomputation. The frontend should use this object rather than a separate GET `/profiles` call. Legacy snapshots have `persisted=true` and a null composite; they are not rewritten or backfilled. If the full composite range exceeds the 2,000-bin limit while individual sessions remain valid, the analysis succeeds with a null composite, an explicit `composite_unavailable_reason` and an uncertainty notice; increase `bin_size` to obtain it. Other validation/calculation errors retain their normal rejection behavior.
 
 Each Scenario has `kind=inferred`, `id`, `description`, `evidence_ids`, `confirmation_conditions`, `invalidation_conditions`. IDs resolve against profile IDs and the VSA/price-action/auction Evidence lists in that response. `uncertainties` are explicit limits; neither shape ambiguity nor detector confirmation is a predictive probability. The catalog's `detector_status` is `implemented` or `knowledge_only`; only implemented rules can emit observations.
 
@@ -84,7 +90,7 @@ Claude should use `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1` and fo
 3. Fetch bars with pagination; convert ISO timestamps to epoch seconds for chart libraries.
 4. POST analysis with the dataset ID and optional historical `as_of`; use its normalized chart levels and observation timestamps.
 5. Display observed measurements, rule classifications, hypotheses and uncertainty separately. Link explanation evidence IDs to chart annotations and the knowledge concept endpoint. Show provisional/confirmed status and estimation badges.
-6. Retain the analysis ID to reopen the immutable snapshot. Recompute explicitly when parameters/as-of change.
+6. Retain a non-null analysis ID only when `persisted=true`, to reopen the immutable snapshot. Use `persist=false` when replaying or previewing changes; save explicitly with `persist=true` when a historical result should become a snapshot.
 
 ```javascript
 const base = process.env.NEXT_PUBLIC_API_BASE_URL;

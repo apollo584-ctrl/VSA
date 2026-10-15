@@ -40,10 +40,11 @@ describe("market selection while analysis is pending or failed", () => {
       await waitFor(() => expect(result.current.market.error?.message).toBe("analysis failed"));
       expect(result.current.market.analysis).toBeNull();
     } else {
-      const historical = { ...latest, asOf: cursor, profiles: {}, interpretation: null };
+      const historical = { ...latest, asOf: cursor, persisted: false, snapshot: undefined, datasetId: dataset.id, profiles: {}, interpretation: null };
       await act(async () => resolve(historical));
       await waitFor(() => expect(result.current.market.analysis?.asOf).toBe(cursor));
       expect(result.current.market.analysis?.profiles).toEqual({});
+      expect(result.current.market.analysis?.snapshot).toBeUndefined();
     }
     client.clear();
   });

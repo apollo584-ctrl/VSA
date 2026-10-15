@@ -30,6 +30,7 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
       </div>
       {market.analysisIsStale && <p className="text-[11px] text-subtle" role="status">Updating analysis for the selected bar…</p>}
       <ReplayControls allBars={market.allBars} />
+      {analysis?.persisted === false && <p className="text-[11px] text-subtle" role="status">Preview — not saved.</p>}
       {analysis?.snapshot && (
         <p className="text-[11px] text-subtle" data-testid="snapshot-line">
           Saved snapshot <Link href={`/snapshot/${analysis.snapshot.id}`} className="num text-accent hover:underline">{analysis.snapshot.id.slice(0, 8)}</Link> · engine {analysis.snapshot.engineVersion} · knowledge {analysis.snapshot.knowledgeVersion} · computed {new Date(analysis.snapshot.createdAt).toLocaleString()} · immutable

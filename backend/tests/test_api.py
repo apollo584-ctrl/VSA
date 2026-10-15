@@ -1,9 +1,11 @@
 import json
+from datetime import datetime
+import pytest
 
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.models import Analysis, Dataset
+from app.models import Analysis, Dataset, Parameters
 from scripts.demo import demo_csv, demo_source
 from tests.conftest import csv_bytes, make_bar
 
@@ -110,3 +112,101 @@ def test_extended_hourly_analysis_with_compatible_tpo(client):
     result = client.post("/api/v1/analyze", json={"dataset_id": response.json()["id"], "parameters": {"tpo_minutes": 60}})
     assert result.status_code == 201, result.text
     assert result.json()["timeframe"] == "60m"
+
+
+def test_previews_write_nothing_and_cannot_be_stored(client, monkeypatch):
+    dataset = upload(client).json()
+    saved = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    assert saved["persisted"] is True and saved["id"] is not None
+    store = client.app.state.store
+    with store.connect() as db:
+        before = db.execute("SELECT id, snapshot FROM analyses ORDER BY id").fetchall()
+        dataset_count = db.execute("SELECT COUNT(*) FROM datasets").fetchone()[0]
+    original_save = store.save_analysis
+    monkeypatch.setattr(store, "save_analysis", lambda *_: pytest.fail("Preview attempted a database write"))
+    for cutoff in ["2025-03-03T14:35:00Z", "2025-03-05T18:15:00Z", None]:
+        response = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "as_of": cutoff, "persist": False})
+        assert response.status_code == 200, response.text
+        preview = response.json()
+        assert preview["persisted"] is False and preview["id"] is None
+        assert preview["composite_profile"] is not None
+        if cutoff is None:
+            metadata = {"id", "persisted", "created_at"}
+            assert {k: v for k, v in preview.items() if k not in metadata} == {k: v for k, v in saved.items() if k not in metadata}
+        with pytest.raises(ValueError, match="preview"):
+            original_save(Analysis.model_validate(preview))
+    with store.connect() as db:
+        assert db.execute("SELECT id, snapshot FROM analyses ORDER BY id").fetchall() == before
+        assert db.execute("SELECT COUNT(*) FROM datasets").fetchone()[0] == dataset_count
+    assert client.get(f'/api/v1/analyses/{saved["id"]}').json() == saved
+
+
+def test_composite_uses_analysis_cutoff_and_all_parameters(client):
+    from app.profiles import profile
+    dataset = upload(client).json()
+    parameters = {"bin_size": 0.5, "value_area_fraction": 0.8, "tpo_minutes": 60}
+    cutoff = "2025-03-05T18:15:00Z"
+    response = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "as_of": cutoff, "parameters": parameters})
+    assert response.status_code == 201
+    result = response.json()
+    d, bars = client.app.state.store.dataset(dataset["id"])
+    visible = [bar for bar in bars if bar.available_at <= datetime.fromisoformat(cutoff)]
+    expected = profile(visible, d.source, Parameters(**parameters), "composite").model_dump(mode="json")
+    assert result["composite_profile"] == expected
+    assert result["composite_profile"]["as_of"] == cutoff
+    assert result["composite_unavailable_reason"] is None
+    assert sum(result["composite_profile"]["volume"]["counts"]) == pytest.approx(sum(bar.volume for bar in visible))
+    assert client.get(f'/api/v1/analyses/{result["id"]}').json() == result
+
+
+def test_legacy_snapshot_is_not_recomputed_or_rewritten(client):
+    dataset = upload(client).json()
+    result = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    legacy = {k: v for k, v in result.items() if k not in {"persisted", "composite_profile", "composite_unavailable_reason"}}
+    legacy["id"] = "legacy-composite"
+    encoded = json.dumps(legacy)
+    with client.app.state.store.connect() as db:
+        db.execute("INSERT INTO analyses VALUES (?, ?, ?)", (legacy["id"], dataset["id"], encoded))
+    reopened = client.get("/api/v1/analyses/legacy-composite").json()
+    assert reopened["persisted"] is True
+    assert reopened["composite_profile"] is None
+    with client.app.state.store.connect() as db:
+        assert db.execute("SELECT snapshot FROM analyses WHERE id=?", (legacy["id"],)).fetchone()[0] == encoded
+
+
+def test_composite_resource_limit_does_not_block_session_analysis(client):
+    raw = csv_bytes([make_bar(0, o=100, h=100.1, low=99.9, c=100),
+                     make_bar(0, session="2025-03-11", o=104, h=104.1, low=103.9, c=104)])
+    dataset = upload(client, raw).json()
+    result = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "parameters": {"bin_size": 0.001}})
+    assert result.status_code == 201, result.text
+    snapshot = result.json()
+    assert len(snapshot["profile_analysis"]) == 2
+    assert snapshot["composite_profile"] is None
+    assert "2000 bins" in snapshot["composite_unavailable_reason"]
+    assert any("Composite profile unavailable" in text for text in snapshot["uncertainties"])
+
+
+def test_failed_preview_creates_no_analysis(client):
+    dataset = upload(client).json()
+    result = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "as_of": "2025-03-03T13:00:00Z", "persist": False})
+    assert result.status_code == 422
+    with client.app.state.store.connect() as db:
+        assert db.execute("SELECT COUNT(*) FROM analyses").fetchone()[0] == 0
+
+
+def test_saved_and_preview_evidence_has_complete_receipts(client):
+    dataset = upload(client).json()
+    saved = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    evidence = saved["vsa_observations"] + saved["price_action_observations"] + saved["auction_state"]["transitions"]
+    assert evidence
+    for item in evidence:
+        assert item["conditions_met"] and all(c["met"] for c in item["conditions_met"])
+        assert item["status_history"][-1]["status"] == item["status"]
+        assert item["status_history"][0]["at"] == item["first_observable_at"]
+        if item["status"] in {"confirmed", "invalidated", "expired"}:
+            assert item["resolved_at"] == item[f'{item["status"]}_at'] == item["status_history"][-1]["at"]
+    assert client.get(f'/api/v1/analyses/{saved["id"]}').json() == saved
+    preview = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "persist": False}).json()
+    assert preview["vsa_observations"] == saved["vsa_observations"]
+    assert preview["price_action_observations"] == saved["price_action_observations"]

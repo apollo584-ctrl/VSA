@@ -56,6 +56,8 @@ class Store:
         return [{"instrument": symbol, "dataset_ids": ids} for symbol, ids in sorted(instruments.items())]
 
     def save_analysis(self, analysis: Analysis):
+        if not analysis.persisted or analysis.id is None:
+            raise ValueError("A preview cannot be stored as a saved analysis")
         with self.connect() as db:
             db.execute("INSERT INTO analyses VALUES (?, ?, ?)", (
                 analysis.id, analysis.dataset_id, analysis.model_dump_json()))

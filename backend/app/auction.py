@@ -1,6 +1,7 @@
 """Transitions use a frozen previous complete session, never its future bars."""
 from app.models import AuctionState, Bar, Evidence, Parameters, Profile
 from app.data import calendar
+from app.evidence import check, initial_status
 
 
 def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions: set[str], p: Parameters) -> AuctionState:
@@ -26,30 +27,46 @@ def classify(bars: list[Bar], session_profiles: list[Profile], complete_sessions
             continue
         vah, val = reference.volume.vah, reference.volume.val
         old = state
-        if bar.close > vah:
+        above_value = check("close_above_value", "Close above prior value", "close", bar.close, ">", vah, "prior_vah")
+        below_value = check("close_below_value", "Close below prior value", "close", bar.close, "<", val, "prior_val")
+        if above_value.met is True:
             above += 1
             below = 0
-            state = "higher_price_acceptance" if above >= p.acceptance_bars else "upward_breakout_attempt"
-        elif bar.close < val:
+            acceptance = check("above_close_count", "Consecutive closes above value", "above_closes", above, ">=", p.acceptance_bars, "parameters.acceptance_bars")
+            state = "higher_price_acceptance" if acceptance.met is True else "upward_breakout_attempt"
+            count = acceptance if acceptance.met is True else check("above_close_count", "Acceptance count not yet reached", "above_closes", above, "<", p.acceptance_bars, "parameters.acceptance_bars")
+            conditions = [above_value, count]
+        elif below_value.met is True:
             below += 1
             above = 0
-            state = "lower_price_acceptance" if below >= p.acceptance_bars else "downward_breakout_attempt"
+            acceptance = check("below_close_count", "Consecutive closes below value", "below_closes", below, ">=", p.acceptance_bars, "parameters.acceptance_bars")
+            state = "lower_price_acceptance" if acceptance.met is True else "downward_breakout_attempt"
+            count = acceptance if acceptance.met is True else check("below_close_count", "Acceptance count not yet reached", "below_closes", below, "<", p.acceptance_bars, "parameters.acceptance_bars")
+            conditions = [below_value, count]
         else:
+            conditions = [check("close_at_or_above_val", "Close at or above prior VAL", "close", bar.close, ">=", val, "prior_val"),
+                          check("close_at_or_below_vah", "Close at or below prior VAH", "close", bar.close, "<=", vah, "prior_vah")]
             if old in ("upward_breakout_attempt", "higher_price_acceptance"):
                 state = "rejection_above_value"
+                previous_states = ["upward_breakout_attempt", "higher_price_acceptance"]
             elif old in ("downward_breakout_attempt", "lower_price_acceptance"):
                 state = "rejection_below_value"
+                previous_states = ["downward_breakout_attempt", "lower_price_acceptance"]
             else:
                 state = "balance"
+                previous_states = ["indeterminate", "balance", "rejection_above_value", "rejection_below_value"]
+            conditions.append(check("previous_state", "Previous auction classification", "previous_state", old, "in", previous_states))
             above = below = 0
         if state != old:
-            transitions.append(Evidence(id=f"auction:{i}", kind="classified", concept_id="auction_state",
+            conditions.extend([check("reference_session", "Reference is the previous scheduled session", "reference_session", reference.session, "==", expected_previous, "calendar.previous_session"),
+                               check("complete_reference", "Reference session is complete", "reference_complete", reference.session in complete_sessions, "==", True)])
+            transitions.append(initial_status(Evidence(id=f"auction:{i}", kind="classified", concept_id="auction_state",
                                         timestamp=bar.timestamp, first_observable_at=bar.available_at, status="observed",
                                         description=f"{old} → {state}",
                                         coordinates={"prior_vah": vah, "prior_val": val, "close": bar.close},
                                         measurements={"above_closes": float(above), "below_closes": float(below),
                                                       "reference_session": reference.session},
-                                        supporting_evidence=[reference.id]))
+                                        supporting_evidence=[reference.id], conditions_met=conditions)))
     current_timestamps = {bar.timestamp for bar in bars if bar.session == bars[-1].session}
     current = [t.id for t in transitions if t.timestamp in current_timestamps]
     return AuctionState(state=state, evidence_ids=current[-1:], transitions=transitions)

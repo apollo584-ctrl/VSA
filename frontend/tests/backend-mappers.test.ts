@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { clipBars, knownEvents } from "@/lib/replay";
 import { analysisSchema, barsResponseSchema, knowledgeListSchema } from "@/lib/api/schemas";
-import { mapAnalysis, mapConcept, mapProfile, barsResponse } from "@/lib/api/backend/mappers";
+import { mapAnalysis, mapConcept, mapProfile, mapVsaEvent, barsResponse } from "@/lib/api/backend/mappers";
 import { rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema } from "@/lib/api/backend/schemas";
 
 // Backend-published example responses (backend/fixtures). Skipped if the backend folder is absent.
@@ -44,7 +44,9 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
     for (const e of ui.vsaEvents) {
       expect(e.measurements.priceLocation).toBeNull();
       expect(e.textSource).toBe("catalog");
-      expect(e.conditions.every((c) => c.met === null)).toBe(true);
+      expect(e.conditionSource).toBe("instance");
+      expect(e.conditions.length).toBeGreaterThan(0);
+      expect(e.conditions.every((c) => c.met === true)).toBe(true);
     }
     for (const p of Object.values(ui.profiles)) expect(p.shape.confidence).toBeNull();
   });
@@ -127,9 +129,60 @@ describe.skipIf(!have)("backend fixture → UI mapping", () => {
     const mismatched = { ...a, knowledge_snapshot: { ...a.knowledge_snapshot!, version: "different-version" } };
     for (const raw of [legacy, mismatched]) {
       const mapped = mapAnalysis(raw, { bars });
-      expect(mapped.vsaEvents.every((e) => e.textSource === "unavailable" && e.implications.length === 0 && e.conditions.length === 0)).toBe(true);
+      expect(mapped.vsaEvents.every((e) => e.textSource === "unavailable" && e.implications.length === 0 && e.conditionSource === "instance" && e.conditions.every((c) => c.met === true))).toBe(true);
       expect(mapped.interpretation!.uncertainty.some((u) => u.text.includes("no matching preserved knowledge"))).toBe(true);
       expect(mapped.interpretation!.whatIsHappening!.standard).toBe(raw.plain_english_summary);
     }
+  });
+
+  it("keeps previews unsaved and only displays a composite preserved in the response", () => {
+    const preview = mapAnalysis({ ...rawAnalysis, id: null, persisted: false }, { bars });
+    expect(preview.persisted).toBe(false);
+    expect(preview.snapshot).toBeUndefined();
+    expect(preview.datasetId).toBe(rawAnalysis.dataset_id);
+    expect(preview.profiles.composite).toBeDefined();
+    const legacy = mapAnalysis({ ...rawAnalysis, composite_profile: undefined }, { bars });
+    expect(legacy.profiles.composite).toBeUndefined();
+    expect(legacy.snapshot).toBeDefined();
+    expect(rawAnalysisSchema.safeParse({ ...rawAnalysis, id: null, persisted: true }).success).toBe(false);
+    expect(rawAnalysisSchema.safeParse({ ...rawAnalysis, persisted: false }).success).toBe(false);
+  });
+
+  it("preserves rule receipts and authoritative lifecycle timestamps", () => {
+    for (const raw of rawAnalysis.vsa_observations) {
+      const event = mapVsaEvent(raw, 300, concepts);
+      expect(event.conditionSource).toBe("instance");
+      for (const [index, condition] of raw.conditions_met!.entries()) {
+        expect(event.conditions[index]).toMatchObject(condition);
+        expect(event.conditions[index]!.detail).toContain(condition.metric);
+      }
+      expect(event.statusHistory).toEqual(raw.status_history!.map((h) => ({ ...h, at: Date.parse(h.at) / 1000 - 300 })));
+      const last = event.statusHistory.at(-1)!;
+      expect(last.status).toBe(event.status);
+      if (event.statusHistory.length > 1) {
+        const earlier = knownEvents([event], last.at - 300)[0]!;
+        expect(earlier.status).toBe("provisional");
+        expect(earlier.statusHistory).toHaveLength(1);
+      }
+    }
+  });
+
+  it("uses only supplied legacy timestamps and marks catalog conditions as unevaluated", () => {
+    const raw = structuredClone(rawAnalysis.vsa_observations[0]!);
+    raw.conditions_met = undefined;
+    raw.status_history = undefined;
+    raw.status = "expired";
+    raw.confirmed_at = null;
+    raw.invalidated_at = null;
+    raw.expired_at = null;
+    raw.resolved_at = null;
+    delete raw.measurements.resolved_at;
+    const legacy = mapVsaEvent(raw, 300, concepts);
+    expect(legacy.conditionSource).toBe("catalog");
+    expect(legacy.conditions.every((c) => c.met === null)).toBe(true);
+    expect(legacy.statusHistory).toHaveLength(1); // no guessed expiry timestamp
+    const at = new Date(Date.parse(raw.first_observable_at) + 300000).toISOString();
+    raw.expired_at = at;
+    expect(mapVsaEvent(raw, 300, concepts).statusHistory.at(-1)).toMatchObject({ status: "expired", at: Date.parse(at) / 1000 - 300 });
   });
 });
