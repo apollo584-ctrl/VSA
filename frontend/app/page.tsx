@@ -29,7 +29,7 @@ export default function OverviewPage() {
 
   return (
     <AnalysisGate market={market}>
-      <div className="flex flex-col gap-5 xl:h-full xl:gap-4">
+      <div className="flex flex-col gap-5 xl:gap-4">
         <AnalysisPageHeader title="Overview" market={market} />
 
         <section aria-label="At a glance" className="grid grid-cols-1 gap-5 md:grid-cols-3 xl:shrink-0 xl:gap-4">
@@ -38,16 +38,16 @@ export default function OverviewPage() {
           <Panel title="Signals this session"><AnalysisBody analysis={a} error={market.error}>{(an) => <SignalsCard analysis={an} />}</AnalysisBody></Panel>
         </section>
 
-        <div className="grid grid-cols-1 gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_26rem] xl:grid-rows-[minmax(0,1fr)] xl:gap-4">
-          <div className="flex min-h-[34rem] min-w-0 flex-col xl:min-h-0"><ChartSection market={market} /></div>
-          <aside className="flex min-w-0 flex-col gap-5 xl:min-h-0 xl:gap-4" aria-label="Analysis">
-            <Panel title="Interpretation" actions={<DetailLevelSwitch />} className="xl:min-h-0 xl:flex-[3]" bodyClassName="max-h-[44rem] overflow-auto xl:max-h-none">
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-4">
+          <div className="flex min-h-[34rem] min-w-0 flex-col"><ChartSection market={market} className="xl:h-[26rem] xl:flex-none" /></div>
+          <aside className="flex min-w-0 flex-col gap-5 xl:gap-4" aria-label="Analysis">
+            <Panel title="Interpretation" actions={<DetailLevelSwitch />} className="overflow-hidden" bodyClassName="max-h-[19rem] overflow-auto">
               <AnalysisBody analysis={a} error={market.error}>{(an) => <InterpretationSummary analysis={an} level={state.detailLevel} />}</AnalysisBody>
             </Panel>
             <Panel
               title="Details"
               actions={<Segmented<Detail> label="Detail" size="sm" value={detail} onChange={setDetail} options={[{ value: "vsa", label: "VSA" }, { value: "profile", label: "Profile" }, { value: "levels", label: "Levels" }]} />}
-              className="max-h-[32rem] xl:max-h-none xl:min-h-0 xl:flex-[2]" bodyClassName="overflow-auto"
+              className="max-h-[20rem] overflow-hidden" bodyClassName="overflow-auto"
             >
               {detail === "vsa" && (selected
                 ? <VsaDetailPanel event={selected} level={state.detailLevel} onClose={() => set({ selectedEventId: null })} />

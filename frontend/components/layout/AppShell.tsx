@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Radar, Settings, Waves, type LucideIcon } from "lucide-react";
+import { BookOpen, BookText, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Radar, Settings, Waves, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -29,6 +29,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Library",
     items: [
       { href: "/knowledge", label: "Knowledge Explorer", icon: BookOpen, match: (p) => p.startsWith("/knowledge") },
+      { href: "/glossary", label: "Glossary", icon: BookText },
       { href: "/history", label: "Analysis History", icon: History },
     ],
   },
@@ -118,7 +119,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* relative: contains absolutely positioned descendants (sr-only text, tooltips), which would otherwise extend the window scroll. */}
-        <main id="main" className={cn("relative min-h-0 min-w-0 flex-1 overflow-auto", fit && "xl:overflow-hidden")} tabIndex={-1}>
+        <main id="main" className="relative min-h-0 min-w-0 flex-1 overflow-auto" tabIndex={-1}>
           <div className={cn("mx-auto w-full max-w-[1680px] px-6 py-5 max-sm:px-4", fit && "xl:h-full")}>{children}</div>
         </main>
         <StatusBar />
