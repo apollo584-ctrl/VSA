@@ -63,6 +63,12 @@ export function StateStrip({ states, selectedStateId, onSelect }: { states: Auct
 }
 
 /** Vertical flow, grouped by session: states connected by clickable transitions. */
+/** The newest state matters most: open the scrolling panel at the end of the list (only that panel scrolls). */
+function scrollToEnd(el: HTMLOListElement | null) {
+  const box = el?.parentElement;
+  if (box && box.scrollHeight > box.clientHeight) box.scrollTop = box.scrollHeight;
+}
+
 export function StateFlow({ states, transitions, selectedTransitionId, onSelect }: {
   states: AuctionState[]; transitions: AuctionTransition[]; selectedTransitionId: string | null; onSelect: (id: string) => void;
 }) {
@@ -71,7 +77,7 @@ export function StateFlow({ states, transitions, selectedTransitionId, onSelect 
   }
   const byTo = new Map(transitions.map((t) => [t.toStateId, t]));
   return (
-    <ol className="flex flex-col items-stretch" aria-label="Auction state transitions">
+    <ol ref={scrollToEnd} className="flex flex-col items-stretch" aria-label="Auction state transitions">
       {states.map((s, i) => {
         const tr = byTo.get(s.id);
         const current = s.endTime === null;

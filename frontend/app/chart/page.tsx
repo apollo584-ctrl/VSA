@@ -21,15 +21,15 @@ export default function ChartProfilePage() {
       <AnalysisPageHeader title="Chart & Profile" description="Candles with the session's estimated volume or TPO profile, value area and structural levels." market={market} />
       <div className="grid grid-cols-1 gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-4">
         <div className="flex min-h-[42rem] min-w-0 flex-col xl:min-h-0"><ChartSection market={market} /></div>
-        <aside className="flex min-w-0 flex-col gap-5 xl:min-h-0 xl:gap-4 xl:overflow-y-auto" aria-label="Market Profile workspace">
+        <aside className="flex min-w-0 flex-col gap-5 xl:min-h-0 xl:gap-4 xl:overflow-y-auto [&>*]:shrink-0" aria-label="Market Profile workspace">
           <Panel title="Market Profile" actions={<>{profile?.estimated && <EstimatedBadge profile={profile} />}</>}>
             <div className="space-y-4">
               <ProfileKindTabs available={a?.status === "ok" ? Object.keys(a.profiles) : undefined} />
               <AnalysisBody analysis={a} error={market.error}>{() => profile ? (
                 <>
                   <p className="text-xs text-subtle">{profile.label}{profile.estimated && profile.estimationMethod ? ` — ${profile.estimationMethod}` : ""}</p>
-                  <ProfileVisual profile={profile} weight={state.profileKind === "tpo" ? "tpo" : "volume"} currentPrice={a?.valueLocation?.price} />
                   <ProfileStats profile={profile} />
+                  <ProfileVisual profile={profile} weight={state.profileKind === "tpo" ? "tpo" : "volume"} currentPrice={a?.valueLocation?.price} />
                 </>
               ) : <p className="text-xs text-subtle">The selected profile type is not available at this point (for example, there is no prior session yet).</p>}</AnalysisBody>
             </div>

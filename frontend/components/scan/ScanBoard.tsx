@@ -42,9 +42,9 @@ export function ScanBoard() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Ordered by importance: scan status and controls, then the flagged symbols, then how the scan works. */}
       <Panel
         title="S&P 500 scan"
-        description="Flags a symbol when at least three of four readings agree and none disagree: value location, auction state, active VSA signals and price action."
         actions={
           <>
             <Segmented<string> label="Auto-scan" size="sm" value={String(status?.auto_minutes ?? 0)} onChange={(v) => auto.mutate(Number(v))}
@@ -62,7 +62,6 @@ export function ScanBoard() {
         </div>
         {status?.running && <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2"><div className="h-full bg-accent transition-all" style={{ width: `${status.total ? (100 * status.done) / status.total : 0}%` }} /></div>}
         {(run.isError || auto.isError) && <p role="alert" className="mt-3 text-sm text-danger">{((run.error ?? auto.error) as Error).message}</p>}
-        <p className="mt-3 text-xs text-subtle">Data comes from Yahoo Finance's unofficial endpoint, delayed and rate-limited, so a full scan takes a few minutes. Auto-scan only runs while this app is open. Flags describe aligned evidence, not predictions or advice.</p>
       </Panel>
 
       <Panel title="Flagged symbols" actions={<Segmented<Filter> label="Direction" size="sm" value={filter} onChange={setFilter} options={[{ value: "all", label: "All" }, { value: "strength", label: "Strength" }, { value: "weakness", label: "Weakness" }]} />}>
@@ -70,6 +69,14 @@ export function ScanBoard() {
           ? <p className="text-sm text-muted">{results.length ? "Nothing currently meets the confluence rule." : "Results appear here after a scan."}</p>
           : <ul className="divide-y divide-border">{shown.map((r) => <Row key={r.symbol} r={r} opening={opening === r.symbol} onOpen={() => open(r.symbol)} />)}</ul>}
         {load.isError && <p role="alert" className="mt-3 text-sm text-danger">{load.error instanceof Error ? load.error.message : "Could not open this symbol."}</p>}
+      </Panel>
+      <Panel title="How the scan works" collapsible defaultOpen={false}>
+        <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-muted">
+          <li>A symbol is flagged when at least three of four readings agree, none disagrees, and the engine reports no contradicting evidence: value location, auction state, active VSA signals and price action.</li>
+          <li>The readings share closes and prior-value levels, so the count is a heuristic, not independent confirmation.</li>
+          <li>Data comes from Yahoo Finance&apos;s unofficial endpoint, delayed and rate-limited, so a full scan takes a few minutes. Auto-scan runs while the backend is running and resets when it restarts.</li>
+          <li>Flags describe aligned evidence, not predictions or advice.</li>
+        </ul>
       </Panel>
     </div>
   );

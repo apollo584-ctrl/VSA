@@ -274,7 +274,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const display = hover ?? bars[bars.length - 1] ?? null;
 
   return (
-    <div ref={frameRef} className={cn("relative h-full min-h-72 w-full overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
+    <div ref={frameRef} className={cn("relative h-full min-h-56 w-full overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
       <div ref={hostRef} className="absolute inset-0" role="img" aria-label={`Candlestick chart, ${bars.length} bars. VSA events are listed beside the chart.`} />
       {size.w > 0 && (
         <ChartOverlay

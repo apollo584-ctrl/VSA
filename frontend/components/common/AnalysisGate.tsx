@@ -5,7 +5,7 @@ import { useMarket } from "@/hooks/data";
 import { useHiddenInstruments } from "@/hooks/hiddenInstruments";
 import { useWorkspace } from "@/hooks/workspace";
 import { Badge, Button, GLOSSARY, InfoTip, KeyValue, Term } from "@/components/ui/primitives";
-import { auctionLabel, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
+import { auctionLabel, fmtDateTime, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
 import type { Analysis, Level } from "@/types";
 import { LOCATION_LABEL, locationReason } from "@/lib/location";
 import { EmptyChartState, ErrorState, InsufficientDataState, InvalidDataState, LoadingState, NoDatasetState, StateMessage } from "./states";
@@ -61,7 +61,7 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Badge tone={ctx?.state === "unavailable" ? "warn" : "neutral"}>{label}</Badge>
+        <Badge tone={ctx?.state === "unavailable" ? "warn" : "neutral"} title={v.referenceProfile}>{label}</Badge>
         <span className="text-sm">Close <b className="num font-semibold">{fmtPrice(v.price)}</b></span>
         {classified ? <InfoTip>{note}</InfoTip> : null}
       </div>
@@ -76,7 +76,6 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
         </dl>
       ) : null}
       {v.distanceFromPocPct !== null && <p className="text-xs text-muted">vs prior POC {fmtPct(v.distanceFromPocPct)}</p>}
-      <p className="text-xs text-subtle">{v.referenceProfile}</p>
       {!classified && <p className="text-xs text-subtle">{note}</p>}
     </div>
   );
@@ -89,6 +88,30 @@ export function AuctionSummaryCard({ analysis }: { analysis: Analysis }) {
     <div className="space-y-1">
       <div className="flex items-center gap-2"><span className="text-sm font-semibold">{auctionLabel(s.kind)}</span>{s.endTime === null && <Badge tone="info">Current</Badge>}</div>
       <p className="text-xs text-muted">{s.summary}</p>
+    </div>
+  );
+}
+
+/** Active strength/weakness signals in the current session and the engine's own evidence balance. Facts only. */
+export function SignalsCard({ analysis }: { analysis: Analysis }) {
+  const resets = analysis.auctionResets ?? [];
+  const since = resets.length ? resets[resets.length - 1]!.at : -Infinity;
+  const active = analysis.vsaEvents
+    .filter((e) => (e.status === "provisional" || e.status === "confirmed") && e.barTime >= since && (e.direction === "strength" || e.direction === "weakness"))
+    .sort((x, y) => y.barTime - x.barTime);
+  const strengths = active.filter((e) => e.direction === "strength").length;
+  const latest = active[0];
+  const balance = analysis.interpretation?.evidenceBalance;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone="ok">{strengths} strength</Badge>
+        <Badge tone="danger">{active.length - strengths} weakness</Badge>
+        {balance && <Badge tone={balance === "mixed" || balance === "contradictory" ? "warn" : "neutral"}>Evidence {humanize(balance).toLowerCase()}</Badge>}
+      </div>
+      <p className="text-xs text-muted">
+        {latest ? <>Latest: <span className="text-fg">{humanize(latest.type)}</span> ({latest.status}) at {fmtDateTime(latest.barTime)}</> : "No active strength or weakness signal this session."}
+      </p>
     </div>
   );
 }

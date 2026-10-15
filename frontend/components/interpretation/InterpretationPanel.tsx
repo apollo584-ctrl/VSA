@@ -114,24 +114,12 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
   const i = analysis.interpretation;
   if (!i) return <StateMessage icon={FileQuestion} title="No interpretation available">The engine did not produce an interpretation for this selection.</StateMessage>;
   const evById = new Map([...i.supporting, ...i.contradicting].map((e) => [e.id, e]));
+  // Ordered by importance: the engine's conclusion and what to watch, then the evidence behind it,
+  // then each component reading, with limitations last.
   return (
     <div className="space-y-4">
       {(i.evidenceBalance === "mixed" || i.evidenceBalance === "contradictory") && <MixedEvidenceNotice />}
       <div className="space-y-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-8 xl:space-y-0">
-      <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Block title="Market context"><NarrativeText n={i.context} level={level} /></Block>
-        <Block title="Profile interpretation"><NarrativeText n={i.profile} level={level} /></Block>
-        <Block title="VSA interpretation"><NarrativeText n={i.vsa} level={level} /></Block>
-        <Block title="Price-action interpretation"><NarrativeText n={i.priceAction} level={level} /></Block>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Block title="Supporting evidence" tag={<ObservationBadge />}><EvidenceList items={i.supporting} tone="support" /></Block>
-        <Block title="Contradictory evidence" tag={<ObservationBadge />}><EvidenceList items={i.contradicting} tone="contradict" /></Block>
-      </div>
-
-      </div>
       <div className="space-y-4">
       <Block title={i.scenarios.length > 1 ? "Alternative scenarios" : "Scenario"} tag={<HypothesisBadge />}>
         <p className="mb-2 text-muted">Scenarios are hypotheses consistent with some evidence and challenged by other evidence. They are not ranked as predictions.</p>
@@ -174,6 +162,21 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
         </ul>
       </Block>
 
+      </div>
+      <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Block title="Supporting evidence" tag={<ObservationBadge />}><EvidenceList items={i.supporting} tone="support" /></Block>
+        <Block title="Contradictory evidence" tag={<ObservationBadge />}><EvidenceList items={i.contradicting} tone="contradict" /></Block>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Block title="Market context"><NarrativeText n={i.context} level={level} /></Block>
+        <Block title="Profile interpretation"><NarrativeText n={i.profile} level={level} /></Block>
+        <Block title="VSA interpretation"><NarrativeText n={i.vsa} level={level} /></Block>
+        <Block title="Price-action interpretation"><NarrativeText n={i.priceAction} level={level} /></Block>
+      </div>
+
+      </div>
+      </div>
       <Block title="Uncertainty and limitations">
         <ul className="space-y-1">
           {i.uncertainty.map((u, n) => (
@@ -181,8 +184,6 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
           ))}
         </ul>
       </Block>
-      </div>
-      </div>
     </div>
   );
 }

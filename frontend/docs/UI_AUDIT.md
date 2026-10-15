@@ -30,3 +30,32 @@ Audited every route (Overview, Chart & Profile, VSA, Auction, Interpretation, Kn
 | F8 | Session-reset text read "restarted from Indeterminate (no complete prior session)" | Plain "Indeterminate" in resets. |
 
 Behaviour, data and analytical wording are otherwise unchanged.
+
+## Second audit: layout and information order (2026-10-15)
+
+Audited every tab at 1280x720, 1440x900 and 1920x1080 against the live backend (AAPL 30m). Each tab is now ordered by importance: the current reading at the top, supporting detail lower, explanations and limitations last.
+
+### Findings and fixes
+
+| # | Finding | Fix |
+|---|---|---|
+| L1 | Overview at 1440x900: the chart overflowed onto the panels below it, and three side-by-side detail panels were too narrow to read (one word per line). | Overview rebuilt (below). The chart frame's fixed minimum height was lowered so it can shrink in fit layouts. |
+| L2 | Chart and Auction right columns: panels shrank inside the scrolling column and drew over each other (profile statistics over the shape explanation; session resets over transition evidence). | Panels in scrolling columns keep their height; the column scrolls instead. |
+| L3 | The chart card's footer wrapped onto two lines, taking chart height. | Data quality and a short snapshot link share one row; full provenance is in the link's tooltip. |
+| F1 | VSA observation lists put neutral measurements (volume expansion, compression) ahead of strength and weakness signals. | Lists are grouped: strength and weakness signals first, then measurements, newest first in each. |
+| F2 | Auction evolution opened at the oldest session, and the current state was not shown at the top. | A Current state card sits beside the timeline; the evolution list opens scrolled to the current state. |
+| F3 | Scanner said auto-scan runs "while this app is open"; it runs while the backend runs and resets on restart. | Corrected, and moved into a collapsible "How the scan works" panel below the results. |
+
+### Information order by tab
+
+| Tab | Top → bottom |
+|---|---|
+| Overview | Price header → at a glance (value location, auction state, signals this session) → chart beside interpretation → details tabs (VSA, profile, levels) |
+| Chart & Profile | Chart → profile key levels → profile drawing → shape explanation → value migration |
+| VSA | Chart → strength/weakness signals → measurements → pattern detail → chart legend |
+| Auction | Current state and timeline → evolution (opens at newest) → transition evidence → session resets → explainer |
+| Interpretation | Scenario → what to observe next → supporting and contradicting evidence → component readings → uncertainty and limitations |
+| Scanner | Scan status and controls → flagged symbols → how the scan works |
+| Knowledge, History, Settings | Unchanged; already ordered by use. |
+
+Remaining: Interpretation scrolls about 1.2 screens at 1440x900 (it is a reading page). At 1280x720 the Overview chart is short (about 200px) and the page scrolls slightly.

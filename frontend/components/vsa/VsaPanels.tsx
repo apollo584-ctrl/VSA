@@ -12,10 +12,19 @@ import type { DetailLevel, VsaEvent } from "@/types";
 
 export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { events: VsaEvent[]; selectedId: string | null; onSelect: (id: string | null) => void; scopeLabel?: string }) {
   if (!events.length) return <NoPatternsState scope={scopeLabel} />;
-  const sorted = [...events].sort((a, b) => b.barTime - a.barTime);
+  const newest = [...events].sort((a, b) => b.barTime - a.barTime);
+  const directional = (e: VsaEvent) => e.direction === "strength" || e.direction === "weakness";
+  const groups = [
+    { label: "Strength and weakness signals", items: newest.filter(directional) },
+    { label: "Measurements", items: newest.filter((e) => !directional(e)) },
+  ].filter((g) => g.items.length);
   return (
-    <ul className="flex flex-col gap-1" aria-label="Detected VSA observations">
-      {sorted.map((e) => (
+    <div className="flex flex-col gap-3">
+    {groups.map((g) => (
+    <section key={g.label} aria-label={g.label}>
+    <h3 className="mb-1 text-xs font-semibold text-subtle">{g.label} <span className="font-normal">({g.items.length})</span></h3>
+    <ul className="flex flex-col gap-1" aria-label={g.label === "Measurements" ? "Detected VSA measurements" : "Detected VSA observations"}>
+      {g.items.map((e) => (
         <li key={e.id}>
           <button
             type="button"
@@ -33,6 +42,9 @@ export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { eve
         </li>
       ))}
     </ul>
+    </section>
+    ))}
+    </div>
   );
 }
 
