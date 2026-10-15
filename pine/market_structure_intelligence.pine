@@ -1,0 +1,867 @@
+// This Pine Script is a port of the VSA backend engine (backend/app/*.py). See pine/README.md.
+// Heuristic, OHLCV-only study. Not trade advice, not a forecast, thresholds are uncalibrated.
+//@version=5
+indicator("Market Structure Intelligence", shorttitle="MSI", overlay=true, max_labels_count=500, max_lines_count=500, max_boxes_count=100)
+
+// ============================================================================
+// Inputs
+// ============================================================================
+G1 = "Engine parameters (defaults match the backend)"
+lookback   = input.int(20, "Baseline lookback (bars)", minval=3, maxval=100, group=G1)
+minHistIn  = input.int(5, "Minimum history (bars)", minval=3, maxval=100, group=G1)
+todMinSess = input.int(5, "Time-of-day: minimum prior sessions", minval=2, maxval=60, group=G1)
+hiVol      = input.float(1.8, "High relative volume >=", minval=1.01, group=G1)
+loVol      = input.float(0.65, "Low relative volume <=", minval=0.05, maxval=0.99, group=G1)
+wideSp     = input.float(1.5, "Wide relative spread >=", minval=1.01, group=G1)
+narrowSp   = input.float(0.65, "Narrow relative spread <=", minval=0.05, maxval=0.99, group=G1)
+closeExt   = input.float(0.25, "Close-location extreme", minval=0.01, maxval=0.49, group=G1)
+wickFrac   = input.float(0.45, "Large wick fraction", minval=0.05, maxval=0.95, group=G1)
+confBars   = input.int(3, "Follow-through horizon (bars)", minval=1, maxval=20, group=G1)
+pivotBars  = input.int(2, "Pivot right/left bars", minval=1, maxval=10, group=G1)
+acceptBars = input.int(3, "Acceptance closes outside value", minval=2, maxval=20, group=G1)
+
+G2 = "Volume profile"
+vaFrac     = input.float(0.7, "Value area fraction", minval=0.1, maxval=1.0, group=G2)
+binInput   = input.float(0.0, "Bin size (0 = auto, about 0.03% of price)", minval=0.0, group=G2)
+nodeFrac   = input.float(0.6, "Node fraction", minval=0.05, maxval=0.95, group=G2)
+valleyFrac = input.float(0.35, "Valley fraction", minval=0.05, maxval=0.95, group=G2)
+nodeSep    = input.int(3, "Node separation (bins)", minval=2, maxval=100, group=G2)
+trendProg  = input.float(0.6, "Trend progress (elongated shape)", minval=0.1, maxval=0.95, group=G2)
+shapeSkew  = input.float(0.5, "Shape skew threshold", minval=0.05, maxval=3.0, group=G2)
+
+G3 = "Display"
+showVsa      = input.bool(true, "VSA labels (SV SC SP NS ND UT BC EFF)", group=G3)
+showPA       = input.bool(true, "Price-action signals (breakouts, failures)", group=G3)
+showWicks    = input.bool(false, "Large-wick markers (neutral)", group=G3)
+showPivots   = input.bool(true, "Swing pivot labels (HH HL LH LL)", group=G3)
+showAuction  = input.bool(true, "Auction transition labels", group=G3)
+showResets   = input.bool(true, "Session reset markers", group=G3)
+showValue    = input.bool(true, "Prior-session value area (VAH / POC / VAL)", group=G3)
+showDev      = input.bool(true, "Developing value of the current session", group=G3)
+showPanel    = input.bool(true, "Interpretation panel", group=G3)
+panelPos     = input.string("Top right", "Panel position", options=["Top right", "Top left", "Bottom right", "Bottom left", "Middle right"], group=G3)
+panelSizeIn  = input.string("Small", "Panel text size", options=["Tiny", "Small", "Normal"], group=G3)
+
+// ============================================================================
+// Constants and helpers
+// ============================================================================
+color cUp   = #26a69a
+color cDn   = #ef5350
+color cNeu  = #9598a1
+color cAuc  = #7e57c2
+color cPA   = #ff9800
+color cVal  = color.new(#2962ff, 88)
+color cLine = color.new(#2962ff, 20)
+
+tfSec  = timeframe.in_seconds()
+tfMs   = int(tfSec * 1000)
+tfMin  = tfSec / 60.0
+engineOn = timeframe.isintraday and tfSec >= 60 and tfSec <= 3600
+isReg  = session.ismarket
+minHist = math.min(minHistIn, lookback)
+maxKeep = math.max(lookback, 2 * pivotBars + 1) + 2
+binIn  = binInput > 0 ? binInput : math.max(syminfo.mintick, math.round_to_mintick(close * 0.0003))
+
+f_add(s, t) => s == "" ? t : s + "+" + t
+
+f_stateName(s) =>
+    switch s
+        0 => "Indeterminate"
+        1 => "Balance"
+        2 => "Upward breakout attempt"
+        3 => "Higher-price acceptance"
+        4 => "Rejection above value"
+        5 => "Downward breakout attempt"
+        6 => "Lower-price acceptance"
+        7 => "Rejection below value"
+        => "?"
+
+f_shapeName(s) =>
+    switch s
+        1 => "P (upper heavy)"
+        2 => "b (lower heavy)"
+        3 => "D (balanced)"
+        4 => "B (double distribution)"
+        5 => "Multi-modal"
+        6 => "Upward elongated"
+        7 => "Downward elongated"
+        => "Unclassified"
+
+f_shapeText(s) =>
+    switch s
+        1 => "activity concentrated higher; covering or higher-price acceptance are possible, unproven explanations"
+        2 => "activity concentrated lower; liquidation or lower-price acceptance are possible, unproven explanations"
+        3 => "two-sided auction activity"
+        4 => "separated concentrations may indicate a transition between value regions"
+        5 => "several concentrations may represent multiple auction regions"
+        6 => "net upward progress accompanies the distribution"
+        7 => "net downward progress accompanies the distribution"
+        => "insufficient or degenerate distribution"
+
+f_mark(s) =>
+    switch s
+        0 => "?"
+        1 => "✓"
+        2 => "×"
+        3 => "~"
+        => ""
+
+f_reason(r) =>
+    switch r
+        0 => "usable"
+        1 => "prior session not adjacent"
+        2 => "prior session incomplete"
+        3 => "prior value area unavailable"
+        => "no prior session in chart data"
+
+f_rel(r) =>
+    switch r
+        1 => "higher"
+        -1 => "lower"
+        0 => "equal"
+        => "first"
+
+f_sym(v) => v == 1 ? "▲" : v == -1 ? "▼" : v == 0 ? "●" : "○"
+
+// Number of local maxima ("nodes") that are separated by a real valley (backend peak_indices).
+f_modes(w) =>
+    int n = array.size(w)
+    int result = 0
+    if n > 0
+        float mx = array.max(w)
+        array<int> cand = array.new_int()
+        for i = 0 to n - 1
+            float wi = array.get(w, i)
+            float l = i > 0 ? array.get(w, i - 1) : -1.0
+            float r = i + 1 < n ? array.get(w, i + 1) : -1.0
+            if mx > 0 and wi >= mx * nodeFrac and wi > l and wi >= r
+                array.push(cand, i)
+        int m = array.size(cand)
+        if m > 0
+            array<bool> used = array.new_bool(m, false)
+            array<int> sel = array.new_int()
+            for t = 1 to m
+                int best = -1
+                float bw = -1.0
+                for c = 0 to m - 1
+                    if not array.get(used, c)
+                        float cw = array.get(w, array.get(cand, c))
+                        if cw > bw
+                            best := c
+                            bw := cw
+                if best >= 0
+                    array.set(used, best, true)
+                    int idx = array.get(cand, best)
+                    bool okSel = true
+                    int ns = array.size(sel)
+                    if ns > 0
+                        for s = 0 to ns - 1
+                            int old = array.get(sel, s)
+                            int a = math.min(idx, old)
+                            int z = math.max(idx, old)
+                            float valley = array.get(w, a)
+                            for q = a to z
+                                valley := math.min(valley, array.get(w, q))
+                            float lim = math.min(array.get(w, idx), array.get(w, old)) * valleyFrac
+                            if math.abs(idx - old) < nodeSep or valley > lim
+                                okSel := false
+                    if okSel
+                        array.push(sel, idx)
+            result := array.size(sel)
+    result
+
+// Estimated volume profile (each bar's volume spread evenly over the bins its range touches), POC / value area,
+// and the backend's shape rules. Returns [ok, poc, vah, val, shape, binUsed].
+f_profile(hs, ls, vs, cs, os, binStart) =>
+    int n = array.size(hs)
+    bool ok = false
+    float poc = na
+    float vah = na
+    float val = na
+    int shp = 0
+    float b = binStart
+    if n > 0
+        float mn = array.min(ls)
+        float mx = array.max(hs)
+        int loI = int(math.floor(mn / b))
+        int hiI = int(math.floor(mx / b))
+        while hiI - loI + 1 > 1000
+            b := b * 2
+            loI := int(math.floor(mn / b))
+            hiI := int(math.floor(mx / b))
+        int nb = hiI - loI + 1
+        array<float> w = array.new_float(nb, 0.0)
+        for i = 0 to n - 1
+            int lo = math.max(0, int(math.floor(array.get(ls, i) / b)) - loI)
+            int hi = math.min(nb - 1, int(math.floor(array.get(hs, i) / b)) - loI)
+            if hi >= lo
+                float share = array.get(vs, i) / (hi - lo + 1)
+                for j = lo to hi
+                    array.set(w, j, array.get(w, j) + share)
+        float total = array.sum(w)
+        if total > 0
+            int pocI = array.indexof(w, array.max(w))
+            int lowI = pocI
+            int highI = pocI
+            float enclosed = array.get(w, pocI)
+            while enclosed < total * vaFrac and (lowI > 0 or highI < nb - 1)
+                float left = lowI > 0 ? array.get(w, lowI - 1) : -1.0
+                float right = highI + 1 < nb ? array.get(w, highI + 1) : -1.0
+                if left >= right
+                    lowI := lowI - 1
+                    enclosed := enclosed + array.get(w, lowI)
+                else
+                    highI := highI + 1
+                    enclosed := enclosed + array.get(w, highI)
+            ok := true
+            poc := (loI + pocI) * b + b / 2
+            val := (loI + lowI) * b
+            vah := (loI + highI) * b + b
+            // Shape (backend profiles.shape)
+            float mean = 0.0
+            for i = 0 to nb - 1
+                mean += i * array.get(w, i)
+            mean := mean / total
+            float variance = 0.0
+            float third = 0.0
+            for i = 0 to nb - 1
+                float d = i - mean
+                variance += d * d * array.get(w, i)
+                third += d * d * d * array.get(w, i)
+            variance := variance / total
+            float skew = variance > 0 ? third / total / math.pow(variance, 1.5) : 0.0
+            int modes = f_modes(w)
+            float rng = mx - mn
+            float progress = rng > 0 ? (array.get(cs, n - 1) - array.get(os, 0)) / rng : 0.0
+            if n < minHist or variance == 0
+                shp := 0
+            else if modes > 2
+                shp := 5
+            else if modes == 2
+                shp := 4
+            else if math.abs(progress) >= trendProg
+                shp := progress > 0 ? 6 : 7
+            else if skew <= -shapeSkew
+                shp := 1
+            else if skew >= shapeSkew
+                shp := 2
+            else
+                shp := 3
+    [ok, poc, vah, val, shp, b]
+
+// ============================================================================
+// State (only advanced on confirmed, regular-session bars: completed bars only)
+// ============================================================================
+var array<float> aO = array.new_float()
+var array<float> aH = array.new_float()
+var array<float> aL = array.new_float()
+var array<float> aC = array.new_float()
+var array<float> aV = array.new_float()
+var array<int>   aT = array.new_int()
+var array<int>   aS = array.new_int()
+
+var array<float> sO = array.new_float()
+var array<float> sH = array.new_float()
+var array<float> sL = array.new_float()
+var array<float> sC = array.new_float()
+var array<float> sV = array.new_float()
+
+// VSA directional candidates of the current session (one per bar and direction)
+var array<int>    cDir  = array.new_int()
+var array<int>    cStat = array.new_int()   // 0 provisional, 1 confirmed, 2 invalidated, 3 expired
+var array<int>    cRem  = array.new_int()   // follow-through bars left; 0 = no longer tracked
+var array<int>    cN    = array.new_int()
+var array<float>  cHi   = array.new_float()
+var array<float>  cLo   = array.new_float()
+var array<string> cCode = array.new_string()
+var array<label>  cLbl  = array.new<label>()
+
+int slotRows = int(math.ceil(1440.0 / math.max(tfMin, 1.0))) + 2
+var todM = matrix.new<float>(slotRows, lookback, na)
+var todN = array.new_int(slotRows, 0)
+
+var int sessCount = 0
+var int lastDayKey = 0
+var int sFirstT = 0
+var int sLastT = 0
+var int sCount = 0
+var bool sOpen = false
+var bool sSawLast = false
+var int sStartBar = 0
+var int prevRegT = 0
+
+var int state = 0
+var int upCnt = 0
+var int dnCnt = 0
+var bool refValid = false
+var float refVah = na
+var float refPoc = na
+var float refVal = na
+var int refReason = 4
+var int refShape = 0
+var line lnV = na
+var line lnP = na
+var line lnL = na
+var box bxV = na
+var line dvV = na
+var line dvP = na
+var line dvL = na
+
+var float lastPivH = na
+var float lastPivL = na
+var int relH = 9
+var int relL = 9
+var int lastBoDir = 0
+var int lastBoBar = 0
+var int lastFbDir = 0
+var int lastFbBar = 0
+
+var float lastC = na
+var float lastRV = na
+var float lastRS = na
+var float lastCL = na
+var float lastTod = na
+var int lastBg = 9
+var string lastTags = ""
+var bool lastBase = false
+
+// Per-bar signals for plotting / alerts
+bool sBoUp = false
+bool sBoDn = false
+bool sFbUp = false
+bool sFbDn = false
+bool sWick = false
+bool sStrNew = false
+bool sWkNew = false
+bool sAuc = false
+bool sReset = false
+
+// ============================================================================
+// Engine
+// ============================================================================
+if engineOn and isReg and barstate.isconfirmed
+    int dayKey = year * 10000 + month * 100 + dayofmonth
+    bool newSess = dayKey != lastDayKey
+
+    // ---- session boundary: finalise the previous session, record the reset, start fresh
+    if newSess
+        if sessCount > 0
+            [okP, pocP, vahP, valP, shpP, binP] = f_profile(sH, sL, sV, sC, sO, binIn)
+            bool gapFree = (sLastT - sFirstT) == (sCount - 1) * tfMs
+            bool complete = sOpen and sSawLast and gapFree
+            bool adjacent = (time - sLastT) <= 4 * 86400000
+            refReason := not adjacent ? 1 : not complete ? 2 : na(vahP) ? 3 : 0
+            refValid := refReason == 0
+            refVah := refValid ? vahP : na
+            refPoc := refValid ? pocP : na
+            refVal := refValid ? valP : na
+            refShape := shpP
+            int prevState = state
+            if showResets
+                line.new(bar_index, low, bar_index, high, extend=extend.both, color=color.new(cAuc, 65), style=line.style_dotted, width=1)
+                string rt = "RESET → Indeterminate" + "\nfrom: " + f_stateName(prevState) + "\nvalue ref: " + f_reason(refReason)
+                label.new(bar_index, na, rt, yloc=yloc.abovebar, style=label.style_label_down, color=color.new(cAuc, 25), textcolor=color.white, size=size.tiny)
+            sReset := true
+            if refValid and showValue
+                lnV := line.new(bar_index, vahP, bar_index, vahP, color=cLine, width=1)
+                lnP := line.new(bar_index, pocP, bar_index, pocP, color=color.new(cLine, 0), width=2)
+                lnL := line.new(bar_index, valP, bar_index, valP, color=cLine, width=1)
+                bxV := box.new(bar_index, vahP, bar_index, valP, border_color=na, bgcolor=cVal)
+        else
+            refReason := 4
+            refValid := false
+        array.clear(sO)
+        array.clear(sH)
+        array.clear(sL)
+        array.clear(sC)
+        array.clear(sV)
+        array.clear(cDir)
+        array.clear(cStat)
+        array.clear(cRem)
+        array.clear(cN)
+        array.clear(cHi)
+        array.clear(cLo)
+        array.clear(cCode)
+        array.clear(cLbl)
+        sessCount += 1
+        sFirstT := time
+        sCount := 0
+        sOpen := session.isfirstbar_regular
+        sSawLast := false
+        sStartBar := bar_index
+        state := 0
+        upCnt := 0
+        dnCnt := 0
+        lastDayKey := dayKey
+
+    bool contiguous = prevRegT > 0 and not newSess and (time - prevRegT == tfMs)
+
+    // ---- prior-only baselines (history excludes the current bar)
+    int nSz = array.size(aC)
+    int nHist = math.min(nSz, lookback)
+    bool haveBase = nHist >= minHist
+    float spread = high - low
+    float cl = spread > 0 ? (close - low) / spread : 0.5
+    float uw = spread > 0 ? (high - math.max(open, close)) / spread : 0.0
+    float lw = spread > 0 ? (math.min(open, close) - low) / spread : 0.0
+    float rv = na
+    float rs = na
+    float pHi = na
+    float pLo = na
+    int bg = 9
+    if haveBase
+        float sumV = 0.0
+        float sumS = 0.0
+        float hh = array.get(aH, nSz - nHist)
+        float ll = array.get(aL, nSz - nHist)
+        for k = nSz - nHist to nSz - 1
+            sumV += array.get(aV, k)
+            sumS += array.get(aH, k) - array.get(aL, k)
+            hh := math.max(hh, array.get(aH, k))
+            ll := math.min(ll, array.get(aL, k))
+        float mV = sumV / nHist
+        float mS = sumS / nHist
+        rv := mV > 0 ? volume / mV : na
+        rs := mS > 0 ? spread / mS : na
+        pHi := hh
+        pLo := ll
+        float prog = array.get(aC, nSz - 1) - array.get(aC, nSz - nHist)
+        bg := prog > 0 ? 1 : prog < 0 ? -1 : 0
+
+    // same local-time-of-day slot, prior sessions only
+    int slot = int(math.floor((hour * 60 + minute) / tfMin))
+    int cntTod = array.get(todN, slot)
+    int nTod = math.min(cntTod, lookback)
+    float todRV = na
+    if nTod >= todMinSess
+        float sumT = 0.0
+        for k = 0 to nTod - 1
+            sumT += matrix.get(todM, slot, k)
+        float mT = sumT / nTod
+        todRV := mT > 0 ? volume / mT : na
+    matrix.set(todM, slot, cntTod % lookback, volume)
+    array.set(todN, slot, cntTod + 1)
+
+    // ---- resolve earlier candidates by price follow-through (never proof of intent)
+    int nc = array.size(cRem)
+    if nc > 0
+        for k = 0 to nc - 1
+            if array.get(cRem, k) > 0
+                if not contiguous
+                    array.set(cRem, k, 0)
+                else
+                    int d = array.get(cDir, k)
+                    float chi = array.get(cHi, k)
+                    float clo = array.get(cLo, k)
+                    bool conf = d == 1 ? close > chi : close < clo
+                    bool inv = d == 1 ? close < clo : close > chi
+                    label lb = array.get(cLbl, k)
+                    if conf or inv
+                        array.set(cStat, k, conf ? 1 : 2)
+                        array.set(cRem, k, 0)
+                        if not na(lb)
+                            label.set_text(lb, array.get(cCode, k) + " " + f_mark(conf ? 1 : 2))
+                            if inv
+                                label.set_color(lb, color.new(d == 1 ? cUp : cDn, 75))
+                    else
+                        int rem = array.get(cRem, k) - 1
+                        array.set(cRem, k, rem)
+                        if rem == 0
+                            array.set(cStat, k, 3)
+                            if not na(lb)
+                                label.set_text(lb, array.get(cCode, k) + " " + f_mark(3))
+                                label.set_color(lb, color.new(d == 1 ? cUp : cDn, 75))
+
+    // ---- VSA rules (same comparisons as backend vsa.py)
+    string tags = ""
+    if not na(rv) and not na(rs)
+        bool hiV = rv >= hiVol
+        bool loV = rv <= loVol
+        bool wide = rs >= wideSp
+        bool narrow = rs <= narrowSp
+        bool upper = cl >= 1 - closeExt
+        bool lower = cl <= closeExt
+        bool offLow = cl > closeExt
+        bool offHigh = cl < 1 - closeExt
+        bool upBg = bg == 1
+        bool dnBg = bg == -1
+        bool atLow = low <= pLo
+        bool atHigh = high >= pHi
+        bool newLow = low < pLo
+        bool newHigh = high > pHi
+        bool recover = close > pLo
+        bool rejectH = close < pHi
+        bool upBar = close > open
+        bool dnBar = close < open
+        bool upWick = uw >= wickFrac
+        bool loWick = lw >= wickFrac
+        bool todHi = not na(todRV) and todRV >= hiVol
+
+        string sCodes = ""
+        string wCodes = ""
+        int sN = 0
+        int wN = 0
+        if hiV and dnBg and atLow and offLow
+            sCodes := f_add(sCodes, "SV")
+            sN += 1
+        if hiV and wide and dnBg and atLow and upper
+            sCodes := f_add(sCodes, "SC")
+            sN += 1
+        if newLow and recover and dnBg and upper
+            sCodes := f_add(sCodes, "SP")
+            sN += 1
+        if loV and narrow and dnBar and dnBg and offLow
+            sCodes := f_add(sCodes, "NS")
+            sN += 1
+        if hiV and dnBg and narrow and loWick and atLow
+            sCodes := f_add(sCodes, "EFF+")
+            sN += 1
+        if loV and narrow and upBar and upBg and offHigh
+            wCodes := f_add(wCodes, "ND")
+            wN += 1
+        if newHigh and rejectH and upBg and lower and upWick
+            wCodes := f_add(wCodes, "UT")
+            wN += 1
+        if hiV and wide and upBg and atHigh and lower
+            wCodes := f_add(wCodes, "BC")
+            wN += 1
+        if hiV and upBg and narrow and upWick and atHigh
+            wCodes := f_add(wCodes, "EFF-")
+            wN += 1
+        if hiV and narrow and offLow and offHigh
+            tags := f_add(tags, "churn")
+        if hiV and narrow
+            tags := f_add(tags, "narrow-spread/high-volume")
+        if loV and wide
+            tags := f_add(tags, "wide-spread/low-volume")
+        if hiV
+            tags := f_add(tags, "volume expansion")
+        if loV
+            tags := f_add(tags, "volume contraction")
+        if narrow
+            tags := f_add(tags, "compression")
+        if hiV and wide
+            tags := f_add(tags, "climactic activity")
+        if todHi
+            tags := f_add(tags, "abnormal time-of-day volume")
+        if sN > 0
+            label lbS = na
+            if showVsa
+                lbS := label.new(bar_index, na, sCodes + " ?", yloc=yloc.belowbar, style=label.style_label_up, color=color.new(cUp, 15), textcolor=color.white, size=size.small)
+            array.push(cDir, 1)
+            array.push(cStat, 0)
+            array.push(cRem, confBars)
+            array.push(cN, sN)
+            array.push(cHi, high)
+            array.push(cLo, low)
+            array.push(cCode, sCodes)
+            array.push(cLbl, lbS)
+            sStrNew := true
+        if wN > 0
+            label lbW = na
+            if showVsa
+                lbW := label.new(bar_index, na, wCodes + " ?", yloc=yloc.abovebar, style=label.style_label_down, color=color.new(cDn, 15), textcolor=color.white, size=size.small)
+            array.push(cDir, -1)
+            array.push(cStat, 0)
+            array.push(cRem, confBars)
+            array.push(cN, wN)
+            array.push(cHi, high)
+            array.push(cLo, low)
+            array.push(cCode, wCodes)
+            array.push(cLbl, lbW)
+            sWkNew := true
+
+    // ---- price action (same comparisons as backend price_action.py)
+    if not na(pHi)
+        if close > pHi
+            sBoUp := true
+            lastBoDir := 1
+            lastBoBar := bar_index
+        else if high > pHi and close < pHi
+            sFbUp := true
+            lastFbDir := -1
+            lastFbBar := bar_index
+        if close < pLo
+            sBoDn := true
+            lastBoDir := -1
+            lastBoBar := bar_index
+        else if low < pLo and close > pLo
+            sFbDn := true
+            lastFbDir := 1
+            lastFbBar := bar_index
+    sWick := math.max(uw, lw) >= wickFrac
+
+    // ---- auction state machine against the prior complete session's value area
+    if not contiguous
+        upCnt := 0
+        dnCnt := 0
+    if refValid
+        int old = state
+        if close > refVah
+            upCnt += 1
+            dnCnt := 0
+            state := upCnt >= acceptBars ? 3 : 2
+        else if close < refVal
+            dnCnt += 1
+            upCnt := 0
+            state := dnCnt >= acceptBars ? 6 : 5
+        else
+            state := (old == 2 or old == 3) ? 4 : ((old == 5 or old == 6) ? 7 : 1)
+            upCnt := 0
+            dnCnt := 0
+        if state != old
+            sAuc := true
+            if showAuction
+                bool upSide = state == 1 or state == 2 or state == 3 or state == 4
+                string aText = switch state
+                    1 => "◆ Balance"
+                    2 => "▲ Breakout attempt"
+                    3 => "▲▲ Accepted above"
+                    4 => "↩ Rejected above"
+                    5 => "▼ Breakdown attempt"
+                    6 => "▼▼ Accepted below"
+                    7 => "↩ Rejected below"
+                    => ""
+                label.new(bar_index, na, aText, yloc=upSide ? yloc.abovebar : yloc.belowbar, style=upSide ? label.style_label_down : label.style_label_up, color=color.new(cAuc, 20), textcolor=color.white, size=size.tiny)
+
+    // ---- keep the prior-session value drawing in step with the chart
+    if refValid and showValue
+        if not na(lnV)
+            line.set_x2(lnV, bar_index)
+            line.set_x2(lnP, bar_index)
+            line.set_x2(lnL, bar_index)
+            box.set_right(bxV, bar_index)
+
+    // ---- record this completed bar
+    array.push(aO, open)
+    array.push(aH, high)
+    array.push(aL, low)
+    array.push(aC, close)
+    array.push(aV, volume)
+    array.push(aT, time)
+    array.push(aS, sessCount)
+    if array.size(aC) > maxKeep
+        array.shift(aO)
+        array.shift(aH)
+        array.shift(aL)
+        array.shift(aC)
+        array.shift(aV)
+        array.shift(aT)
+        array.shift(aS)
+    array.push(sO, open)
+    array.push(sH, high)
+    array.push(sL, low)
+    array.push(sC, close)
+    array.push(sV, volume)
+    sCount += 1
+    sLastT := time
+    if session.islastbar_regular
+        sSawLast := true
+    prevRegT := time
+
+    // ---- swing pivots: observable only after the right-hand bars have closed
+    int sz = array.size(aC)
+    int need = 2 * pivotBars + 1
+    if sz >= need
+        bool contig = true
+        for k = sz - need + 1 to sz - 1
+            if array.get(aS, k) != array.get(aS, k - 1) or array.get(aT, k) - array.get(aT, k - 1) != tfMs
+                contig := false
+        if contig
+            int ci = sz - 1 - pivotBars
+            float cH = array.get(aH, ci)
+            float cLw = array.get(aL, ci)
+            float maxO = na
+            float minO = na
+            for k = sz - need to sz - 1
+                if k != ci
+                    maxO := na(maxO) ? array.get(aH, k) : math.max(maxO, array.get(aH, k))
+                    minO := na(minO) ? array.get(aL, k) : math.min(minO, array.get(aL, k))
+            if cH > maxO
+                relH := na(lastPivH) ? 8 : (cH > lastPivH ? 1 : (cH < lastPivH ? -1 : 0))
+                if showPivots
+                    string ph = relH == 1 ? "HH" : relH == -1 ? "LH" : relH == 0 ? "EH" : "SH"
+                    label.new(bar_index - pivotBars, cH, ph, style=label.style_label_down, color=color.new(cPA, 30), textcolor=color.white, size=size.tiny)
+                lastPivH := cH
+            if cLw < minO
+                relL := na(lastPivL) ? 8 : (cLw > lastPivL ? 1 : (cLw < lastPivL ? -1 : 0))
+                if showPivots
+                    string pl = relL == 1 ? "HL" : relL == -1 ? "LL" : relL == 0 ? "EL" : "SL"
+                    label.new(bar_index - pivotBars, cLw, pl, style=label.style_label_up, color=color.new(cPA, 30), textcolor=color.white, size=size.tiny)
+                lastPivL := cLw
+
+    // ---- snapshot for the panel
+    lastC := close
+    lastRV := rv
+    lastRS := rs
+    lastCL := cl
+    lastTod := todRV
+    lastBg := bg
+    lastTags := tags
+    lastBase := haveBase
+
+// ============================================================================
+// Chart signals and alerts
+// ============================================================================
+plotshape(showPA and sBoUp, "Breakout up", shape.triangleup, location.belowbar, color.new(cPA, 10), size=size.tiny)
+plotshape(showPA and sBoDn, "Breakout down", shape.triangledown, location.abovebar, color.new(cPA, 10), size=size.tiny)
+plotshape(showPA and sFbUp, "Failed breakout up (rejected)", shape.xcross, location.abovebar, color.new(cDn, 20), size=size.tiny)
+plotshape(showPA and sFbDn, "Failed breakout down (rejected)", shape.xcross, location.belowbar, color.new(cUp, 20), size=size.tiny)
+plotshape(showWicks and sWick, "Large wick", shape.circle, location.top, color.new(cNeu, 40), size=size.tiny)
+
+alertcondition(sStrNew, "VSA strength candidate", "MSI: strength observation candidate (provisional until follow-through)")
+alertcondition(sWkNew, "VSA weakness candidate", "MSI: weakness observation candidate (provisional until follow-through)")
+alertcondition(sAuc, "Auction state change", "MSI: auction state changed against prior value")
+alertcondition(sReset, "Session reset", "MSI: new session, auction state reset")
+
+// ============================================================================
+// Interpretation: combine every factor into one reading
+// ============================================================================
+var table pnl = table.new(
+  panelPos == "Top left" ? position.top_left : panelPos == "Bottom right" ? position.bottom_right : panelPos == "Bottom left" ? position.bottom_left : panelPos == "Middle right" ? position.middle_right : position.top_right,
+  2, 11, border_width=1, border_color=color.new(color.gray, 70), frame_width=1, frame_color=color.new(color.gray, 60))
+
+psize = panelSizeIn == "Tiny" ? size.tiny : panelSizeIn == "Normal" ? size.normal : size.small
+bgPanel = color.new(#131722, 8)
+bgHead  = color.new(#1e222d, 0)
+txt     = color.new(#d1d4dc, 0)
+dim     = color.new(#868993, 0)
+
+if barstate.islast and showPanel
+    if not engineOn
+        table.cell(pnl, 0, 0, "MSI", text_color=txt, bgcolor=bgHead, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 0, "Use an intraday chart between 1 and 60 minutes (regular hours).", text_color=color.new(color.orange, 0), bgcolor=bgHead, text_size=psize, text_halign=text.align_left)
+    else
+        // ---- developing profile of the current session
+        bool devOk = false
+        float devPoc = na
+        float devVah = na
+        float devVal = na
+        int devShp = 0
+        if array.size(sH) > 0
+            [okD, pocD, vahD, valD, shpD, binD] = f_profile(sH, sL, sV, sC, sO, binIn)
+            devOk := okD
+            devPoc := pocD
+            devVah := vahD
+            devVal := valD
+            devShp := shpD
+        if showDev and devOk
+            if na(dvV)
+                dvV := line.new(sStartBar, devVah, bar_index, devVah, extend=extend.right, color=color.new(cPA, 30), style=line.style_dotted)
+                dvP := line.new(sStartBar, devPoc, bar_index, devPoc, extend=extend.right, color=color.new(cPA, 10), style=line.style_dashed)
+                dvL := line.new(sStartBar, devVal, bar_index, devVal, extend=extend.right, color=color.new(cPA, 30), style=line.style_dotted)
+            else
+                line.set_xy1(dvV, sStartBar, devVah)
+                line.set_xy2(dvV, bar_index, devVah)
+                line.set_xy1(dvP, sStartBar, devPoc)
+                line.set_xy2(dvP, bar_index, devPoc)
+                line.set_xy1(dvL, sStartBar, devVal)
+                line.set_xy2(dvL, bar_index, devVal)
+
+        // ---- active VSA observations in this session
+        int nStr = 0
+        int nWk = 0
+        string strC = ""
+        string wkC = ""
+        int ncs = array.size(cDir)
+        if ncs > 0
+            for k = 0 to ncs - 1
+                int stt = array.get(cStat, k)
+                if stt == 0 or stt == 1
+                    string cc = array.get(cCode, k) + f_mark(stt)
+                    if array.get(cDir, k) == 1
+                        nStr += array.get(cN, k)
+                        strC := f_add(strC, cc)
+                    else
+                        nWk += array.get(cN, k)
+                        wkC := f_add(wkC, cc)
+
+        // ---- the engine's own scenario rule (backend interpretation.py)
+        bool shpUp = devShp == 1 or devShp == 6
+        bool shpDn = devShp == 2 or devShp == 7
+        bool contradiction = (nStr > 0 and nWk > 0) or (shpUp and nWk > 0) or (shpDn and nStr > 0)
+        int scen = contradiction ? 0 : ((nStr > 0 or nWk > 0) ? (nStr > 0 ? 1 : 2) : 3)
+        string scenName = scen == 0 ? "Mixed evidence" : scen == 1 ? "Potential local strength" : scen == 2 ? "Potential local weakness" : "No significant directional pattern"
+        string scenText = scen == 0 ? "Profile context and local strength/weakness observations are in tension; no directional conclusion is warranted." : scen == 1 ? "Local strength classifications may reflect a change in auction pressure; continuation or ordinary noise remain plausible." : scen == 2 ? "Local weakness classifications may reflect a change in auction pressure; continuation or ordinary noise remain plausible." : "No active directional VSA pattern meets the configured rules. The profile describes activity but cannot establish directional intent."
+        string confirmText = scen == 0 ? "Continued closes outside prior value, with progress rather than repeated rejection, would support acceptance." : scen == 3 ? "Additional completed bars and contextual evidence are required." : "Subsequent closes beyond the observation extreme in its classified direction."
+        string invalText = scen == 0 ? "Return inside prior value and failure to recover would weaken acceptance." : scen == 3 ? "A new context-qualified observation becomes available." : "Subsequent closes beyond its opposite extreme; lack of follow-through weakens the interpretation."
+
+        // ---- factor votes: +1 up, -1 down, 0 neutral, 9 unknown
+        int vBg = lastBg == 9 ? 9 : lastBg
+        int vLoc = not refValid or na(lastC) ? 9 : (lastC > refVah ? 1 : (lastC < refVal ? -1 : 0))
+        int vAuc = not refValid ? 9 : (state == 3 ? 1 : (state == 6 ? -1 : (state == 7 ? 1 : (state == 4 ? -1 : (state == 0 ? 9 : 0)))))
+        int shpUse = array.size(sH) >= minHist ? devShp : refShape
+        int vShp = shpUse == 1 or shpUse == 6 ? 1 : (shpUse == 2 or shpUse == 7 ? -1 : (shpUse == 0 ? 9 : 0))
+        int vVsa = nStr > nWk ? 1 : (nWk > nStr ? -1 : 0)
+        int vStr = (relH == 9 or relL == 9 or relH == 8 or relL == 8) ? 9 : ((relH == 1 and relL == 1) ? 1 : ((relH == -1 and relL == -1) ? -1 : 0))
+        int upN = 0
+        int dnN = 0
+        int neuN = 0
+        int knownN = 0
+        string dissentUp = ""
+        string dissentDn = ""
+        array<int> votes = array.from(vBg, vLoc, vAuc, vShp, vVsa, vStr)
+        array<string> names = array.from("Background", "Location", "Auction", "Profile", "VSA", "Structure")
+        for k = 0 to 5
+            int v = array.get(votes, k)
+            if v != 9
+                knownN += 1
+                if v == 1
+                    upN += 1
+                    dissentUp := f_add(dissentUp, array.get(names, k))
+                else if v == -1
+                    dnN += 1
+                    dissentDn := f_add(dissentDn, array.get(names, k))
+                else
+                    neuN += 1
+        string verdict = ""
+        if knownN < 3
+            verdict := "Not enough established context yet to form an overall picture."
+        else if upN > 0 and dnN > 0
+            if upN == dnN
+                verdict := "CONFLICTED: " + dissentUp + " lean up, but " + dissentDn + " lean down. The picture does not agree with itself, so no overall lean."
+            else if upN > dnN
+                verdict := "LEANING UP with dissent: " + dissentUp + " point up; " + dissentDn + " disagree."
+            else
+                verdict := "LEANING DOWN with dissent: " + dissentDn + " point down; " + dissentUp + " disagree."
+        else if upN > 0
+            verdict := (upN >= 3 ? "ALIGNED UP: " : "LEANING UP (thin): ") + dissentUp + " point up; the other " + str.tostring(knownN - upN) + " are neutral."
+        else if dnN > 0
+            verdict := (dnN >= 3 ? "ALIGNED DOWN: " : "LEANING DOWN (thin): ") + dissentDn + " point down; the other " + str.tostring(knownN - dnN) + " are neutral."
+        else
+            verdict := "BALANCED: no factor leans either way; two-sided trade."
+
+        // ---- sentences
+        string locTxt = not refValid ? "No usable prior value reference (" + f_reason(refReason) + "); location versus value is not assessed." : (vLoc == 1 ? "Price is ABOVE" : vLoc == -1 ? "Price is BELOW" : "Price is INSIDE") + " the prior session's value area " + str.tostring(refVal, format.mintick) + " – " + str.tostring(refVah, format.mintick) + " (POC " + str.tostring(refPoc, format.mintick) + ")."
+        string aucWhy = state == 0 ? "no state established yet this session" : state == 1 ? "closes are back inside prior value" : state == 2 ? "closes above value, not yet accepted (" + str.tostring(upCnt) + " of " + str.tostring(acceptBars) + ")" : state == 3 ? "price accepted above value (" + str.tostring(upCnt) + " consecutive closes)" : state == 4 ? "an upward excursion failed and price returned inside value" : state == 5 ? "closes below value, not yet accepted (" + str.tostring(dnCnt) + " of " + str.tostring(acceptBars) + ")" : state == 6 ? "price accepted below value (" + str.tostring(dnCnt) + " consecutive closes)" : "a downward excursion failed and price returned inside value"
+        string vsaTxt = (nStr == 0 and nWk == 0) ? "No active directional VSA observation this session." : "Active this session: " + (nStr > 0 ? "strength " + strC : "") + (nStr > 0 and nWk > 0 ? " | " : "") + (nWk > 0 ? "weakness " + wkC : "") + "  (? provisional, ✓ confirmed by follow-through)"
+        string pivTxt = (relH == 9 or relL == 9) ? "Not enough confirmed pivots yet." : "Pivot highs: " + f_rel(relH) + ", pivot lows: " + f_rel(relL) + (vStr == 1 ? " → rising structure" : vStr == -1 ? " → falling structure" : vStr == 0 ? " → mixed structure" : "")
+        string paTxt = lastBoBar > 0 and bar_index - lastBoBar <= 10 ? " Last breakout " + (lastBoDir == 1 ? "up" : "down") + " " + str.tostring(bar_index - lastBoBar) + " bars ago." : ""
+        string fbTxt = lastFbBar > 0 and bar_index - lastFbBar <= 10 ? " Failed " + (lastFbDir == -1 ? "upside" : "downside") + " break " + str.tostring(bar_index - lastFbBar) + " bars ago." : ""
+        string barTxt = lastBase ? "Last bar: volume " + str.tostring(lastRV, "#.0") + "x, spread " + str.tostring(lastRS, "#.0") + "x average; close at " + str.tostring(lastCL * 100, "#") + "% of range." + (lastTags != "" ? " [" + lastTags + "]" : "") : "Not enough bars for baselines yet."
+
+        // ---- table
+        table.cell(pnl, 0, 0, "MSI", text_color=txt, bgcolor=bgHead, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 0, syminfo.ticker + " · " + timeframe.period + " · completed bars only", text_color=dim, bgcolor=bgHead, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 1, "Context", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 1, locTxt + " Background " + (lastBg == 1 ? "up" : lastBg == -1 ? "down" : "flat") + " over the last " + str.tostring(lookback) + " bars.", text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left, width=34)
+        table.cell(pnl, 0, 2, "Auction", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 2, f_stateName(state) + " — " + aucWhy + ".", text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 3, "Profile", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 3, "This session: " + f_shapeName(devShp) + " — " + f_shapeText(devShp) + ". Prior session: " + f_shapeName(refShape) + ". Shape ambiguity: high.", text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 4, "VSA", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 4, vsaTxt, text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 5, "Structure", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 5, pivTxt + paTxt + fbTxt, text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 6, "Last bar", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 6, barTxt, text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        string fl = f_sym(vBg) + " Background  " + f_sym(vLoc) + " Location  " + f_sym(vAuc) + " Auction  " + f_sym(vShp) + " Profile  " + f_sym(vVsa) + " VSA  " + f_sym(vStr) + " Structure"
+        table.cell(pnl, 0, 7, "Factors", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 7, fl + "\n▲ up   ▼ down   ● neutral   ○ not established", text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        color vc = upN > 0 and dnN > 0 ? color.new(color.orange, 0) : upN > 0 ? cUp : dnN > 0 ? cDn : txt
+        table.cell(pnl, 0, 8, "Reading", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 8, verdict + "\nEngine rule: " + scenName + ". " + scenText, text_color=vc, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 9, "Watch", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 9, "Would support: " + confirmText + "\nWould weaken: " + invalText, text_color=txt, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 0, 10, "Note", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
+        table.cell(pnl, 1, 10, "Rule-based and heuristic, from OHLCV only. Not a forecast or trade advice; participants and intent cannot be seen.", text_color=dim, bgcolor=bgPanel, text_size=psize, text_halign=text.align_left)
