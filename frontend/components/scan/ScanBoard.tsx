@@ -44,7 +44,7 @@ export function ScanBoard() {
     <div className="flex flex-col gap-6">
       <Panel
         title="S&P 500 scan"
-        description="Flags a symbol when at least three of four independent readings agree and none disagree: value location, auction state, active VSA signals and price action."
+        description="Flags a symbol when at least three of four readings agree and none disagree: value location, auction state, active VSA signals and price action."
         actions={
           <>
             <Segmented<string> label="Auto-scan" size="sm" value={String(status?.auto_minutes ?? 0)} onChange={(v) => auto.mutate(Number(v))}

@@ -72,6 +72,16 @@ def test_any_opposing_reading_or_too_few_readings_does_not_flag():
     assert confluence(a) == ("none", 0, [])
 
 
+def test_engine_reported_contradiction_suppresses_the_flag():
+    # Reproduces the review case: strength majority, an opposing weakness observation, and populated contradicting_evidence.
+    a, bars = base_analysis()
+    with_state(a, "above_value", "higher_price_acceptance")
+    a.vsa_observations = [ev("strength", bars=bars), ev("strength", concept="stopping_volume", bars=bars), ev("weakness", concept="upthrust", bars=bars)]
+    assert confluence(a)[:2] == ("strength", 3)  # majority voting alone would flag it
+    a.contradicting_evidence = [a.vsa_observations[2].id]
+    assert confluence(a)[0] == "none"
+
+
 def test_resolved_vsa_and_earlier_session_signals_do_not_count():
     a, bars = base_analysis()
     with_state(a, "above_value", "higher_price_acceptance")

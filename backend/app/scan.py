@@ -1,6 +1,6 @@
 """S&P 500 confluence scanner: loads recent bars per symbol, runs the normal analysis, and flags aligned strength or weakness.
 
-Nothing here changes detector rules. A symbol is flagged only when independent readings from the existing analysis agree.
+Nothing here changes detector rules. A symbol is flagged only when several readings from the existing analysis agree and the engine reports no contradiction. The readings share closes and prior-value levels, so the count is a heuristic, not independent corroboration.
 Scans use the unofficial Yahoo chart endpoint (see providers.py) and never persist datasets or snapshots.
 """
 import json
@@ -79,7 +79,7 @@ def load_universe() -> list[dict]:
 
 
 def confluence(a: Analysis) -> tuple[str, int, list[ScanVote]]:
-    """Four readings, each -1 (weakness), 0 or +1 (strength). Flag only when >= MIN_AGREEING agree and none oppose."""
+    """Four readings, each -1 (weakness), 0 or +1 (strength). Flag only when >= MIN_AGREEING agree, none oppose and the engine reports no contradicting evidence."""
     votes = []
     loc = a.value_location
     if loc is not None and loc.state != "unavailable":
@@ -100,6 +100,9 @@ def confluence(a: Analysis) -> tuple[str, int, list[ScanVote]]:
     if s or w:
         votes.append(ScanVote(factor="price_action", vote=1 if s > w else -1 if w > s else 0, text=f"Price action this session: {s} strength, {w} weakness"))
     up, down = sum(v.vote > 0 for v in votes), sum(v.vote < 0 for v in votes)
+    if a.contradicting_evidence:
+        # The engine itself reports opposing evidence; majority voting must not hide it.
+        return "none", max(up, down), votes
     if up >= MIN_AGREEING and down == 0:
         return "strength", up, votes
     if down >= MIN_AGREEING and up == 0:
