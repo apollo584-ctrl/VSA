@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, Settings, Waves, type LucideIcon } from "lucide-react";
+import { BookOpen, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Settings, Waves, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -61,13 +61,25 @@ function Sidebar() {
   const collapsed = state.navCollapsed;
   return (
     <nav aria-label="Primary" className={cn("relative flex shrink-0 flex-col border-r border-border bg-surface transition-[width] max-md:w-16", collapsed ? "w-16" : "w-64")}>
-      <Link href="/" className={cn("flex h-16 shrink-0 items-center gap-3 px-4", collapsed && "justify-center px-0")}>
-        <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-value text-sm font-bold text-white shadow-sm">MS</span>
-        <span className={cn("leading-tight", collapsed && "sr-only", "max-md:sr-only")}>
-          <span className="block text-sm font-semibold text-fg">Market Structure</span>
-          <span className="block text-xs text-subtle">Analysis terminal</span>
-        </span>
-      </Link>
+      <div className={cn("flex h-16 shrink-0 items-center gap-2 px-3", collapsed && "flex-col justify-center gap-1 px-0")}>
+        <Link href="/" aria-label="Market Structure home" className={cn("flex min-w-0 flex-1 items-center gap-3 px-1", collapsed && "flex-none justify-center px-0")}>
+          <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-accent to-value text-sm font-bold text-white shadow-sm">MS</span>
+          <span className={cn("min-w-0 leading-tight", collapsed && "sr-only", "max-md:sr-only")}>
+            <span className="block text-sm font-semibold text-fg">Market Structure</span>
+            <span className="block text-xs text-subtle">Analysis terminal</span>
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => set({ navCollapsed: !collapsed })}
+          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-subtle hover:bg-surface-2 hover:text-fg max-md:hidden"
+        >
+          <PanelLeft size={17} aria-hidden />
+        </button>
+      </div>
       <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 pt-4">
         {NAV_GROUPS.map((group) => (
           <div key={group.label}>

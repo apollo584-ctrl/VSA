@@ -12,6 +12,7 @@ import { barTimeContaining } from "@/lib/replay";
 import { cn } from "@/lib/utils";
 import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/types";
 import { ChartOverlay } from "./ChartOverlay";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
 /** Volume expansion/contraction recolour their candle instead of carrying a text marker (the chart gets crowded otherwise). */
@@ -58,6 +59,8 @@ interface Props {
 export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile }: Props) {
   const { state } = useWorkspace();
   const hostRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
@@ -78,6 +81,17 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   eventsRef.current = events;
   const barsRef = useRef(bars);
   barsRef.current = bars;
+
+  // Full screen applies to the chart frame only; the chart autosizes to it via its ResizeObserver.
+  useEffect(() => {
+    const onChange = () => setFullscreen(document.fullscreenElement === frameRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void frameRef.current?.requestFullscreen?.().catch(() => undefined);
+  };
 
   // ---- create chart once
   useEffect(() => {
@@ -236,7 +250,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const display = hover ?? bars[bars.length - 1] ?? null;
 
   return (
-    <div className={cn("relative h-full min-h-72 w-full overflow-hidden rounded-md", className)}>
+    <div ref={frameRef} className={cn("relative h-full min-h-72 w-full overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
       <div ref={hostRef} className="absolute inset-0" role="img" aria-label={`Candlestick chart, ${bars.length} bars. VSA events are listed beside the chart.`} />
       {size.w > 0 && (
         <ChartOverlay
@@ -248,6 +262,18 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
           developing={profileKind === "developing" ? profile : null} showValueLevels={layers.valueLevels && !hideProfile}
         />
       )}
+      <div role="group" aria-label="Chart tools" className="absolute bottom-9 right-2 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-surface/90 shadow-sm backdrop-blur-sm">
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+          aria-pressed={fullscreen}
+          title={fullscreen ? "Exit full screen" : "Full screen"}
+          className="grid h-8 w-8 place-items-center text-muted hover:bg-surface-2 hover:text-fg"
+        >
+          {fullscreen ? <Minimize2 size={15} aria-hidden /> : <Maximize2 size={15} aria-hidden />}
+        </button>
+      </div>
       {display && (
         <div className="pointer-events-none absolute left-2 top-1 flex max-w-[calc(100%-4.5rem)] flex-wrap gap-x-3 rounded-md bg-surface/80 px-2 py-0.5 text-xs backdrop-blur-sm" style={{ top: layers.auction ? 38 : 4 }}>
           <span className="text-muted">{fmtDateTime(display.t, true)}</span>
