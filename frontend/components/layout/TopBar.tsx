@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Search, Settings, Sun } from "lucide-react";
+import { Moon, Power, Search, Settings, Sun } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
@@ -72,6 +72,28 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
   );
 }
 
+/** Stops the frontend and backend, the same as stop.bat. Only works when started with start.bat. */
+function QuitButton() {
+  const [status, setStatus] = useState<"idle" | "stopping" | "stopped" | "unavailable">("idle");
+  async function quit() {
+    if (!window.confirm("Stop the terminal and the analysis backend? Close this tab afterwards.")) return;
+    setStatus("stopping");
+    try {
+      const res = await fetch("/api/quit", { method: "POST", headers: { "X-MSI-Action": "quit" } });
+      setStatus(res.ok ? "stopped" : "unavailable");
+    } catch {
+      setStatus("stopped"); // the server going down mid-request is the expected outcome
+    }
+  }
+  if (status === "stopped") return <span role="status" className="text-xs text-muted">Stopped. You can close this tab.</span>;
+  if (status === "unavailable") return <span role="status" className="text-xs text-danger">Quit needs start.bat. Stop the servers manually.</span>;
+  return (
+    <Button variant="ghost" size="sm" onClick={quit} disabled={status === "stopping"} title="Stop the frontend and backend (same as stop.bat)">
+      <Power size={14} aria-hidden /> {status === "stopping" ? "Stopping…" : "Quit"}
+    </Button>
+  );
+}
+
 export function TopBar() {
   const { state, set, selectInstrument } = useWorkspace();
   const { data: instruments = [] } = useInstruments();
@@ -128,6 +150,7 @@ export function TopBar() {
           </Badge>
         )}
         <Link href="/settings" aria-label="Settings" className="inline-grid h-7 w-7 place-items-center rounded-md text-muted hover:bg-surface-2 hover:text-fg"><Settings size={15} aria-hidden /></Link>
+        <QuitButton />
         <Button variant="ghost" size="icon" aria-label={state.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => set({ theme: state.theme === "dark" ? "light" : "dark" })}>
           {state.theme === "dark" ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
         </Button>
