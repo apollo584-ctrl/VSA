@@ -15,8 +15,9 @@ from pydantic import ValidationError
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, Parameters, Profile, Source
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, Parameters, Profile, Source, SymbolLoadRequest
 from app.profiles import profile, profiles
+from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.store import Store
 
 logger = logging.getLogger("market_intelligence")
@@ -28,7 +29,8 @@ logger.setLevel(logging.INFO)
 logger.propagate = False
 
 
-def create_app(db_path: Path | None = None) -> FastAPI:
+def create_app(db_path: Path | None = None, market_fetch=None) -> FastAPI:
+    fetch = market_fetch or http_fetch
     store = Store(db_path or Path(os.getenv("MSI_DB_PATH", str(Path(__file__).resolve().parents[1] / "data/market.sqlite3"))))
 
     @asynccontextmanager
@@ -85,6 +87,24 @@ def create_app(db_path: Path | None = None) -> FastAPI:
             dataset, bars = await run_in_threadpool(ingest, raw, source)
         except (ValueError, ValidationError) as exc:
             raise HTTPException(422, str(exc)) from exc
+        await run_in_threadpool(store.save_dataset, dataset, bars, raw)
+        return dataset
+
+    @app.post("/api/v1/datasets/from-symbol", response_model=Dataset, status_code=201,
+              responses={200: {"model": Dataset, "description": "Identical data already stored; existing dataset returned"}})
+    async def load_symbol(request: SymbolLoadRequest, response: Response):
+        provider = YahooChartProvider(request.symbol, request.timeframe_minutes, request.period, fetch=fetch)
+        try:
+            source, raw = await run_in_threadpool(provider.read)
+            dataset, bars = await run_in_threadpool(ingest, raw, source)
+        except ProviderUnavailable as exc:
+            raise HTTPException(502, str(exc)) from exc
+        except ValueError as exc:  # includes SymbolNotFound
+            raise HTTPException(422, str(exc)) from exc
+        existing = await run_in_threadpool(store.find_dataset, dataset.content_sha256, source)
+        if existing is not None:
+            response.status_code = 200
+            return existing
         await run_in_threadpool(store.save_dataset, dataset, bars, raw)
         return dataset
 

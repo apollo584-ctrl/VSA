@@ -51,6 +51,13 @@ export const api = {
     return validated(knowledgeListSchema, { concepts: items }).concepts;
   },
 
+  /** Load recent bars for a typed symbol. Only the real backend can fetch market data. */
+  async loadSymbol(symbol: string): Promise<{ datasetId: string }> {
+    if (API_MODE === "mock") throw new ApiError("not_supported", "Loading a symbol needs the real backend; mock mode uses fixed fixtures.", 0);
+    const { datasetId } = await backendApi.loadSymbol(symbol);
+    return { datasetId };
+  },
+
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
     if (API_MODE === "mock") return validated(uploadResultSchema, await (await mock()).uploadDataset({ name: file.name, text: await file.text() }));
     return validated(uploadResultSchema, await backendApi.uploadDataset(file, metadata));

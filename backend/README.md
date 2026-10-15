@@ -1,6 +1,6 @@
 # Market Structure Intelligence backend
 
-First working vertical slice for historical OHLCV interpretation. Requires Python 3.12+. No API keys or LLM needed. The demo is synthetic, not live data. Frontend integration: [API contract](../docs/API_CONTRACT.md). Scope and remaining modules: [product specification](../docs/PRODUCT_SPEC.md).
+First working vertical slice for historical OHLCV interpretation. Requires Python 3.12+. No API keys or LLM needed. The demo is synthetic, not live data. `POST /api/v1/datasets/from-symbol` imports recent, delayed bars for a ticker from Yahoo Finance (no key; needs network access) through the same validation as an upload. Frontend integration: [API contract](../docs/API_CONTRACT.md). Scope and remaining modules: [product specification](../docs/PRODUCT_SPEC.md).
 
 ## Windows PowerShell setup
 

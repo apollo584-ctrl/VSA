@@ -4,7 +4,8 @@ import { Moon, Power, Search, Settings, Sun } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
-import { useInstruments } from "@/hooks/data";
+import { API_MODE } from "@/lib/api/client";
+import { useInstruments, useLoadSymbol } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
 import type { Instrument } from "@/types";
@@ -16,6 +17,9 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+  const load = useLoadSymbol();
+  const typed = query.trim().toUpperCase();
+  const canLoad = API_MODE === "http" && /^[A-Z][A-Z0-9.\-]{0,15}$/.test(typed);
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     return instruments.filter((i) => !q || i.symbol.toLowerCase().includes(q) || (i.label ?? "").toLowerCase().includes(q) || i.name.toLowerCase().includes(q));
@@ -32,7 +36,13 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const choose = (i: Instrument) => { onSelect(i.symbol); setQuery(""); setOpen(false); inputRef.current?.blur(); };
+  const choose = (i: Instrument) => { load.reset(); onSelect(i.symbol); setQuery(""); setOpen(false); inputRef.current?.blur(); };
+  // Row 0 is the "load this symbol" action when the typed text looks like a ticker.
+  const loadSymbol = () => {
+    if (!canLoad || load.isPending) return;
+    load.mutate(typed, { onSuccess: ({ datasetId }) => { onSelect(datasetId); setQuery(""); setOpen(false); inputRef.current?.blur(); } });
+  };
+  const offset = canLoad ? 1 : 0;
 
   return (
     <div className="relative w-56 max-md:w-full">
@@ -50,18 +60,29 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         onKeyDown={(e) => {
-          if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, results.length - 1)); }
+          if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(a + 1, results.length - 1 + offset)); }
           else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-          else if (e.key === "Enter" && results[active]) choose(results[active]!);
+          else if (e.key === "Enter" && canLoad && active === 0) loadSymbol();
+          else if (e.key === "Enter" && results[active - offset]) choose(results[active - offset]!);
           else if (e.key === "Escape") setOpen(false);
         }}
         className="h-8 w-full rounded-md border border-border bg-surface-2 pl-7 pr-2 text-xs placeholder:text-subtle"
       />
       {open && (
         <ul id={listId} role="listbox" className="absolute left-0 top-9 z-50 max-h-72 w-80 overflow-auto rounded-md border border-border-strong bg-surface-2 p-1 shadow-xl">
-          {results.length === 0 && <li className="px-2 py-2 text-xs text-muted">No matching datasets. Upload one in Settings.</li>}
+          {canLoad && (
+            <li role="option" aria-selected={active === 0} onMouseDown={(e) => { e.preventDefault(); loadSymbol(); }} className={cn("cursor-pointer rounded px-2 py-1.5", active === 0 && "bg-surface-3")}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold">{load.isPending ? `Loading ${typed}…` : `Load ${typed} from Yahoo Finance`}</span>
+                <Badge tone="info">30m · 1 month</Badge>
+              </div>
+              <div className="text-[11px] text-muted">Recent completed regular-session bars, delayed. Not a live feed.</div>
+              {load.isError && <div role="alert" className="mt-0.5 text-[11px] text-danger">{load.error instanceof Error ? load.error.message : "Could not load this symbol."}</div>}
+            </li>
+          )}
+          {results.length === 0 && !canLoad && <li className="px-2 py-2 text-xs text-muted">No matching datasets. Upload one in Settings.</li>}
           {results.map((i, n) => (
-            <li key={i.symbol} role="option" aria-selected={n === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded px-2 py-1.5", n === active && "bg-surface-3")}>
+            <li key={i.symbol} role="option" aria-selected={n + offset === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded px-2 py-1.5", n + offset === active && "bg-surface-3")}>
               <div className="flex items-center justify-between gap-2"><span className="num font-semibold">{i.label ?? i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
               <div className="text-[11px] text-muted">{i.name}</div>
             </li>

@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Literal
 
@@ -71,6 +72,20 @@ class AnalyzeRequest(Model):
     def aware(cls, value):
         if value is not None and (value.tzinfo is None or value.utcoffset() is None):
             raise ValueError("as_of must include a UTC offset")
+        return value
+
+
+class SymbolLoadRequest(Model):
+    symbol: str
+    timeframe_minutes: Literal[5, 15, 30] = 30
+    period: Literal["5d", "1mo", "60d"] = "1mo"
+
+    @field_validator("symbol")
+    @classmethod
+    def valid_symbol(cls, value):
+        value = value.strip().upper()
+        if not re.fullmatch(r"[A-Z][A-Z0-9.\-]{0,15}", value):
+            raise ValueError("symbol must start with a letter and use letters, digits, '.' or '-' (at most 16 characters)")
         return value
 
 

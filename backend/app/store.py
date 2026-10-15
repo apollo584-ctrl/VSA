@@ -46,6 +46,16 @@ class Store:
             raise KeyError(dataset_id)
         return Dataset.model_validate_json(row[0]), [Bar.model_validate(b) for b in json.loads(row[1])]
 
+    def find_dataset(self, content_sha256: str, source) -> Dataset | None:
+        """An identical import (same bytes and provenance) is reused rather than stored twice."""
+        with self.connect() as db:
+            rows = db.execute("SELECT metadata FROM datasets WHERE metadata LIKE ?", (f'%"{content_sha256}"%',)).fetchall()
+        for row in rows:
+            found = Dataset.model_validate_json(row[0])
+            if found.content_sha256 == content_sha256 and found.source == source:
+                return found
+        return None
+
     def instruments(self):
         with self.connect() as db:
             rows = db.execute("SELECT metadata FROM datasets ORDER BY id").fetchall()

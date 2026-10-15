@@ -75,6 +75,54 @@
         }
       }
     },
+    "/api/v1/datasets/from-symbol": {
+      "post": {
+        "summary": "Load Symbol",
+        "operationId": "load_symbol_api_v1_datasets_from_symbol_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymbolLoadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dataset"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Identical data already stored; existing dataset returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dataset"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/datasets/{dataset_id}": {
       "get": {
         "summary": "Dataset",
@@ -2113,6 +2161,40 @@
           "reason"
         ],
         "title": "StatusChange"
+      },
+      "SymbolLoadRequest": {
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "timeframe_minutes": {
+            "type": "integer",
+            "enum": [
+              5,
+              15,
+              30
+            ],
+            "title": "Timeframe Minutes",
+            "default": 30
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "5d",
+              "1mo",
+              "60d"
+            ],
+            "title": "Period",
+            "default": "1mo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "symbol"
+        ],
+        "title": "SymbolLoadRequest"
       },
       "ValidationError": {
         "properties": {

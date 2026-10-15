@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
@@ -15,6 +15,15 @@ export function useInstruments() {
 
 export function useKnowledge() {
   return useQuery({ queryKey: ["knowledge"], queryFn: () => api.listKnowledge(), staleTime: 30 * 60_000 });
+}
+
+export function useLoadSymbol() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (symbol: string) => api.loadSymbol(symbol),
+    // The instrument list must contain the new dataset before it is selected.
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["instruments"] }),
+  });
 }
 
 export function useUpload() {

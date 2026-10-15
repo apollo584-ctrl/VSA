@@ -137,6 +137,15 @@ export const backendApi = {
     return (await getConcepts()).map(mapConcept);
   },
 
+  /** Fetch recent completed bars for a symbol (backend → Yahoo Finance) and store them as a dataset. */
+  async loadSymbol(symbol: string): Promise<{ datasetId: string; created: boolean }> {
+    const d = await request("/datasets/from-symbol", rawDatasetSchema, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbol }),
+    });
+    datasetCache.set(d.id, Promise.resolve(d));
+    return { datasetId: d.id, created: true };
+  },
+
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
     if (!base()) throw new ApiError("unavailable", "No backend URL configured (NEXT_PUBLIC_API_BASE_URL).", 0);
     const form = new FormData();

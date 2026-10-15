@@ -7,8 +7,9 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | Method | Path | Input | Output |
 |---|---|---|---|
 | GET | `/health` | — | status, engine_version, knowledge_version, live_data=false |
-| GET | `/instruments` | — | `{items: [{instrument, dataset_ids}]}` for uploaded instruments only |
+| GET | `/instruments` | — | `{items: [{instrument, dataset_ids}]}` for stored datasets (uploaded or loaded by symbol) |
 | POST | `/datasets/upload` | multipart file and metadata JSON string | 201 Dataset |
+| POST | `/datasets/from-symbol` | `{symbol, timeframe_minutes=30 (5, 15 or 30), period="1mo" ("5d", "1mo" or "60d")}` | 201 Dataset; 200 existing Dataset when identical data is already stored |
 | GET | `/datasets/{id}` | dataset UUID | Dataset |
 | GET | `/market/bars` | dataset_id; optional as_of, offset=0, limit=1000 (max 10000) | Bar array |
 | GET | `/profiles` | dataset_id; optional as_of, bin_size=.25, value_area_fraction=.7, composite=false | Profile array |
@@ -19,6 +20,10 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/analyses/{id}` | analysis UUID | persisted Analysis |
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
+
+## Loading a symbol
+
+`POST /datasets/from-symbol` fetches recent completed bars for a ticker from Yahoo Finance's unofficial chart endpoint, converts them to the canonical CSV and runs them through the same validation and storage as an upload; the result is an ordinary immutable Dataset (`source_name` `yahoo_finance_chart_{period}`, `is_demo=false`, declared `split_adjusted`). `symbol` is trimmed and upper-cased and must match the instrument pattern. Only regular-session bars of an XNYS session are kept: bars still forming, empty bars and bars outside the session window (such as Yahoo's trailing 16:00 print) are dropped, never repaired. The data are delayed, the endpoint is undocumented and may be rate-limited or change, and use should respect the provider's terms; this is for testing and personal analysis. It is not a real-time feed (`/health` keeps `live_data=false`). Unknown symbols and symbols with no completed regular-session bars return 422 with a `detail` message; an unreachable or unreadable provider returns 502. Failures store nothing. Repeating a load that yields byte-identical data and provenance returns the existing dataset (200) instead of storing a duplicate; newer bars create a new dataset, since datasets are immutable.
 
 ## CSV and upload metadata
 

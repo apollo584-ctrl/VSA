@@ -76,3 +76,22 @@ describe("analysis HTTP requests", () => {
     expect(!!result.snapshot).toBe(expected);
   });
 });
+
+describe("loading a typed symbol", () => {
+  it("posts only the symbol and caches the returned dataset", async () => {
+    const dataset = read("dataset_response.json");
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(dataset), { status: 201 }));
+    vi.stubGlobal("fetch", fetcher);
+    expect(await backendApi.loadSymbol("SPY")).toEqual({ datasetId: dataset.id, created: true });
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://test/api/v1/datasets/from-symbol");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ symbol: "SPY" });
+  });
+
+  it.each([[422, "rejected", "No market data found for symbol ZZZZ"], [502, "http_error", "Market data provider could not be reached"]])(
+    "surfaces the backend's %i message", async (status, code, detail) => {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail }), { status })));
+      await expect(backendApi.loadSymbol("ZZZZ")).rejects.toMatchObject({ code, message: detail });
+    });
+});
