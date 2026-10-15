@@ -14,6 +14,8 @@ import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/ty
 import { ChartOverlay } from "./ChartOverlay";
 
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
+/** Volume expansion/contraction recolour their candle instead of carrying a text marker (the chart gets crowded otherwise). */
+const BAR_TINT: Record<string, string> = { volume_expansion: "#22e07a", volume_contraction: "#8b1a1a" };
 const STATUS_MARK = { observed: "", provisional: "?", confirmed: "✓", invalidated: "×", expired: "~", historical: "" } as const;
 
 /** Marker placement only anchors the label to the bar; engine direction (when given) picks the side. */
@@ -138,7 +140,16 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || !candleRef.current || !volumeRef.current) return;
-    candleRef.current.setData(bars.map((b) => ({ time: b.t as UTCTimestamp, open: b.o, high: b.h, low: b.l, close: b.c })));
+    const tint = new Map<number, string>();
+    if (layers.vsa) for (const e of events) {
+      const color = BAR_TINT[e.type];
+      const t = color ? barTimeContaining(bars, e.barTime) : null;
+      if (color && t !== null) tint.set(t, color);
+    }
+    candleRef.current.setData(bars.map((b) => {
+      const color = tint.get(b.t);
+      return { time: b.t as UTCTimestamp, open: b.o, high: b.h, low: b.l, close: b.c, ...(color ? { color, borderColor: color, wickColor: color } : {}) };
+    }));
     volumeRef.current.setData(bars.map((b) => ({ time: b.t as UTCTimestamp, value: b.v, color: withAlpha(b.c >= b.o ? palette.up : palette.down, 0.45) })));
     if (lastFit.current !== fitKey && bars.length) {
       chart.timeScale().fitContent();
@@ -147,7 +158,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     }
     tick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, fitKey, palette]);
+  }, [bars, fitKey, palette, events, layers.vsa]);
 
   useEffect(() => {
     candleRef.current?.applyOptions({ visible: layers.candles });
@@ -196,6 +207,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     if (!layers.vsa) { series.setMarkers([]); return; }
     const markers: SeriesMarker<Time>[] = [];
     for (const e of events) {
+      if (e.type in BAR_TINT) continue;
       const t = barTimeContaining(bars, e.barTime);
       if (t === null) continue;
       const sel = e.id === selectedEventId;
