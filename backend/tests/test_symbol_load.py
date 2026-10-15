@@ -25,7 +25,7 @@ def chart(days=DAYS, extra_close_bar=True, null_at=None, symbol="SPY"):
     if null_at is not None:
         for column in quote.values():
             column[null_at] = None
-    return {"chart": {"result": [{"meta": {"symbol": symbol}, "timestamp": seconds, "indicators": {"quote": [quote]}}], "error": None}}
+    return {"chart": {"result": [{"meta": {"symbol": symbol, "exchangeName": "PCX", "exchangeTimezoneName": "America/New_York", "instrumentType": "ETF"}, "timestamp": seconds, "indicators": {"quote": [quote]}}], "error": None}}
 
 
 def fetcher(payload, calls=None):

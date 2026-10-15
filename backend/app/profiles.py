@@ -79,16 +79,13 @@ def peak_indices(weights: np.ndarray, p: Parameters) -> list[int]:
     return sorted(selected)
 
 
-def distribution(weights, centers, bars, p, method):
+def value_area_indices(weights, fraction):
     total = float(weights.sum())
-    if total <= 0:
-        return Distribution(method=method, counts=weights.tolist(), poc=None, vah=None, val=None,
-                            achieved_value_fraction=None, shape=shape(weights, bars, p))
     # Ties: lower price. Grow contiguously from POC; equal neighbours choose lower.
     poc = int(np.argmax(weights))
     low = high = poc
     enclosed = float(weights[poc])
-    while enclosed < total * p.value_area_fraction and (low > 0 or high < len(weights) - 1):
+    while enclosed < total * fraction and (low > 0 or high < len(weights) - 1):
         left = weights[low - 1] if low > 0 else -1
         right = weights[high + 1] if high + 1 < len(weights) else -1
         if left >= right:
@@ -97,6 +94,15 @@ def distribution(weights, centers, bars, p, method):
         else:
             high += 1
             enclosed += float(weights[high])
+    return poc, low, high, enclosed
+
+
+def distribution(weights, centers, bars, p, method):
+    total = float(weights.sum())
+    if total <= 0:
+        return Distribution(method=method, counts=weights.tolist(), poc=None, vah=None, val=None,
+                            achieved_value_fraction=None, shape=shape(weights, bars, p))
+    poc, low, high, enclosed = value_area_indices(weights, p.value_area_fraction)
     return Distribution(method=method, counts=weights.tolist(), poc=float(centers[poc]),
                         val=float(centers[low] - p.bin_size / 2), vah=float(centers[high] + p.bin_size / 2),
                         achieved_value_fraction=enclosed / total, shape=shape(weights, bars, p))

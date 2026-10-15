@@ -87,6 +87,12 @@ class YahooChartProvider:
             # No undocumented aliases: an upstream identity mismatch must never relabel bars.
             if not isinstance(returned_symbol, str) or returned_symbol.strip().upper() != self.symbol.strip().upper():
                 raise ValueError("returned symbol does not match requested symbol")
+            meta = result["meta"]
+            # These US equity venues share the supported XNYS regular-session calendar.
+            if (meta.get("exchangeName") not in ("NYQ", "NMS", "NGM", "NCM", "ASE", "PCX", "BTS")
+                    or meta.get("exchangeTimezoneName") != "America/New_York"
+                    or meta.get("instrumentType") not in ("EQUITY", "ETF")):
+                raise ValueError("unsupported market metadata; US equities and ETFs required")
             timestamps = result["timestamp"]
             if not isinstance(timestamps, list) or any(
                 type(t) not in (int, float) or not math.isfinite(t) for t in timestamps

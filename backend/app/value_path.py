@@ -1,24 +1,43 @@
 """Developing value path and session-to-session value relationship, both strictly causal.
 
-The developing path recomputes the session's volume profile from only the bars that had closed at each step.
+The developing path accumulates volume from only the bars that had closed at each step.
 The relationship compares a session's value area with the previous scheduled, complete session's; the
 current session's relationship is provisional because its profile is still developing.
 """
 from app.data import calendar
 from app.models import Bar, DevelopingPoint, DevelopingProfile, Parameters, Profile, Source, ValueMigrationStep
-from app.profiles import profile
+from decimal import Decimal, ROUND_FLOOR
+
+import numpy as np
+
+from app.profiles import ProfileLimitError, value_area_indices
 
 
 def developing_profile(bars: list[Bar], source: Source, p: Parameters) -> DevelopingProfile | None:
     session = bars[-1].session
     today = [b for b in bars if b.session == session]
+    if p.tpo_minutes < source.timeframe_minutes or p.tpo_minutes % source.timeframe_minutes:
+        raise ValueError("TPO interval must be a multiple of the bar timeframe and at least as large")
+    def index(price):
+        return int((Decimal(str(price)) / Decimal(str(p.bin_size))).to_integral_value(rounding=ROUND_FLOOR))
     points = []
-    for k in range(len(today)):
-        levels = profile(today[:k + 1], source, p).volume
-        if levels.poc is None or levels.vah is None or levels.val is None:
+    lower = upper = index(today[0].low)
+    volumes = np.zeros(1)
+    for bar in today:
+        lo, hi = index(bar.low), index(bar.high)
+        new_lower, new_upper = min(lower, lo), max(upper, hi)
+        if new_upper - new_lower + 1 > 2000:
+            raise ProfileLimitError("Profile exceeds 2000 bins; increase bin_size")
+        volumes = np.pad(volumes, (lower - new_lower, new_upper - upper))
+        lower, upper = new_lower, new_upper
+        volumes[lo - lower:hi - lower + 1] += bar.volume / (hi - lo + 1)
+        if volumes.sum() <= 0:
             continue
-        points.append(DevelopingPoint(timestamp=today[k].timestamp, available_at=today[k].available_at,
-                                      poc=levels.poc, vah=levels.vah, val=levels.val))
+        poc, low, high, _ = value_area_indices(volumes, p.value_area_fraction)
+        centers = np.arange(lower, upper + 1, dtype=float) * p.bin_size + p.bin_size / 2
+        points.append(DevelopingPoint(timestamp=bar.timestamp, available_at=bar.available_at,
+                                      poc=float(centers[poc]), vah=float(centers[high] + p.bin_size / 2),
+                                      val=float(centers[low] - p.bin_size / 2)))
     return DevelopingProfile(session=session, points=points) if points else None
 
 

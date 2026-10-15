@@ -105,11 +105,9 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             raise HTTPException(502, str(exc)) from exc
         except ValueError as exc:  # includes SymbolNotFound
             raise HTTPException(422, str(exc)) from exc
-        existing = await run_in_threadpool(store.find_dataset, dataset.content_sha256, source)
-        if existing is not None:
+        dataset, created = await run_in_threadpool(store.save_or_find_dataset, dataset, bars, raw)
+        if not created:
             response.status_code = 200
-            return existing
-        await run_in_threadpool(store.save_dataset, dataset, bars, raw)
         return dataset
 
     @app.get("/api/v1/datasets/{dataset_id}", response_model=Dataset)

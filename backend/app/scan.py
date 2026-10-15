@@ -116,6 +116,7 @@ class Scanner:
         self.universe = universe if universe is not None else load_universe()
         self.lock = threading.Lock()
         self.status = ScanStatus(running=False, universe_size=len(self.universe))
+        self._stopping = threading.Event()
         self._auto_stop = threading.Event()
         self._auto_thread: threading.Thread | None = None
         self._thread: threading.Thread | None = None
@@ -129,11 +130,11 @@ class Scanner:
         wanted = {s.strip().upper() for s in symbols} if symbols else None
         targets = [c for c in self.universe if wanted is None or c["symbol"] in wanted]
         with self.lock:
-            if self.status.running:
+            if self.status.running or self._stopping.is_set():
                 return self.status.model_copy(), False
             self.status = self.status.model_copy(update={"running": True, "started_at": datetime.now(UTC), "finished_at": None, "total": len(targets), "done": 0})
-        self._thread = threading.Thread(target=self._run, args=(targets,), daemon=True)
-        self._thread.start()
+            self._thread = threading.Thread(target=self._run, args=(targets,), daemon=True)
+            self._thread.start()
         return self.current_status(), True
 
     def wait(self, timeout: float = 30):
@@ -158,9 +159,13 @@ class Scanner:
 
     def _run(self, targets: list[dict]):
         def work(item):
+            if self._stopping.is_set():
+                return
             result = self.scan_one(item)
-            self.store.save_scan_result(result)
             with self.lock:
+                if self._stopping.is_set():
+                    return
+                self.store.save_scan_result(result)
                 self.status = self.status.model_copy(update={"done": self.status.done + 1})
         try:
             with ThreadPoolExecutor(WORKERS) as pool:
@@ -170,17 +175,29 @@ class Scanner:
                 self.status = self.status.model_copy(update={"running": False, "finished_at": datetime.now(UTC)})
 
     def set_auto(self, minutes: int) -> ScanStatus:
-        self._auto_stop.set()
-        self._auto_stop = stop = threading.Event()
         with self.lock:
+            if self._stopping.is_set():
+                return self.status.model_copy()
+            self._auto_stop.set()
+            self._auto_stop = stop = threading.Event()
             self.status = self.status.model_copy(update={"auto_minutes": minutes})
-        if minutes:
-            def loop():
-                while not stop.wait(minutes * 60):
-                    self.start()
-            self._auto_thread = threading.Thread(target=loop, daemon=True)
-            self._auto_thread.start()
-        return self.current_status()
+            if minutes:
+                def loop():
+                    while not stop.wait(minutes * 60):
+                        self.start()
+                self._auto_thread = threading.Thread(target=loop, daemon=True)
+                self._auto_thread.start()
+            return self.status.model_copy()
 
     def shutdown(self):
-        self._auto_stop.set()
+        with self.lock:
+            self._stopping.set()
+            self._auto_stop.set()
+            self.status = self.status.model_copy(update={"auto_minutes": 0})
+            worker, timer = self._thread, self._auto_thread
+        # In-flight fetches have provider timeouts. Drain them before lifespan exits;
+        # queued tasks skip their fetch and no result is saved after stopping.
+        if timer:
+            timer.join()
+        if worker:
+            worker.join()

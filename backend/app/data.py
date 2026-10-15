@@ -79,17 +79,20 @@ def ingest(raw: bytes, source: Source) -> tuple[Dataset, list[Bar]]:
         content = raw.decode("utf-8-sig")
     except (UnicodeDecodeError, ZoneInfoNotFoundError) as exc:
         raise ValueError("CSV must be UTF-8; timezone must be an IANA name") from exc
-    reader = csv.DictReader(io.StringIO(content))
-    expected = ["timestamp", "open", "high", "low", "close", "volume"]
-    if reader.fieldnames != expected:
-        raise ValueError("CSV header must be timestamp,open,high,low,close,volume in that order")
-    rows = []
-    for row in reader:
-        if len(rows) >= MAX_ROWS:
-            raise ValueError("CSV exceeds 50000 bars")
-        if None in row or any(value is None or not value.strip() for value in row.values()):
-            raise ValueError(f"Malformed or missing cells at row {len(rows) + 2}")
-        rows.append(row)
+    try:
+        reader = csv.DictReader(io.StringIO(content), strict=True)
+        expected = ["timestamp", "open", "high", "low", "close", "volume"]
+        if reader.fieldnames != expected:
+            raise ValueError("CSV header must be timestamp,open,high,low,close,volume in that order")
+        rows = []
+        for row in reader:
+            if len(rows) >= MAX_ROWS:
+                raise ValueError("CSV exceeds 50000 bars")
+            if None in row or any(value is None or not value.strip() for value in row.values()):
+                raise ValueError(f"Malformed or missing cells at row {len(rows) + 2}")
+            rows.append(row)
+    except csv.Error as exc:
+        raise ValueError("Malformed CSV: invalid quoting or oversized field") from exc
     if not rows:
         raise ValueError("CSV must contain bars")
     stamps = []

@@ -49,6 +49,21 @@ class Store:
                 dataset.id, dataset.model_dump_json(),
                 json.dumps([bar.model_dump(mode="json") for bar in bars], allow_nan=False), raw))
 
+    def save_or_find_dataset(self, dataset: Dataset, bars: list[Bar], raw: bytes):
+        """Serialize lookup and insertion across connections, including separate app instances."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            rows = db.execute("SELECT metadata FROM datasets WHERE metadata LIKE ?",
+                              (f'%"{dataset.content_sha256}"%',)).fetchall()
+            for row in rows:
+                found = Dataset.model_validate_json(row[0])
+                if found.content_sha256 == dataset.content_sha256 and found.source == dataset.source:
+                    return found, False
+            db.execute("INSERT INTO datasets VALUES (?, ?, ?, ?)", (
+                dataset.id, dataset.model_dump_json(),
+                json.dumps([bar.model_dump(mode="json") for bar in bars], allow_nan=False), raw))
+            return dataset, True
+
     def dataset(self, dataset_id: str):
         with self.connect() as db:
             row = db.execute("SELECT metadata, bars FROM datasets WHERE id=?", (dataset_id,)).fetchone()
