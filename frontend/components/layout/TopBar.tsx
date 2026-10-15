@@ -5,11 +5,15 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
 import { API_MODE } from "@/lib/api/client";
 import { useInstruments, useLoadSymbol } from "@/hooks/data";
+import { useHiddenInstruments } from "@/hooks/hiddenInstruments";
 import { useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
 import type { Instrument } from "@/types";
 
-function InstrumentSearch({ instruments, current, onSelect }: { instruments: Instrument[]; current: string | null; onSelect: (s: string) => void }) {
+function InstrumentSearch({ instruments, current, onSelect, hiddenCount, onClearList, onRestore }: {
+  instruments: Instrument[]; current: string | null; onSelect: (s: string) => void;
+  hiddenCount: number; onClearList: () => void; onRestore: () => void;
+}) {
   const currentLabel = instruments.find((i) => i.symbol === current)?.label ?? current;
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -93,13 +97,21 @@ function InstrumentSearch({ instruments, current, onSelect }: { instruments: Ins
               {load.isError && <div role="alert" className="mt-0.5 text-xs text-danger">{load.error instanceof Error ? load.error.message : "Could not load this symbol."}</div>}
             </li>
           )}
-          {results.length === 0 && !canLoad && <li className="px-3 py-3 text-sm text-muted">No matching datasets. Type a ticker to load one, or upload a CSV in Settings.</li>}
+          {results.length === 0 && !canLoad && <li className="px-3 py-3 text-sm text-muted">{hiddenCount > 0 && !query ? "List cleared. Type a ticker to load one, or show the cleared symbols below." : "No matching datasets. Type a ticker to load one, or upload a CSV in Settings."}</li>}
           {results.map((i, n) => (
             <li key={i.symbol} role="option" aria-selected={n + offset === active} onMouseDown={(e) => { e.preventDefault(); choose(i); }} className={cn("cursor-pointer rounded-lg px-3 py-2.5", n + offset === active && "bg-surface-2")}>
               <div className="flex items-center justify-between gap-2"><span className="font-semibold">{i.label ?? i.symbol}</span><Badge tone={i.source.kind === "fixture" ? "warn" : "neutral"}>{i.source.kind}</Badge></div>
               <div className="mt-0.5 text-xs text-muted">{i.name}</div>
             </li>
           ))}
+          {!query && (results.length > 0 || hiddenCount > 0) && (
+            <li role="presentation" className="sticky -bottom-1.5 z-10 mt-1 flex items-center justify-between gap-3 border-t border-border bg-surface px-3 pb-2 pt-2 text-xs">
+              {results.length > 0 ? (
+                <button type="button" title="Hide every symbol in this list. Saved data and analyses are kept." onMouseDown={(e) => { e.preventDefault(); onClearList(); setOpen(true); }} className="text-muted hover:text-fg">Clear all</button>
+              ) : <span />}
+              {hiddenCount > 0 && <button type="button" onMouseDown={(e) => { e.preventDefault(); onRestore(); setOpen(true); }} className="text-accent hover:underline">Show {hiddenCount} cleared</button>}
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -131,12 +143,20 @@ function QuitButton() {
 export function TopBar() {
   const { state, set, selectInstrument } = useWorkspace();
   const { data: instruments = [] } = useInstruments();
+  const [hidden, setHidden] = useHiddenInstruments();
+  const visible = useMemo(() => instruments.filter((i) => !hidden.includes(i.symbol)), [instruments, hidden]);
+  const hiddenCount = instruments.length - visible.length;
   const inst = instruments.find((i) => i.symbol === state.symbol) ?? null;
+  const select = (id: string) => { if (hidden.includes(id)) setHidden(hidden.filter((h) => h !== id)); selectInstrument(id); };
+  const clearList = () => {
+    setHidden([...new Set([...hidden, ...instruments.map((i) => i.symbol)])]);
+    if (state.symbol) set({ symbol: null, date: null, replayTime: null, selectedEventId: null });
+  };
   const dates = inst ? [...inst.availableDates].sort().reverse() : [];
 
   return (
     <header className="relative z-40 flex min-h-16 shrink-0 flex-wrap items-center gap-x-4 gap-y-3 border-b border-border bg-surface/80 px-6 py-3 backdrop-blur max-sm:gap-y-2 max-sm:px-4">
-      <InstrumentSearch instruments={instruments} current={state.symbol} onSelect={selectInstrument} />
+      <InstrumentSearch instruments={visible} current={state.symbol} onSelect={select} hiddenCount={hiddenCount} onClearList={clearList} onRestore={() => setHidden([])} />
 
       <div className="ml-auto flex flex-wrap items-center gap-3 max-sm:ml-0 max-sm:gap-2">
         <Segmented

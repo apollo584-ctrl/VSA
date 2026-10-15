@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TopBar } from "@/components/layout/TopBar";
 import { WorkspaceProvider, useWorkspace } from "@/hooks/workspace";
@@ -17,6 +17,8 @@ const instrument = (symbol: string, label: string): Instrument => ({
   source: { name: "test", kind: "historical", note: "" },
 } as Instrument);
 
+// Only the symbol list; the "As of" select has its own <option> elements.
+const listed = () => { const box = screen.queryByRole("listbox"); return box ? within(box).queryAllByRole("option") : []; };
 function Probe() { return <output data-testid="selected">{useWorkspace().state.symbol ?? "none"}</output>; }
 function setup() {
   render(
@@ -63,5 +65,39 @@ describe("typing a symbol in the top bar", () => {
     h.mode = "mock";
     fireEvent.change(setup(), { target: { value: "spy" } });
     expect(screen.queryByRole("option", { name: /Load/ })).toBeNull();
+  });
+});
+
+describe("clearing the symbol list", () => {
+  it("hides the listed symbols, deselects the current one, keeps them out after a reload, and can restore them", async () => {
+    h.listInstruments.mockResolvedValue([instrument("ds-1", "SPY · 30m"), instrument("ds-2", "AAPL · 30m")]);
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-1" }));
+    const box = setup();
+    await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("ds-1"));
+    fireEvent.focus(box);
+    await waitFor(() => expect(listed().length).toBe(2));
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Clear all" }));
+    await waitFor(() => expect(listed().length).toBe(0));
+    expect(screen.getByTestId("selected").textContent).toBe("none");
+    expect(JSON.parse(localStorage.getItem("mst.hiddenInstruments.v1")!)).toEqual(["ds-1", "ds-2"]);
+    cleanup();
+    const again = setup();
+    fireEvent.focus(again);
+    await screen.findByText(/List cleared/);
+    expect(listed().length).toBe(0);
+    fireEvent.mouseDown(screen.getByRole("button", { name: "Show 2 cleared" }));
+    await waitFor(() => expect(listed().length).toBe(2));
+    expect(localStorage.getItem("mst.hiddenInstruments.v1")).toBe("[]");
+  });
+
+  it("shows a cleared symbol again when it is loaded again", async () => {
+    h.listInstruments.mockResolvedValue([instrument("ds-1", "SPY · 30m")]);
+    h.loadSymbol.mockResolvedValue({ datasetId: "ds-1" });
+    localStorage.setItem("mst.hiddenInstruments.v1", JSON.stringify(["ds-1"]));
+    const box = setup();
+    fireEvent.change(box, { target: { value: "spy" } });
+    fireEvent.mouseDown(await screen.findByRole("option", { name: /Load SPY/ }));
+    await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("ds-1"));
+    expect(localStorage.getItem("mst.hiddenInstruments.v1")).toBe("[]");
   });
 });
