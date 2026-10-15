@@ -10,6 +10,9 @@ import { useWorkspace } from "@/hooks/workspace";
 import { fmtDateTime, fmtPrice } from "@/lib/formatting";
 import type { RawScanResult } from "@/lib/api/backend/schemas";
 
+/** Bars older than this are shown with a warning: the scan may be reading a stale or delayed feed. */
+const STALE_MS = 3 * 24 * 60 * 60 * 1000;
+
 const FACTOR: Record<string, string> = { value_location: "Value location", auction_state: "Auction", vsa: "VSA", price_action: "Price action" };
 type Filter = "all" | "strength" | "weakness";
 
@@ -85,6 +88,7 @@ function Row({ r, opening, onOpen }: { r: RawScanResult; opening: boolean; onOpe
         <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">
           {r.votes.filter((v) => v.vote !== 0).map((v) => <li key={v.factor}><span className="text-muted">{FACTOR[v.factor]}:</span> {v.text}</li>)}
         </ul>
+        {r.last_bar_at && Date.now() - Date.parse(r.last_bar_at) > STALE_MS && <p className="mt-1 text-xs text-warn">Latest bar is more than 3 days old; treat this flag as stale until the next scan.</p>}
         <p className="mt-1 text-xs text-subtle">{r.last_close != null && <>Last close {fmtPrice(r.last_close)} · </>}{r.last_bar_at && <>bar closed {fmtDateTime(Date.parse(r.last_bar_at) / 1000, true)}</>}</p>
       </div>
       <Button size="sm" disabled={opening} onClick={onOpen}>{opening ? "Opening…" : "Open analysis"}</Button>
