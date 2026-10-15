@@ -7,6 +7,7 @@ import { MixedEvidenceNotice, StateMessage } from "@/components/common/states";
 import { Badge, SectionLabel, Segmented } from "@/components/ui/primitives";
 import { useWorkspace } from "@/hooks/workspace";
 import { fmtDateTime, humanize } from "@/lib/formatting";
+import { tradeIdea } from "@/lib/tradeIdea";
 import { cn } from "@/lib/utils";
 import type { Analysis, DetailLevel, EvidenceItem, Interpretation, Narrative } from "@/types";
 import { FileQuestion } from "lucide-react";
@@ -64,6 +65,24 @@ function Block({ title, children, tag }: { title: string; children: React.ReactN
   );
 }
 
+/** Quick depth only: a rule-based lean with the reasons behind it. Not a prediction or personal advice. */
+export function TradeIdeaBlock({ analysis }: { analysis: Analysis }) {
+  const idea = tradeIdea(analysis);
+  if (!idea) return null;
+  const tone = idea.action === "long" ? "ok" : idea.action === "short" ? "danger" : "neutral";
+  return (
+    <section aria-label="Trade idea" className="rounded-lg border border-border bg-surface-2 p-3">
+      <div className="mb-1 flex items-center gap-2"><SectionLabel>Trade idea</SectionLabel><Badge tone={tone}>{idea.headline}</Badge></div>
+      <div className="text-xs leading-relaxed">
+        <p className="mb-1 text-muted">Why:</p>
+        <ul className="list-disc space-y-0.5 pl-4">{idea.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+        {idea.invalidation && <p className="mt-1">{idea.invalidation}</p>}
+        <p className="mt-2 text-subtle">A rule-based reading of the supplied evidence, not a prediction or advice. Switch to Standard or Deep for the full reasoning.</p>
+      </div>
+    </section>
+  );
+}
+
 /** The five questions: what, why, supporting, contradicting, what next. Used on the Overview. */
 export function InterpretationSummary({ analysis, level }: { analysis: Analysis; level: DetailLevel }) {
   const i = analysis.interpretation;
@@ -71,6 +90,7 @@ export function InterpretationSummary({ analysis, level }: { analysis: Analysis;
   return (
     <div className="space-y-3">
       {i.evidenceBalance === "mixed" || i.evidenceBalance === "contradictory" ? <MixedEvidenceNotice /> : null}
+      {level === "quick" && <TradeIdeaBlock analysis={analysis} />}
       <Block title="What is happening?" tag={<ObservationBadge />}><NarrativeText n={i.whatIsHappening} level={level} /></Block>
       {i.whyItMatters && <Block title="Why does it matter?"><NarrativeText n={i.whyItMatters} level={level} /></Block>}
       <Block title="What evidence supports it?"><EvidenceList items={i.supporting} tone="support" /></Block>
