@@ -36,6 +36,7 @@ export default function VsaPage() {
           </Panel>
           <Panel title="Reading the chart" collapsible defaultOpen={false}>
             <ul className="space-y-2 text-xs leading-relaxed text-muted">
+              <li>Small grey dots are neutral volume measurements (compression, relative volume and similar), merged to one per bar. Select a bar or an event in the list to read them. Only strength and weakness signals carry a code on the chart.</li>
               <li>Markers show a pattern code and its status: <b className="text-fg">?</b> provisional, <b className="text-fg">✓</b> confirmed, <b className="text-fg">×</b> invalidated, <b className="text-fg">~</b> expired.</li>
               <li>Volume expansion bars are drawn <span className="font-semibold" style={{ color: "#22e07a" }}>bright green</span> and volume contraction bars <span className="font-semibold" style={{ color: "#c0392b" }}>dark red</span> instead of carrying a label.</li>
               <li>A marker sits above or below its bar according to the engine&apos;s contextual label (weakness, strength or neutral). It is not a trade instruction.</li>

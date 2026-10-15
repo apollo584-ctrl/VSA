@@ -12,12 +12,13 @@ import { barTimeContaining } from "@/lib/replay";
 import { cn } from "@/lib/utils";
 import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/types";
 import { ChartOverlay } from "./ChartOverlay";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
 /** Volume expansion/contraction recolour their candle instead of carrying a text marker (the chart gets crowded otherwise). */
 const BAR_TINT: Record<string, string> = { volume_expansion: "#22e07a", volume_contraction: "#8b1a1a" };
 /** Stable empty list: a fresh [] each render would re-run the data effect, whose redraw re-renders (an update loop). */
+const ZOOM_STEP = 1.25;
 const NO_EVENTS: VsaEvent[] = [];
 const STATUS_MARK = { observed: "", provisional: "?", confirmed: "✓", invalidated: "×", expired: "~", historical: "" } as const;
 
@@ -93,6 +94,13 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     else void frameRef.current?.requestFullscreen?.().catch(() => undefined);
   };
 
+  /** Scale the bar spacing around the current view; lightweight-charts clamps to minBarSpacing/maxBarSpacing. */
+  const zoom = (factor: number) => {
+    const ts = chartRef.current?.timeScale();
+    if (!ts) return;
+    ts.applyOptions({ barSpacing: Math.min(60, Math.max(2, ts.options().barSpacing * factor)) });
+  };
+
   // ---- create chart once
   useEffect(() => {
     const host = hostRef.current!;
@@ -101,7 +109,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: palette.muted, fontSize: 11, attributionLogo: false },
       grid: { vertLines: { color: palette.grid }, horzLines: { color: palette.grid } },
       crosshair: { mode: CrosshairMode.Normal },
-      rightPriceScale: { borderColor: palette.border, scaleMargins: { top: 0.08, bottom: 0.22 } },
+      rightPriceScale: { borderColor: palette.border, scaleMargins: { top: 0.14, bottom: 0.22 } },
       timeScale: { borderColor: palette.border, timeVisible: true, secondsVisible: false, rightOffset: 22, barSpacing: 9, minBarSpacing: 2 },
       localization: { timeFormatter: (t: Time) => fmtDateTime(t as number, true) },
     });
@@ -119,7 +127,8 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     chart.subscribeClick((param) => {
       if (!param.time) { onSelectRef.current(null); return; }
       const t = param.time as number;
-      const hit = eventsRef.current.find((e) => barTimeContaining(barsRef.current, e.barTime) === t);
+      const atBar = eventsRef.current.filter((e) => barTimeContaining(barsRef.current, e.barTime) === t);
+      const hit = atBar.find((e) => e.direction === "strength" || e.direction === "weakness") ?? atBar[0];
       onSelectRef.current(hit ? hit.id : null);
     });
     const ro = new ResizeObserver((entries) => {
@@ -198,7 +207,12 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     }
     if (!hideProfile && profile && layers.nodes) {
       profile.hvns.forEach((p) => add(p, "HVN", palette.hvn, LineStyle.Dotted));
-      profile.lvns.forEach((p) => add(p, "LVN", palette.lvn, LineStyle.Dotted));
+      // Every LVN is drawn, but only the nearest above and below the last close is labelled; a label per line piles up.
+      const last = barsRef.current[barsRef.current.length - 1]?.c;
+      const lvns = [...profile.lvns].sort((a, b) => a - b);
+      const above = last === undefined ? undefined : lvns.find((p) => p >= last);
+      const below = last === undefined ? undefined : [...lvns].reverse().find((p) => p < last);
+      lvns.forEach((p) => add(p, p === above || p === below ? "LVN" : "", palette.lvn, LineStyle.Dotted));
     }
     if (analysis && layers.structure) {
       for (const l of analysis.levels) {
@@ -222,20 +236,29 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     if (!series) return;
     if (!layers.vsa) { series.setMarkers([]); return; }
     const markers: SeriesMarker<Time>[] = [];
+    const neutralDots = new Map<string, SeriesMarker<Time>>();
     for (const e of events) {
       if (e.type in BAR_TINT) continue;
       const t = barTimeContaining(bars, e.barTime);
       if (t === null) continue;
       const sel = e.id === selectedEventId;
+      const position = placeAbove(e) ? "aboveBar" : "belowBar";
+      if (!sel && e.direction !== "strength" && e.direction !== "weakness") {
+        // Neutral measurements (compression, relative volume, ...): one small unlabelled dot per bar and side.
+        const key = `${t}|${position}`;
+        if (!neutralDots.has(key)) neutralDots.set(key, { time: t as UTCTimestamp, position, shape: "circle", color: withAlpha(palette.vsa, 0.5), size: 0.6 });
+        continue;
+      }
       markers.push({
         time: t as UTCTimestamp,
-        position: placeAbove(e) ? "aboveBar" : "belowBar",
+        position,
         shape: "circle",
         color: sel ? palette.accent : e.status === "invalidated" ? withAlpha(palette.vsa, 0.45) : palette.vsa,
         text: `${patternCode(e.type)}${STATUS_MARK[e.status]}`,
         size: sel ? 1.6 : 1,
       });
     }
+    markers.push(...neutralDots.values());
     markers.sort((a, b) => (a.time as number) - (b.time as number));
     series.setMarkers(markers);
   }, [events, bars, layers.vsa, selectedEventId, palette]);
@@ -262,7 +285,15 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
           developing={profileKind === "developing" ? profile : null} showValueLevels={layers.valueLevels && !hideProfile}
         />
       )}
-      <div role="group" aria-label="Chart tools" className="absolute bottom-9 right-2 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-surface/90 shadow-sm backdrop-blur-sm">
+      <div role="group" aria-label="Zoom" style={{ right: size.w - plotWidth + 8 }} className="absolute bottom-9 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-surface/90 opacity-60 shadow-sm backdrop-blur-sm transition-opacity hover:opacity-100 focus-within:opacity-100">
+        <button type="button" onClick={() => zoom(ZOOM_STEP)} aria-label="Zoom in" title="Zoom in" className="grid h-8 w-8 place-items-center text-muted hover:bg-surface-2 hover:text-fg">
+          <Plus size={16} aria-hidden />
+        </button>
+        <span aria-hidden className="h-px bg-border" />
+        <button type="button" onClick={() => zoom(1 / ZOOM_STEP)} aria-label="Zoom out" title="Zoom out" className="grid h-8 w-8 place-items-center text-muted hover:bg-surface-2 hover:text-fg">
+          <Minus size={16} aria-hidden />
+        </button>
+        <span aria-hidden className="h-px bg-border" />
         <button
           type="button"
           onClick={toggleFullscreen}
