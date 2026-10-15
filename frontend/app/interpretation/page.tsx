@@ -14,7 +14,7 @@ export default function InterpretationPage() {
   const a = market.analysis;
   return (
     <AnalysisGate market={market}>
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex max-w-[110rem] flex-col gap-5 xl:gap-4">
         <AnalysisPageHeader title="Interpretation" description="What the evidence supports, what contradicts it and what to watch next. Scenarios are hypotheses, not predictions." market={market} actions={<DetailLevelSwitch />} />
         <ReplayControls allBars={market.allBars} />
         <Panel title="Market interpretation">

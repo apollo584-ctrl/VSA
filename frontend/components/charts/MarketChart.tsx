@@ -19,6 +19,12 @@ const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "e
 const BAR_TINT: Record<string, string> = { volume_expansion: "#22e07a", volume_contraction: "#8b1a1a" };
 /** Stable empty list: a fresh [] each render would re-run the data effect, whose redraw re-renders (an update loop). */
 const ZOOM_STEP = 1.25;
+
+/** The chart draws its own axis text in pixels, so follow the page's rem scale (11px at the 16px baseline). */
+function chartFontSize() {
+  const root = typeof window === "undefined" ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  return Math.round((11 * root) / 16);
+}
 const NO_EVENTS: VsaEvent[] = [];
 const STATUS_MARK = { observed: "", provisional: "?", confirmed: "✓", invalidated: "×", expired: "~", historical: "" } as const;
 
@@ -106,7 +112,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     const host = hostRef.current!;
     const chart = createChart(host, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: palette.muted, fontSize: 11, attributionLogo: false },
+      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: palette.muted, fontSize: chartFontSize(), attributionLogo: false },
       grid: { vertLines: { color: palette.grid }, horzLines: { color: palette.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: palette.border, scaleMargins: { top: 0.14, bottom: 0.22 } },
@@ -134,6 +140,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     const ro = new ResizeObserver((entries) => {
       const r = entries[0]?.contentRect;
       if (r) setSize({ w: Math.round(r.width), h: Math.round(r.height) });
+      chart.applyOptions({ layout: { fontSize: chartFontSize() } });
     });
     ro.observe(host);
     const onPointer = () => requestAnimationFrame(redraw);

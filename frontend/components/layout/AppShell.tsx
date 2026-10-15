@@ -33,6 +33,8 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     ],
   },
 ];
+/** Dashboard-style tabs that fit one screen on wide displays; their panels scroll inside themselves. */
+const FIT_ROUTES = new Set(["/", "/chart", "/vsa", "/auction"]);
 const SETTINGS: NavItem = { href: "/settings", label: "Settings", icon: Settings };
 export const NAV: NavItem[] = [...NAV_GROUPS.flatMap((g) => g.items), SETTINGS];
 
@@ -108,14 +110,16 @@ function Sidebar() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  // Dashboard tabs fit one screen on wide displays: the wrapper takes the full height and panels scroll inside themselves.
+  const fit = FIT_ROUTES.has(usePathname());
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* relative: contains absolutely positioned descendants (sr-only text, tooltips), which would otherwise extend the window scroll. */}
-        <main id="main" className="relative min-h-0 min-w-0 flex-1 overflow-auto" tabIndex={-1}>
-          <div className="mx-auto w-full max-w-[1680px] px-6 py-6 max-sm:px-4">{children}</div>
+        <main id="main" className={cn("relative min-h-0 min-w-0 flex-1 overflow-auto", fit && "xl:overflow-hidden")} tabIndex={-1}>
+          <div className={cn("mx-auto w-full max-w-[1680px] px-6 py-5 max-sm:px-4", fit && "xl:h-full")}>{children}</div>
         </main>
         <StatusBar />
       </div>

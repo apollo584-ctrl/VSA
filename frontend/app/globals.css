@@ -105,11 +105,14 @@
 }
 
 html, body { height: 100%; }
+/* The whole UI is sized in rem, so scaling the root scales everything in proportion: about 16px at 1440x900,
+   smaller on a 1280x720 laptop and larger on a big monitor, with the same information visible. */
+html { font-size: clamp(14px, min(1.11vw, 1.75vh), 22px); }
 body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "cv11", "ss01";

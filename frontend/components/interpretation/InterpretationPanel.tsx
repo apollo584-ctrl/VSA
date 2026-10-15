@@ -7,7 +7,7 @@ import { MixedEvidenceNotice, StateMessage } from "@/components/common/states";
 import { Badge, SectionLabel, Segmented } from "@/components/ui/primitives";
 import { useWorkspace } from "@/hooks/workspace";
 import { fmtDateTime, humanize } from "@/lib/formatting";
-import { tradeIdea } from "@/lib/tradeIdea";
+import { evidenceSummary } from "@/lib/evidenceSummary";
 import { cn } from "@/lib/utils";
 import type { Analysis, DetailLevel, EvidenceItem, Interpretation, Narrative } from "@/types";
 import { FileQuestion } from "lucide-react";
@@ -65,20 +65,17 @@ function Block({ title, children, tag }: { title: string; children: React.ReactN
   );
 }
 
-/** Quick depth only: a rule-based lean with the reasons behind it. Not a prediction or personal advice. */
-export function TradeIdeaBlock({ analysis }: { analysis: Analysis }) {
-  const idea = tradeIdea(analysis);
-  if (!idea) return null;
-  const tone = idea.action === "long" ? "ok" : idea.action === "short" ? "danger" : "neutral";
+/** Quick depth only: the supplied readings stated as facts. No lean, entry, target or advice. */
+export function EvidenceSummaryBlock({ analysis }: { analysis: Analysis }) {
+  const items = evidenceSummary(analysis);
+  if (!items) return null;
   return (
-    <section aria-label="Trade idea" className="rounded-lg border border-border bg-surface-2 p-3">
-      <div className="mb-1 flex items-center gap-2"><SectionLabel>Trade idea</SectionLabel><Badge tone={tone}>{idea.headline}</Badge></div>
-      <div className="text-xs leading-relaxed">
-        <p className="mb-1 text-muted">Why:</p>
-        <ul className="list-disc space-y-0.5 pl-4">{idea.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
-        {idea.invalidation && <p className="mt-1">{idea.invalidation}</p>}
-        <p className="mt-2 text-subtle">A rule-based reading of the supplied evidence, not a prediction or advice. Switch to Standard or Deep for the full reasoning.</p>
-      </div>
+    <section aria-label="Evidence summary" className="rounded-lg border border-border bg-surface-2 p-3">
+      <SectionLabel>Evidence summary</SectionLabel>
+      <dl className="text-xs leading-relaxed">
+        {items.map((it) => <div key={it.label} className="flex flex-wrap gap-x-2"><dt className="text-muted">{it.label}:</dt><dd>{it.text}</dd></div>)}
+      </dl>
+      <p className="mt-2 text-xs text-subtle">A restatement of the engine's supplied readings, not a prediction or advice. Switch to Standard or Deep for the full reasoning.</p>
     </section>
   );
 }
@@ -90,7 +87,7 @@ export function InterpretationSummary({ analysis, level }: { analysis: Analysis;
   return (
     <div className="space-y-3">
       {i.evidenceBalance === "mixed" || i.evidenceBalance === "contradictory" ? <MixedEvidenceNotice /> : null}
-      {level === "quick" && <TradeIdeaBlock analysis={analysis} />}
+      {level === "quick" && <EvidenceSummaryBlock analysis={analysis} />}
       <Block title="What is happening?" tag={<ObservationBadge />}><NarrativeText n={i.whatIsHappening} level={level} /></Block>
       {i.whyItMatters && <Block title="Why does it matter?"><NarrativeText n={i.whyItMatters} level={level} /></Block>}
       <Block title="What evidence supports it?"><EvidenceList items={i.supporting} tone="support" /></Block>
@@ -120,6 +117,8 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
   return (
     <div className="space-y-4">
       {(i.evidenceBalance === "mixed" || i.evidenceBalance === "contradictory") && <MixedEvidenceNotice />}
+      <div className="space-y-4 xl:grid xl:grid-cols-2 xl:items-start xl:gap-8 xl:space-y-0">
+      <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-2">
         <Block title="Market context"><NarrativeText n={i.context} level={level} /></Block>
         <Block title="Profile interpretation"><NarrativeText n={i.profile} level={level} /></Block>
@@ -132,9 +131,11 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
         <Block title="Contradictory evidence" tag={<ObservationBadge />}><EvidenceList items={i.contradicting} tone="contradict" /></Block>
       </div>
 
+      </div>
+      <div className="space-y-4">
       <Block title={i.scenarios.length > 1 ? "Alternative scenarios" : "Scenario"} tag={<HypothesisBadge />}>
         <p className="mb-2 text-muted">Scenarios are hypotheses consistent with some evidence and challenged by other evidence. They are not ranked as predictions.</p>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 md:grid-cols-2">
           {i.scenarios.map((s) => (
             <article key={s.id} className="hypothesis space-y-1.5 rounded-md p-2.5">
               <h4 className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">{s.title}{s.isAlternative && <Badge tone="hypothesis">alternative</Badge>}</h4>
@@ -180,6 +181,8 @@ export function InterpretationFull({ analysis, level }: { analysis: Analysis; le
           ))}
         </ul>
       </Block>
+      </div>
+      </div>
     </div>
   );
 }

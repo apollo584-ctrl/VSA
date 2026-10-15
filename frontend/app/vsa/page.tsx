@@ -19,17 +19,17 @@ export default function VsaPage() {
   const selected = events.find((e) => e.id === state.selectedEventId) ?? null;
   return (
     <AnalysisGate market={market}>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5 xl:h-full xl:gap-4">
       <AnalysisPageHeader title="VSA Analysis" description="Volume spread analysis: bars where volume, range and close location meet a defined rule set." market={market} />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
-        <div className="flex min-h-[42rem] min-w-0 flex-col">
+      <div className="grid grid-cols-1 gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-4">
+        <div className="flex min-h-[42rem] min-w-0 flex-col xl:min-h-0">
           <ChartSection market={market} hideProfile layerKeys={["candles", "volume", "vsa", "structure"]} />
         </div>
-        <aside className="flex min-w-0 flex-col gap-6" aria-label="VSA workspace">
-          <Panel title="Detected events" description="Newest first, up to the current bar" bodyClassName="max-h-96 overflow-auto">
+        <aside className="flex min-w-0 flex-col gap-5 xl:min-h-0 xl:gap-4" aria-label="VSA workspace">
+          <Panel title="Detected events" description="Newest first, up to the current bar" className="xl:min-h-[9rem] xl:flex-1" bodyClassName="max-h-96 overflow-auto xl:max-h-none">
             <AnalysisBody analysis={a} error={market.error}>{() => <VsaEventList events={events} selectedId={state.selectedEventId} onSelect={(id) => set({ selectedEventId: id })} scopeLabel="up to this point" />}</AnalysisBody>
           </Panel>
-          <Panel title="Pattern detail" actions={<DetailLevelSwitch />} bodyClassName="overflow-auto">
+          <Panel title="Pattern detail" actions={<DetailLevelSwitch />} className="xl:min-h-[9rem] xl:flex-1" bodyClassName="overflow-auto">
             {selected
               ? <VsaDetailPanel event={selected} level={state.detailLevel} onClose={() => set({ selectedEventId: null })} />
               : <StateMessage icon={MousePointerClick} title="Select a pattern">Click a marker on the chart or an event in the list to see its measurements, conditions and alternative explanations.</StateMessage>}

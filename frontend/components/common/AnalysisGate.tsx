@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useMarket } from "@/hooks/data";
 import { useHiddenInstruments } from "@/hooks/hiddenInstruments";
 import { useWorkspace } from "@/hooks/workspace";
-import { Badge, Button, GLOSSARY, KeyValue, Term } from "@/components/ui/primitives";
+import { Badge, Button, GLOSSARY, InfoTip, KeyValue, Term } from "@/components/ui/primitives";
 import { auctionLabel, fmtPct, fmtPrice, humanize } from "@/lib/formatting";
 import type { Analysis, Level } from "@/types";
 import { LOCATION_LABEL, locationReason } from "@/lib/location";
@@ -54,19 +54,30 @@ export function ValueLocationCard({ analysis }: { analysis: Analysis }) {
   const label = ctx ? LOCATION_LABEL[ctx.state] : "Not classified";
   // Levels come with the classification when supplied, so they always belong to the reference session used.
   const prof = ctx ? (ctx.state === "unavailable" ? null : { vah: ctx.vah, poc: ctx.poc, val: ctx.val }) : analysis.profiles.prior;
+  const note = ctx
+    ? (ctx.state === "unavailable" ? `No usable prior value area: ${locationReason(ctx.unavailableReason)}.` : "Inside value includes the VAL and VAH boundaries. Location describes where price is relative to value; it is not a directional signal.")
+    : "This snapshot was saved before price location was recorded, so it is not classified. The last close and prior value area are shown as supplied.";
+  const classified = !!ctx && ctx.state !== "unavailable";
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2"><Badge tone={ctx?.state === "unavailable" ? "warn" : "neutral"}>{label}</Badge><span className="text-xs text-subtle">{v.referenceProfile}</span></div>
-      <dl className="text-xs">
-        <KeyValue k="Last close" v={fmtPrice(v.price)} />
-        {prof && (<>
-          <KeyValue k={<Term hint={GLOSSARY.VAH}>Prior VAH</Term>} v={fmtPrice(prof.vah)} />
-          <KeyValue k={<Term hint={GLOSSARY.POC}>Prior POC</Term>} v={fmtPrice(prof.poc)} />
-          <KeyValue k={<Term hint={GLOSSARY.VAL}>Prior VAL</Term>} v={fmtPrice(prof.val)} />
-        </>)}
-        <KeyValue k="vs prior POC" v={fmtPct(v.distanceFromPocPct)} />
-      </dl>
-      <p className="text-xs text-subtle">{ctx ? (ctx.state === "unavailable" ? `No usable prior value area: ${locationReason(ctx.unavailableReason)}.` : "Inside value includes the VAL and VAH boundaries. Location describes where price is relative to value; it is not a directional signal.") : "This snapshot was saved before price location was recorded, so it is not classified. The last close and prior value area are shown as supplied."}</p>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Badge tone={ctx?.state === "unavailable" ? "warn" : "neutral"}>{label}</Badge>
+        <span className="text-sm">Close <b className="num font-semibold">{fmtPrice(v.price)}</b></span>
+        {classified ? <InfoTip>{note}</InfoTip> : null}
+      </div>
+      {prof ? (
+        <dl className="grid grid-cols-3 gap-2 text-center">
+          {([["VAH", GLOSSARY.VAH, prof.vah], ["POC", GLOSSARY.POC, prof.poc], ["VAL", GLOSSARY.VAL, prof.val]] as const).map(([k, hint, value]) => (
+            <div key={k} className="rounded-lg bg-surface-2 px-2 py-1.5">
+              <dt className="text-xs text-subtle"><Term hint={hint}>Prior {k}</Term></dt>
+              <dd className="num text-sm font-medium">{fmtPrice(value)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {v.distanceFromPocPct !== null && <p className="text-xs text-muted">vs prior POC {fmtPct(v.distanceFromPocPct)}</p>}
+      <p className="text-xs text-subtle">{v.referenceProfile}</p>
+      {!classified && <p className="text-xs text-subtle">{note}</p>}
     </div>
   );
 }

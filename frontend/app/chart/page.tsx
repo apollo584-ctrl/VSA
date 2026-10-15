@@ -17,11 +17,11 @@ export default function ChartProfilePage() {
   const profile = a?.status === "ok" ? (a.profiles[state.profileKind] ?? null) : null;
   return (
     <AnalysisGate market={market}>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5 xl:h-full xl:gap-4">
       <AnalysisPageHeader title="Chart & Profile" description="Candles with the session's estimated volume or TPO profile, value area and structural levels." market={market} />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_28rem]">
-        <div className="flex min-h-[42rem] min-w-0 flex-col"><ChartSection market={market} /></div>
-        <aside className="flex min-w-0 flex-col gap-6" aria-label="Market Profile workspace">
+      <div className="grid grid-cols-1 gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-4">
+        <div className="flex min-h-[42rem] min-w-0 flex-col xl:min-h-0"><ChartSection market={market} /></div>
+        <aside className="flex min-w-0 flex-col gap-5 xl:min-h-0 xl:gap-4 xl:overflow-y-auto" aria-label="Market Profile workspace">
           <Panel title="Market Profile" actions={<>{profile?.estimated && <EstimatedBadge profile={profile} />}</>}>
             <div className="space-y-4">
               <ProfileKindTabs available={a?.status === "ok" ? Object.keys(a.profiles) : undefined} />
