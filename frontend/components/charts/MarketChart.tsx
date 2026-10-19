@@ -12,6 +12,7 @@ import { barTimeContaining } from "@/lib/replay";
 import { cn } from "@/lib/utils";
 import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/types";
 import { ChartOverlay } from "./ChartOverlay";
+import { ChartProfileControls } from "./ChartProfileControls";
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
@@ -64,7 +65,7 @@ interface Props {
 }
 
 export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile }: Props) {
-  const { state } = useWorkspace();
+  const { state, set } = useWorkspace();
   const hostRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -78,7 +79,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const [hover, setHover] = useState<Bar | null>(null);
   const palette = useMemo<ChartPalette>(() => readPalette(), [state.theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const profile = analysis?.profiles[profileKind] ?? analysis?.profiles.volume ?? null;
+  const profile = analysis?.profiles[profileKind] ?? null;
   const tpoProfile = analysis?.profiles.tpo ?? null;
   const events = analysis?.vsaEvents ?? NO_EVENTS;
   const selected = events.find((e) => e.id === selectedEventId) ?? null;
@@ -274,7 +275,13 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const display = hover ?? bars[bars.length - 1] ?? null;
 
   return (
-    <div ref={frameRef} className={cn("relative h-full min-h-56 w-full overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
+    <div ref={frameRef} className={cn("relative flex h-full min-h-56 w-full flex-col overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
+      {!hideProfile && <ChartProfileControls
+        profiles={analysis?.profiles ?? null} kind={profileKind} visible={layers.volumeProfile}
+        onChange={(kind) => set({ profileKind: kind })}
+        onVisibleChange={(visible) => set({ layers: { ...state.layers, volumeProfile: visible } })}
+      />}
+      <div className="relative min-h-0 flex-1">
       <div ref={hostRef} className="absolute inset-0" role="img" aria-label={`Candlestick chart, ${bars.length} bars. VSA events are listed beside the chart.`} />
       {size.w > 0 && (
         <ChartOverlay
@@ -315,6 +322,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
           <span className="num text-muted">V {fmtVolume(display.v)}</span>
         </div>
       )}
+      </div>
     </div>
   );
 }
