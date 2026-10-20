@@ -1,17 +1,21 @@
 import json
 import logging
 import os
+import secrets
+import subprocess
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
+from app import auth
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
@@ -29,6 +33,14 @@ if not logger.handlers:
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 logger.propagate = False
+
+
+def launch_stop(script: str):
+    """Detached `stop.bat delay`, so this response is sent before the servers go down."""
+    flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    # Doubled outer quotes keep a path with spaces intact under cmd /c.
+    subprocess.Popen(f'cmd.exe /d /c ""{script}" delay"', creationflags=flags, close_fds=True,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: list[dict] | None = None) -> FastAPI:
@@ -49,14 +61,27 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     scanner = Scanner(store, fetch=fetch, universe=scan_universe)
     study_runner = StudyRunner(store, fetch=fetch, universe=scan_universe)
     collector = IntradayCollector(store, fetch=fetch, universe=scan_universe)
-    app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan, dependencies=[Depends(auth.require_auth)])
+    app.state.auth_path = auth.auth_path(store.path)
+    limiter = auth.LoginLimiter()
+    app.state.launch_stop = launch_stop
     app.state.store = store
     app.state.scanner = scanner
     app.state.study_runner = study_runner
     app.state.collector = collector
     origins = os.getenv("MSI_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
-    app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins],
-                       allow_methods=["GET", "POST"], allow_headers=["Content-Type"], expose_headers=["X-Request-ID"])
+    app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins], allow_credentials=True,
+                       allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+):3000$",
+                       allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-MSI-Request"], expose_headers=["X-Request-ID", "Retry-After"])
+
+    @app.middleware("http")
+    async def protect_docs(request, call_next):
+        if request.url.path in ("/docs", "/redoc", "/openapi.json", "/docs/oauth2-redirect") and not auth.is_local(request):
+            if auth.load_pin_file(app.state.auth_path) is None:
+                return JSONResponse({"detail": "No PIN is set on the host PC"}, 401)
+            if not auth.has_session(request):
+                return JSONResponse({"detail": "Login required"}, 401)
+        return await call_next(request)
 
     @app.middleware("http")
     async def log_request(request, call_next):
@@ -86,6 +111,59 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     @app.get("/api/v1/health")
     def health():
         return {"status": "ok", "engine_version": "0.1.0", "knowledge_version": load().version, "live_data": False}
+
+    @app.get("/api/v1/auth/status")
+    def auth_status(request: Request):
+        return {"local": auth.is_local(request), "pin_set": auth.load_pin_file(app.state.auth_path) is not None,
+                "authenticated": auth.has_session(request)}
+
+    @app.post("/api/v1/auth/login")
+    async def auth_login(request: Request, response: Response):
+        try:
+            pin = (await request.json()).get("pin")
+        except (ValueError, AttributeError):
+            pin = None
+        if not auth.valid_pin(pin):
+            raise HTTPException(422, "PIN must be 6 to 12 digits")
+        local = auth.is_local(request)
+        ip = request.client.host if request.client else "unknown"
+        data = auth.load_pin_file(app.state.auth_path)
+        if data is None:
+            raise HTTPException(401, "No PIN is set on the host PC")
+        if not local:
+            wait = limiter.attempt(ip)
+            if wait:
+                raise HTTPException(429, "Too many attempts", headers={"Retry-After": str(wait)})
+        if not await run_in_threadpool(auth.verify_pin, data, pin):
+            raise HTTPException(401, "Wrong PIN")
+        if not local:
+            limiter.success(ip)
+        token = secrets.token_urlsafe(32)
+        now = datetime.now(timezone.utc)
+        store.create_session(auth.token_hash(token, data), now.isoformat(), (now + timedelta(seconds=auth.SESSION_SECONDS)).isoformat())
+        response.set_cookie(auth.COOKIE, token, max_age=auth.SESSION_SECONDS, path="/api/v1", httponly=True, samesite="lax", secure=False)
+        return {"authenticated": True}
+
+    @app.post("/api/v1/auth/logout")
+    def auth_logout(request: Request, response: Response):
+        token = request.cookies.get(auth.COOKIE)
+        data = auth.load_pin_file(app.state.auth_path)
+        if token and data is not None:
+            store.delete_session(auth.token_hash(token, data))
+        response.delete_cookie(auth.COOKIE, path="/api/v1")
+        return {"authenticated": False}
+
+    @app.post("/api/v1/app/quit")
+    def app_quit(request: Request):
+        """Quit button: runs stop.bat after a short delay. Host PC only (loopback client and loopback Host), even with a
+        PIN session, because the frontend server cannot see the real client address."""
+        if not auth.is_local(request) or request.headers.get("x-msi-request") != "1":
+            raise HTTPException(403, "Quit is only available on the host PC")
+        script = os.getenv("MSI_STOP_SCRIPT")
+        if not script:
+            raise HTTPException(501, "Quit is only available when the app is started with start.bat.")
+        app.state.launch_stop(script)
+        return {"stopping": True}
 
     @app.get("/api/v1/instruments")
     def instruments():

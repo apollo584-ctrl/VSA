@@ -282,3 +282,6 @@ export type RawJobStatus = z.infer<typeof rawJobStatusSchema>;
 export type RawOutcomeStat = z.infer<typeof rawOutcomeStatSchema>;
 export type RawOutcomes = z.infer<typeof rawOutcomesSchema>;
 export type RawIntraday = z.infer<typeof rawIntradaySchema>;
+
+export const rawAuthStatusSchema = z.object({ local: z.boolean(), pin_set: z.boolean(), authenticated: z.boolean() });
+export type RawAuthStatus = z.infer<typeof rawAuthStatusSchema>;

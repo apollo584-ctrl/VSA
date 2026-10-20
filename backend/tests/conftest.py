@@ -15,7 +15,7 @@ def source():
 
 @pytest.fixture
 def client(tmp_path):
-    with TestClient(create_app(tmp_path / "test.sqlite3")) as result:
+    with TestClient(create_app(tmp_path / "test.sqlite3"), client=("127.0.0.1", 50000), base_url="http://localhost") as result:
         yield result
 
 

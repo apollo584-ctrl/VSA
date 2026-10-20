@@ -39,7 +39,29 @@ class Store:
                     symbol TEXT NOT NULL, ts TEXT NOT NULL, open REAL NOT NULL, high REAL NOT NULL, low REAL NOT NULL,
                     close REAL NOT NULL, volume REAL NOT NULL, basis INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (symbol, ts, basis));
                 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS sessions (
+                    token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL, expires_at TEXT NOT NULL);
             """)
+
+    def create_session(self, token_hash: str, created_at: str, expires_at: str):
+        with self.connect() as db:
+            db.execute("DELETE FROM sessions WHERE expires_at <= ?", (created_at,))
+            db.execute("INSERT INTO sessions (token_hash, created_at, expires_at) VALUES (?, ?, ?)", (token_hash, created_at, expires_at))
+
+    def session_valid(self, token_hash: str) -> bool:
+        from datetime import datetime, timezone
+        with self.connect() as db:
+            row = db.execute("SELECT 1 FROM sessions WHERE token_hash=? AND expires_at > ?",
+                             (token_hash, datetime.now(timezone.utc).isoformat())).fetchone()
+        return row is not None
+
+    def clear_sessions(self):
+        with self.connect() as db:
+            db.execute("DELETE FROM sessions")
+
+    def delete_session(self, token_hash: str):
+        with self.connect() as db:
+            db.execute("DELETE FROM sessions WHERE token_hash=?", (token_hash,))
 
     def save_study(self, study: dict):
         with self.connect() as db:

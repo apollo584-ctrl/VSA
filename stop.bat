@@ -4,9 +4,10 @@ rem "stop.bat delay" waits two seconds first, so a caller that is itself stopped
 setlocal
 if /i "%~1"=="delay" ping -n 3 127.0.0.1 >nul
 echo Stopping Market Structure Terminal...
-rem Backend first: the frontend's process tree is the one the Quit button runs inside, so it is stopped last.
-call :stop_port 8000
+rem Frontend first: the Quit button runs this script as a child of the backend, and taskkill /T on the backend
+rem would end this script too, so the backend is stopped last.
 call :stop_port 3000
+call :stop_port 8000
 echo Done.
 endlocal
 exit /b 0

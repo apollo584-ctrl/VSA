@@ -1,10 +1,12 @@
 "use client";
 
-import { Moon, Power, Search, Sun, X } from "lucide-react";
+import { Lock, Moon, Power, Search, Sun, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
 import { API_MODE } from "@/lib/api/client";
-import { useInstruments, useLoadSymbol } from "@/hooks/data";
+import { backendApi } from "@/lib/api/backend/client";
+import { ApiError } from "@/lib/api/errors";
+import { useAuthStatus, useInstruments, useLoadSymbol, useLogout } from "@/hooks/data";
 import { useHiddenInstruments } from "@/hooks/hiddenInstruments";
 import { useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
@@ -125,10 +127,11 @@ function QuitButton() {
     if (!window.confirm("Stop the terminal and the analysis backend? Close this tab afterwards.")) return;
     setStatus("stopping");
     try {
-      const res = await fetch("/api/quit", { method: "POST", headers: { "X-MSI-Action": "quit" } });
-      setStatus(res.ok ? "stopped" : "unavailable");
-    } catch {
-      setStatus("stopped"); // the server going down mid-request is the expected outcome
+      await backendApi.quit();
+      setStatus("stopped");
+    } catch (e) {
+      // status 0 = the server went down mid-request, the expected outcome; anything else was refused
+      setStatus(e instanceof ApiError && e.status !== 0 ? "unavailable" : "stopped");
     }
   }
   if (status === "stopped") return <span role="status" className="text-xs text-muted">Stopped. You can close this tab.</span>;
@@ -136,6 +139,18 @@ function QuitButton() {
   return (
     <Button variant="ghost" onClick={quit} disabled={status === "stopping"} title="Stop the frontend and backend (same as stop.bat)">
       <Power size={16} aria-hidden /> <span className="max-sm:sr-only">{status === "stopping" ? "Stopping…" : "Quit"}</span>
+    </Button>
+  );
+}
+
+/** Remote devices only: ends the PIN session and returns to the PIN screen. */
+function LockButton() {
+  const { data } = useAuthStatus(API_MODE === "http");
+  const logout = useLogout();
+  if (!data || data.local || !data.authenticated) return null;
+  return (
+    <Button variant="ghost" onClick={() => logout.mutate()} disabled={logout.isPending} title="Lock this device (asks for the PIN again)">
+      <Lock size={16} aria-hidden /> <span className="max-sm:sr-only">Lock</span>
     </Button>
   );
 }
@@ -188,6 +203,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" aria-label={state.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => set({ theme: state.theme === "dark" ? "light" : "dark" })}>
           {state.theme === "dark" ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
         </Button>
+        <LockButton />
         <QuitButton />
       </div>
     </header>

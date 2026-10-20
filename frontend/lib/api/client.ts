@@ -64,6 +64,10 @@ export const api = {
   },
 
   /** Scanner calls need the real backend: they fetch live market data. */
+  async getAuthStatus() { return backendApi.getAuthStatus(); },
+  async login(pin: string) { await backendApi.login(pin); },
+  async logout() { await backendApi.logout(); },
+
   async getScan() { return scanBackend().getScan(); },
   async runScan() { return scanBackend().runScan(); },
   async setScanAuto(minutes: number) { return scanBackend().setScanAuto(minutes); },

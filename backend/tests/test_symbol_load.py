@@ -41,7 +41,7 @@ def make_client(tmp_path):
     clients = []
 
     def make(fetch):
-        client = TestClient(create_app(tmp_path / f"s{len(clients)}.sqlite3", market_fetch=fetch))
+        client = TestClient(create_app(tmp_path / f"s{len(clients)}.sqlite3", market_fetch=fetch), client=("127.0.0.1", 50000), base_url="http://localhost")
         client.__enter__()
         clients.append(client)
         return client

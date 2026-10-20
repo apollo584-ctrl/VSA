@@ -21,6 +21,16 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
 
+## Authentication
+
+Clients on 127.0.0.1 / ::1 that address the server as `localhost`, `127.0.0.1` or `[::1]` skip login (a loopback client using any other Host name, e.g. a rebound DNS name, is treated as remote). Remote requests that send an `Origin` must name the same host they reached (dashboard and API on one PC), else 403; remote writes also need `X-MSI-Request: 1`, else 403. Login attempts are counted before the PIN is checked, so parallel guesses cannot bypass the limits. Running `python -m scripts.set_pin` logs every device out. Every other `/api/v1` request needs the `msi_session` cookie (HttpOnly, SameSite=Lax, Path=/api/v1, 30 days) obtained from `POST /api/v1/auth/login`, else `401 {"detail":"Login required"}`; with no PIN file set on the host: `401 "No PIN is set on the host PC"`. Exempt: `GET /health`, `GET /auth/status`, `POST /auth/login`, `POST /auth/logout`. `/docs`, `/redoc`, `/openapi.json` are closed to non-local clients.
+
+- `POST /auth/login` `{"pin":"123456"}` (string of 6-12 digits, else 422): 200 sets the cookie; 401 `Wrong PIN`; 429 with `Retry-After` after 5 failures per IP in 15 min (60 s lock, doubling to 15 min) or 20 failures across all non-local clients in 60 min (30 min lock).
+- `POST /auth/logout`: deletes the session and clears the cookie. `GET /auth/status` -> `{local, pin_set, authenticated}`.
+- Sessions are bound to the current PIN: changing the PIN invalidates every session, including logins in flight. CORS exposes `Retry-After`.
+- `POST /app/quit` (header `X-MSI-Request: 1`): runs `MSI_STOP_SCRIPT` (stop.bat) detached. Host PC only (loopback client and Host); 403 otherwise, even with a session; 501 when not started by start.bat.
+- Every non-GET/HEAD/OPTIONS request from a non-local client must send `X-MSI-Request: 1`, else 403. CORS allows credentials for the `MSI_CORS_ORIGINS` list plus private-network hosts on port 3000.
+
 ## Loading a symbol
 
 Provider responses are validated before CSV conversion: the returned symbol must match the request (case-insensitive; no implicit aliases), and timestamps and all five OHLCV arrays must have equal lengths. Malformed response structures, invalid timestamps and identity/array mismatches return 502 without storing a dataset. Explicit provider `Not Found` errors and valid empty series retain their 422 rejection behavior.

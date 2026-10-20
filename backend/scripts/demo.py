@@ -48,7 +48,7 @@ def generate():
     (FIXTURES / "demo.csv").write_bytes(raw)
     (FIXTURES / "upload_metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     with TemporaryDirectory() as temp:
-        with TestClient(create_app(Path(temp) / "demo.sqlite3")) as client:
+        with TestClient(create_app(Path(temp) / "demo.sqlite3"), client=("127.0.0.1", 50000), base_url="http://localhost") as client:
             uploaded = client.post("/api/v1/datasets/upload", files={"file": ("demo.csv", raw, "text/csv")},
                                    data={"metadata": json.dumps(metadata)})
             uploaded.raise_for_status()

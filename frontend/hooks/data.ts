@@ -26,6 +26,20 @@ export function useLoadSymbol() {
   });
 }
 
+export function useAuthStatus(enabled = true) {
+  return useQuery({ queryKey: ["auth"], queryFn: () => api.getAuthStatus(), enabled, retry: false, staleTime: 0 });
+}
+
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (pin: string) => api.login(pin), onSuccess: () => qc.invalidateQueries() });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.logout(), onSuccess: () => qc.invalidateQueries({ queryKey: ["auth"] }) });
+}
+
 export function useScan() {
   return useQuery({
     queryKey: ["scan"], queryFn: () => api.getScan(), staleTime: 0,

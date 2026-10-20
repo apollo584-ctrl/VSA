@@ -4,11 +4,28 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { ApiError } from "../errors";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
-  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawIntradaySchema, rawJobStatusSchema,
+  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawIntradaySchema, rawJobStatusSchema, rawAuthStatusSchema,
   type RawAnalysis, type RawBar, type RawConcept, type RawDataset,
 } from "./schemas";
 
-const base = () => (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+/** A localhost backend URL follows the page host, so a LAN device opening http://<pc-ip>:3000 reaches http://<pc-ip>:8000. */
+export function resolveBase(configured: string, pageHost?: string): string {
+  const url = configured.replace(/\/$/, "");
+  if (!url || !pageHost) return url;
+  try {
+    const u = new URL(url);
+    if ((u.hostname === "localhost" || u.hostname === "127.0.0.1") && pageHost !== "localhost" && pageHost !== "127.0.0.1") {
+      u.hostname = pageHost.includes(":") && !pageHost.startsWith("[") ? `[${pageHost}]` : pageHost;
+      return u.toString().replace(/\/$/, "");
+    }
+  } catch { /* keep configured */ }
+  return url;
+}
+
+const base = () => resolveBase(process.env.NEXT_PUBLIC_API_BASE_URL ?? "", typeof window === "undefined" ? undefined : window.location.hostname);
+
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(fn: (() => void) | null) { onUnauthorized = fn; }
 
 function detailMessage(body: unknown): string | null {
   const d = (body as { detail?: unknown } | null)?.detail;
@@ -21,7 +38,7 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   if (!base()) throw new ApiError("unavailable", "No backend URL configured (NEXT_PUBLIC_API_BASE_URL).", 0);
   let res: Response;
   try {
-    res = await fetch(`${base()}${path}`, { ...init, headers: { Accept: "application/json", ...init?.headers } });
+    res = await fetch(`${base()}${path}`, { ...init, credentials: "include", headers: { Accept: "application/json", ...(init?.method && init.method !== "GET" ? { "X-MSI-Request": "1" } : {}), ...init?.headers } });
   } catch {
     throw new ApiError("unavailable", "The analysis service could not be reached.", 0);
   }
@@ -29,6 +46,11 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   try { body = await res.json(); } catch { /* non-JSON */ }
   if (!res.ok) {
     const msg = detailMessage(body) ?? `Request failed (${res.status})`;
+    if (res.status === 401) {
+      if (path !== "/auth/login") onUnauthorized?.();
+      throw new ApiError("unauthorized", msg, 401, body);
+    }
+    if (res.status === 429) throw new ApiError("rate_limited", msg, 429, { retryAfter: Number(res.headers.get("Retry-After")) || undefined });
     throw new ApiError(res.status === 422 ? "rejected" : res.status === 404 ? "not_found" : "http_error", msg, res.status, body);
   }
   const parsed = schema.safeParse(body);
@@ -146,6 +168,12 @@ export const backendApi = {
     return { datasetId: d.id, created: true };
   },
 
+  getAuthStatus() { return request("/auth/status", rawAuthStatusSchema); },
+  login(pin: string) { return request("/auth/login", z.unknown(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin }) }); },
+  logout() { return request("/auth/logout", z.unknown(), { method: "POST" }); },
+  /** Runs stop.bat; the backend accepts it only from the host PC. */
+  quit() { return request("/app/quit", z.unknown(), { method: "POST" }); },
+
   getScan() { return request("/scan", rawScanSchema); },
   runScan() { return request("/scan/run", rawScanStatusSchema, { method: "POST" }); },
   setScanAuto(minutes: number) {
@@ -163,9 +191,10 @@ export const backendApi = {
     form.append("file", file);
     form.append("metadata", JSON.stringify(metadata));
     let res: Response;
-    try { res = await fetch(`${base()}/datasets/upload`, { method: "POST", body: form }); }
+    try { res = await fetch(`${base()}/datasets/upload`, { method: "POST", body: form, credentials: "include", headers: { "X-MSI-Request": "1" } }); }
     catch { throw new ApiError("unavailable", "The analysis service could not be reached.", 0); }
     const body: unknown = await res.json().catch(() => null);
+    if (res.status === 401) onUnauthorized?.();
     if (!res.ok) {
       return { accepted: false, datasetId: null, issues: [{ code: res.status === 422 ? "rejected" : "http_error", severity: "error", message: detailMessage(body) ?? `Upload failed (${res.status})` }] };
     }

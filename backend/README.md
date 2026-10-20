@@ -27,4 +27,8 @@ Analysis saves by default. Send `persist=false` for a write-free replay/preview 
 
 Tests use temporary databases and deterministic inputs, with no persistent runtime mutations. Run from `backend/` using `python -m pytest -q`. `requirements.lock.txt` records the tested Python 3.13 Windows environment (runtime and test packages). For matching versions from the repository root, install using `python -m pip install -c backend/requirements.lock.txt -e './backend[test]'`; this is a constraints file, not a portable binary lock. The knowledge catalog is checked in; only run `python -m scripts.build_knowledge` when deliberately regenerating it.
 
-This local MVP has no authentication or public deployment configuration. No tests establish predictive trading accuracy. Catalog-only detectors and incomplete analysis features are listed explicitly in the product specification.
+Requests from this PC (127.0.0.1 / ::1) need no login. Other devices on the network must log in with a shared PIN (see "Setting the PIN"); there is no public deployment configuration. No tests establish predictive trading accuracy. Catalog-only detectors and incomplete analysis features are listed explicitly in the product specification.
+
+## Setting the PIN
+
+Run from `backend/`: `.venv\Scripts\python.exe -m scripts.set_pin`. It asks twice (hidden input) for a PIN of 6-12 digits and writes a salted PBKDF2 hash to `backend/data/auth.json` (or `MSI_AUTH_PATH`). The PIN is never stored or printed. Until a PIN is set, other devices are refused (fail closed). Re-run the script to change it.

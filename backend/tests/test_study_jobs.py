@@ -36,7 +36,7 @@ def make(tmp_path):
     made = []
 
     def build(fetch, name="j.sqlite3"):
-        client = TestClient(create_app(tmp_path / name, market_fetch=fetch, scan_universe=UNIVERSE))
+        client = TestClient(create_app(tmp_path / name, market_fetch=fetch, scan_universe=UNIVERSE), client=("127.0.0.1", 50000), base_url="http://localhost")
         client.__enter__()
         made.append(client)
         return client
@@ -108,7 +108,7 @@ def test_auto_collect_only_when_enabled_and_stale(tmp_path, monkeypatch):
             monkeypatch.setenv("MSI_AUTO_COLLECT", "1")
         else:
             monkeypatch.delenv("MSI_AUTO_COLLECT", raising=False)
-        with TestClient(create_app(tmp_path / db, market_fetch=fetch_for(), scan_universe=UNIVERSE)) as c:
+        with TestClient(create_app(tmp_path / db, market_fetch=fetch_for(), scan_universe=UNIVERSE), client=("127.0.0.1", 50000), base_url="http://localhost") as c:
             c.app.state.collector.wait(30)
             return c.app.state.collector.current_status().started_at is not None
     assert started(False, "a.sqlite3") is False

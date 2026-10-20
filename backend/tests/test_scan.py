@@ -111,7 +111,7 @@ def make(tmp_path):
     made = []
 
     def build(fetch, name="s.sqlite3"):
-        client = TestClient(create_app(tmp_path / name, market_fetch=fetch, scan_universe=UNIVERSE))
+        client = TestClient(create_app(tmp_path / name, market_fetch=fetch, scan_universe=UNIVERSE), client=("127.0.0.1", 50000), base_url="http://localhost")
         client.__enter__()
         made.append(client)
         return client

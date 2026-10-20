@@ -17,7 +17,7 @@ def upload(client, raw=None):
 
 def test_vertical_slice_and_restart_persistence(tmp_path):
     path = tmp_path / "persistent.sqlite3"
-    with TestClient(create_app(path)) as client:
+    with TestClient(create_app(path), client=("127.0.0.1", 50000), base_url="http://localhost") as client:
         response = upload(client)
         assert response.status_code == 201, response.text
         dataset = Dataset.model_validate(response.json())
@@ -35,7 +35,7 @@ def test_vertical_slice_and_restart_persistence(tmp_path):
         assert analysis.plain_english_summary and analysis.vsa_observations
         assert result.headers["X-Request-ID"]
         saved = result.json()
-    with TestClient(create_app(path)) as client:
+    with TestClient(create_app(path), client=("127.0.0.1", 50000), base_url="http://localhost") as client:
         assert client.get(f"/api/v1/analyses/{analysis.id}").json() == saved
         assert client.get("/api/v1/instruments").json()["items"][0]["dataset_ids"] == [dataset.id]
     # Windows forbids this if a SQLite connection was left open.
