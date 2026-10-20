@@ -33,6 +33,14 @@ Provider responses are validated before CSV conversion: the returned symbol must
 
 A result is flagged `strength` or `weakness` when at least three of four readings agree, none opposes, and the engine's own `contradicting_evidence` is empty (an engine-reported contradiction suppresses the flag). The readings share closes and prior-value levels, so the count is a heuristic, not independent corroboration: value location (above/below prior value), auction state (acceptance or rejection pointing the same way), active VSA signals in the current session (provisional or confirmed, majority direction) and current-session price-action direction (swing structure excluded). `agreeing` is the count, `votes` lists each reading, and results sort flagged first, then by agreement, with errors last. The scan describes aligned evidence; it is not a prediction or advice.
 
+## Outcome study and intraday history
+
+`POST /outcomes/run` starts a background study over the scan universe (daily bars, Yahoo, 10y) and returns the job status: 202 when started, 200 if one is already running. `GET /outcomes` returns `{status, study}`; `study` is the latest saved `outcomes.run_study` result (`generated_at, symbols_used, date_range, cutoff_date, horizons, min_cases, stats, holds, method_notes`) or `null`. Symbols that fail are counted in `errors` and skipped.
+
+`POST /intraday/collect` starts a background collector that saves each universe symbol's 30m bars (`period=60d`) into `intraday_bars`; rows are insert-only, so a repeat run adds only new bars. Same 202/200 behavior. `GET /intraday` returns `{status, summary}` with `summary = {symbols, bars, first_ts, last_ts, rebased_symbols, last_collected_at}` (counts use each symbol's latest price basis only; `rebased_symbols` is how many symbols started a new basis after a split/adjustment, detected when refetched closes differ by more than 0.1%; old rows are kept, never overwritten; `last_collected_at` is set only when at least one symbol succeeded). With env `MSI_AUTO_COLLECT=1` the collector starts at backend startup when `last_collected_at` is missing or older than 3 days (off by default).
+
+Job `status` fields: `running, started_at, finished_at, total, done, errors, bars_added, error` (`bars_added` is used by the collector only; `error` is a string when saving/finalizing the run failed, otherwise null).
+
 ## CSV and upload metadata
 
 UTF-8 header, exactly: `timestamp,open,high,low,close,volume`. Each row is one completed bar. Prices must be finite and positive; volume finite and nonnegative. Input order must be strictly increasing. Naive timestamps use metadata's IANA `timezone`; offset-aware timestamps are normalized to UTC. Mixing naive and aware timestamps is rejected. Ambiguous/nonexistent local DST times are rejected.

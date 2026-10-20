@@ -33,7 +33,58 @@ class Store:
                     snapshot TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS scan_results (
                     symbol TEXT PRIMARY KEY, scanned_at TEXT NOT NULL, payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS study_runs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS intraday_bars (
+                    symbol TEXT NOT NULL, ts TEXT NOT NULL, open REAL NOT NULL, high REAL NOT NULL, low REAL NOT NULL,
+                    close REAL NOT NULL, volume REAL NOT NULL, basis INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (symbol, ts, basis));
+                CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             """)
+
+    def save_study(self, study: dict):
+        with self.connect() as db:
+            db.execute("INSERT INTO study_runs (created_at, payload) VALUES (?, ?)", (study["generated_at"], json.dumps(study, allow_nan=False)))
+
+    def latest_study(self):
+        with self.connect() as db:
+            row = db.execute("SELECT payload FROM study_runs ORDER BY id DESC LIMIT 1").fetchone()
+        return json.loads(row[0]) if row else None
+
+    def save_intraday_bars(self, symbol: str, bars: list[Bar]) -> int:
+        """Insert bars never seen before; existing rows are never overwritten. Returns rows added.
+
+        If incoming closes differ from stored ones (split/adjustment) by more than 0.1%, a new basis starts and the bars go under it.
+        """
+        with self.connect() as db:
+            basis = db.execute("SELECT COALESCE(MAX(basis), 0) FROM intraday_bars WHERE symbol=?", (symbol,)).fetchone()[0]
+            stored = dict(db.execute("SELECT ts, close FROM intraday_bars WHERE symbol=? AND basis=?", (symbol, basis)))
+            for b in bars:
+                old = stored.get(b.timestamp.isoformat())
+                if old is not None and abs(b.close - old) > 0.001 * abs(old):
+                    basis += 1
+                    break
+            before = db.total_changes
+            db.executemany("INSERT OR IGNORE INTO intraday_bars VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           [(symbol, b.timestamp.isoformat(), b.open, b.high, b.low, b.close, b.volume, basis) for b in bars])
+            return db.total_changes - before
+
+    def intraday_summary(self):
+        with self.connect() as db:
+            symbols, count, first, last = db.execute(
+                "SELECT COUNT(DISTINCT symbol), COUNT(*), MIN(ts), MAX(ts) FROM intraday_bars b "
+                "WHERE basis = (SELECT MAX(basis) FROM intraday_bars WHERE symbol = b.symbol)").fetchone()
+            rebased = db.execute("SELECT COUNT(DISTINCT symbol) FROM intraday_bars WHERE basis > 0").fetchone()[0]
+        return {"symbols": symbols, "bars": count, "first_ts": first, "last_ts": last, "rebased_symbols": rebased,
+                "last_collected_at": self.get_meta("last_collected_at")}
+
+    def get_meta(self, key: str):
+        with self.connect() as db:
+            row = db.execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def set_meta(self, key: str, value: str):
+        with self.connect() as db:
+            db.execute("INSERT OR REPLACE INTO meta VALUES (?, ?)", (key, value))
 
     def save_scan_result(self, result):
         with self.connect() as db:

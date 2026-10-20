@@ -20,6 +20,7 @@ from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
+from app.study_jobs import IntradayCollector, JobStatus, StudyRunner, is_stale
 
 logger = logging.getLogger("market_intelligence")
 if not logger.handlers:
@@ -38,13 +39,21 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     async def lifespan(app):
         store.initialize()
         load()
+        if os.getenv("MSI_AUTO_COLLECT") == "1" and is_stale(store.get_meta("last_collected_at")):
+            collector.start()
         yield
         scanner.shutdown()
+        study_runner.shutdown()
+        collector.shutdown()
 
     scanner = Scanner(store, fetch=fetch, universe=scan_universe)
+    study_runner = StudyRunner(store, fetch=fetch, universe=scan_universe)
+    collector = IntradayCollector(store, fetch=fetch, universe=scan_universe)
     app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan)
     app.state.store = store
     app.state.scanner = scanner
+    app.state.study_runner = study_runner
+    app.state.collector = collector
     origins = os.getenv("MSI_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
     app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins],
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"], expose_headers=["X-Request-ID"])
@@ -156,7 +165,29 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             scanner.start()
         return scanner.current_status()
 
-    @app.get("/api/v1/knowledge/concepts", response_model=list[Concept])
+    @app.post("/api/v1/outcomes/run", response_model=JobStatus, status_code=202)
+    def outcomes_run(response: Response):
+        status, started = study_runner.start()
+        if not started:
+            response.status_code = 200
+        return status
+
+    @app.get("/api/v1/outcomes")
+    def outcomes_latest():
+        return {"status": study_runner.current_status(), "study": store.latest_study()}
+
+    @app.post("/api/v1/intraday/collect", response_model=JobStatus, status_code=202)
+    def intraday_collect(response: Response):
+        status, started = collector.start()
+        if not started:
+            response.status_code = 200
+        return status
+
+    @app.get("/api/v1/intraday")
+    def intraday():
+        return {"status": collector.current_status(), "summary": store.intraday_summary()}
+
+    @app.get("/api/v1/knowledge/concepts",response_model=list[Concept])
     def concepts(category: str | None = None):
         return [c for c in load().concepts if category is None or c.category == category]
 
