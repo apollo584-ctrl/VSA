@@ -50,6 +50,8 @@ const PERSISTED: (keyof WorkspaceState)[] = ["symbol", "timeframe", "session", "
 
 interface Ctx {
   state: WorkspaceState;
+  /** True once saved preferences have been read from storage (the symbol is final only after this). */
+  ready: boolean;
   set: (patch: Partial<WorkspaceState>) => void;
   toggleLayer: (k: LayerKey) => void;
   selectInstrument: (symbol: string) => void;
@@ -83,7 +85,7 @@ export function WorkspaceProvider({ children, initial }: { children: ReactNode; 
   const set = useCallback((patch: Partial<WorkspaceState>) => dispatch({ type: "set", patch }), []);
   const toggleLayer = useCallback((key: LayerKey) => dispatch({ type: "toggleLayer", key }), []);
   const selectInstrument = useCallback((symbol: string) => dispatch({ type: "selectInstrument", symbol }), []);
-  const value = useMemo(() => ({ state, set, toggleLayer, selectInstrument }), [state, set, toggleLayer, selectInstrument]);
+  const value = useMemo(() => ({ state, ready, set, toggleLayer, selectInstrument }), [state, ready, set, toggleLayer, selectInstrument]);
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }
 
