@@ -68,6 +68,11 @@ export const api = {
   async runScan() { return scanBackend().runScan(); },
   async setScanAuto(minutes: number) { return scanBackend().setScanAuto(minutes); },
 
+  async getOutcomes() { return scanBackend().getOutcomes(); },
+  async runOutcomes() { return scanBackend().runOutcomes(); },
+  async getIntraday() { return scanBackend().getIntraday(); },
+  async collectIntraday() { return scanBackend().collectIntraday(); },
+
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
     if (API_MODE === "mock") return validated(uploadResultSchema, await (await mock()).uploadDataset({ name: file.name, text: await file.text() }));
     return validated(uploadResultSchema, await backendApi.uploadDataset(file, metadata));

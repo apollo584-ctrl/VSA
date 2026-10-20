@@ -4,7 +4,7 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { ApiError } from "../errors";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
-  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema,
+  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawIntradaySchema, rawJobStatusSchema,
   type RawAnalysis, type RawBar, type RawConcept, type RawDataset,
 } from "./schemas";
 
@@ -151,6 +151,11 @@ export const backendApi = {
   setScanAuto(minutes: number) {
     return request("/scan/auto", rawScanStatusSchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes }) });
   },
+
+  getOutcomes() { return request("/outcomes", rawOutcomesSchema); },
+  runOutcomes() { return request("/outcomes/run", rawJobStatusSchema, { method: "POST" }); },
+  getIntraday() { return request("/intraday", rawIntradaySchema); },
+  collectIntraday() { return request("/intraday/collect", rawJobStatusSchema, { method: "POST" }); },
 
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
     if (!base()) throw new ApiError("unavailable", "No backend URL configured (NEXT_PUBLIC_API_BASE_URL).", 0);

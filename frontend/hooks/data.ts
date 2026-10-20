@@ -44,6 +44,30 @@ export function useScanAuto() {
   return useMutation({ mutationFn: (minutes: number) => api.setScanAuto(minutes), onSuccess: () => qc.invalidateQueries({ queryKey: ["scan"] }) });
 }
 
+export function useOutcomes() {
+  return useQuery({
+    queryKey: ["outcomes"], queryFn: () => api.getOutcomes(), staleTime: 0,
+    refetchInterval: (q) => (q.state.data?.status.running ? 3_000 : 60_000),
+  });
+}
+
+export function useRunOutcomes() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.runOutcomes(), onSuccess: () => qc.invalidateQueries({ queryKey: ["outcomes"] }) });
+}
+
+export function useIntraday() {
+  return useQuery({
+    queryKey: ["intraday"], queryFn: () => api.getIntraday(), staleTime: 0,
+    refetchInterval: (q) => (q.state.data?.status.running ? 3_000 : 60_000),
+  });
+}
+
+export function useCollectIntraday() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.collectIntraday(), onSuccess: () => qc.invalidateQueries({ queryKey: ["intraday"] }) });
+}
+
 export function useUpload() {
   return useMutation({ mutationFn: (v: { file: File; metadata: Record<string, unknown> }) => api.uploadDataset(v.file, v.metadata) });
 }

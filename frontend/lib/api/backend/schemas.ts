@@ -254,3 +254,31 @@ export type RawEvidence = z.infer<typeof rawEvidenceSchema>;
 export type RawProfile = z.infer<typeof rawProfileSchema>;
 export type RawAnalysis = z.infer<typeof rawAnalysisSchema>;
 export type RawConcept = z.infer<typeof rawConceptSchema>;
+
+export const rawJobStatusSchema = z.object({
+  running: z.boolean(), started_at: iso.nullable().optional(), finished_at: iso.nullable().optional(),
+  total: z.number(), done: z.number(), errors: z.number(), bars_added: z.number().optional(), error: z.string().nullable().optional(),
+});
+export const rawOutcomeStatSchema = z.object({
+  concept: z.string(), direction: z.enum(["strength", "weakness"]), horizon: z.number(), period: z.enum(["older", "newer"]),
+  n_cases: z.number(), n_raw: z.number().optional(), hit_rate: z.number(), baseline_hit_rate: z.number(), edge: z.number(),
+  mean_return: z.number().optional(), holds: z.boolean(),
+});
+export const rawOutcomeStudySchema = z.object({
+  generated_at: iso, symbols_used: z.array(z.string()), date_range: z.object({ start: z.string().nullable(), end: z.string().nullable() }),
+  cutoff_date: z.string().nullable().optional(), horizons: z.array(z.number()), min_cases: z.number(),
+  stats: z.array(rawOutcomeStatSchema), holds: z.array(z.object({ concept: z.string(), horizon: z.number(), holds: z.boolean() })),
+  method_notes: z.array(z.string()).optional(),
+});
+export const rawOutcomesSchema = z.object({ status: rawJobStatusSchema, study: rawOutcomeStudySchema.nullable() });
+export const rawIntradaySchema = z.object({
+  status: rawJobStatusSchema,
+  summary: z.object({
+    symbols: z.number(), bars: z.number(), first_ts: iso.nullable().optional(), last_ts: iso.nullable().optional(),
+    rebased_symbols: z.number(), last_collected_at: iso.nullable().optional(),
+  }),
+});
+export type RawJobStatus = z.infer<typeof rawJobStatusSchema>;
+export type RawOutcomeStat = z.infer<typeof rawOutcomeStatSchema>;
+export type RawOutcomes = z.infer<typeof rawOutcomesSchema>;
+export type RawIntraday = z.infer<typeof rawIntradaySchema>;
