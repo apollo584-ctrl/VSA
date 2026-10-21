@@ -114,7 +114,10 @@ function Sidebar() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   // Dashboard tabs fit one screen on wide displays: the wrapper takes the full height and panels scroll inside themselves.
-  const fit = FIT_ROUTES.has(usePathname());
+  const pathname = usePathname();
+  const fit = FIT_ROUTES.has(pathname);
+  // The pop-out chart window is chart-only: no sidebar, top bar or status bar.
+  if (pathname.startsWith("/chart/popout")) return <>{children}</>;
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />

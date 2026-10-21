@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MarketChart } from "@/components/charts/MarketChart";
 import { mockApi } from "@/fixtures/api";
-import { DEFAULT_LAYERS, WorkspaceProvider, useWorkspace } from "@/hooks/workspace";
+import { VSA_PROFILE_LAYERS, WorkspaceProvider, useWorkspace } from "@/hooks/workspace";
 import type { Analysis } from "@/types";
 
 const chart = vi.hoisted(() => {
@@ -12,9 +12,9 @@ const chart = vi.hoisted(() => {
   return { series, scale };
 });
 vi.mock("lightweight-charts", () => ({
-  ColorType: { Solid: 0 }, CrosshairMode: { Normal: 0 }, LineStyle: { Solid: 0, Dashed: 1, Dotted: 2, SparseDotted: 3, LargeDashed: 4 },
+  ColorType: { Solid: 0 }, CrosshairMode: { Normal: 0 }, LineType: { Simple: 0, WithSteps: 1, Curved: 2 }, LineStyle: { Solid: 0, Dashed: 1, Dotted: 2, SparseDotted: 3, LargeDashed: 4 },
   createChart: () => ({
-    addCandlestickSeries: () => chart.series, addHistogramSeries: () => chart.series,
+    addCandlestickSeries: () => chart.series, addHistogramSeries: () => chart.series, addLineSeries: () => chart.series,
     timeScale: () => chart.scale, priceScale: () => ({ applyOptions: vi.fn(), width: () => 50 }),
     applyOptions: vi.fn(), subscribeCrosshairMove: vi.fn(), subscribeClick: vi.fn(), remove: vi.fn(),
   }),
@@ -35,7 +35,7 @@ function Harness({ analysis }: { analysis: Analysis }) {
 
 it("changes the chart scope, displays its dates and keeps controls inside fullscreen", async () => {
   const analysis = await mockApi.getAnalysis({ symbol: "FIXA", timeframe: "30m", session: "RTH" });
-  render(<WorkspaceProvider><Harness analysis={analysis} /></WorkspaceProvider>);
+  render(<WorkspaceProvider initial={{ layers: VSA_PROFILE_LAYERS }}><Harness analysis={analysis} /></WorkspaceProvider>);
   await userEvent.selectOptions(screen.getByLabelText("Profile range"), "composite");
   expect(screen.getByRole("status")).toHaveTextContent(analysis.profiles.composite!.label);
   expect(screen.getByRole("status")).toHaveTextContent(/ET.*price range/);
@@ -57,7 +57,7 @@ it("changes the chart scope, displays its dates and keeps controls inside fullsc
 it("does not draw substitute profile levels for an unavailable selection", async () => {
   const analysis = await mockApi.getAnalysis({ symbol: "FIXA", timeframe: "30m", session: "RTH" });
   delete analysis.profiles.prior;
-  render(<WorkspaceProvider initial={{ profileKind: "prior", layers: { ...DEFAULT_LAYERS, nodes: false, structure: false } }}><Harness analysis={analysis} /></WorkspaceProvider>);
+  render(<WorkspaceProvider initial={{ profileKind: "prior", layers: { ...VSA_PROFILE_LAYERS, nodes: false, structure: false } }}><Harness analysis={analysis} /></WorkspaceProvider>);
   expect(screen.getByRole("status")).toHaveTextContent(/Selected profile unavailable/);
   expect(chart.series.createPriceLine).not.toHaveBeenCalled();
   await userEvent.selectOptions(screen.getByLabelText("Profile range"), "volume");
@@ -66,7 +66,7 @@ it("does not draw substitute profile levels for an unavailable selection", async
 
 it("lets users turn the profile histogram on in fullscreen without leaving the chart", async () => {
   const analysis = await mockApi.getAnalysis({ symbol: "FIXA", timeframe: "30m", session: "RTH" });
-  render(<WorkspaceProvider initial={{ layers: { ...DEFAULT_LAYERS, volumeProfile: false } }}><Harness analysis={analysis} /></WorkspaceProvider>);
+  render(<WorkspaceProvider initial={{ layers: { ...VSA_PROFILE_LAYERS, volumeProfile: false } }}><Harness analysis={analysis} /></WorkspaceProvider>);
   const toggle = screen.getByRole("checkbox", { name: "Show profile histogram" });
   expect(toggle).not.toBeChecked();
   await userEvent.click(toggle);

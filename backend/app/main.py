@@ -2,7 +2,9 @@ import json
 import logging
 import os
 import secrets
+import re
 import subprocess
+import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -26,6 +28,7 @@ from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanS
 from app.store import Store
 from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRunner, is_stale
 
+DAILY_SYMBOL = re.compile(r"^[A-Z][A-Z0-9.\-]{0,15}$")
 logger = logging.getLogger("market_intelligence")
 if not logger.handlers:
     handler = logging.StreamHandler()
@@ -203,6 +206,30 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
         if not created:
             response.status_code = 200
         return dataset
+
+    daily_cache: dict[str, tuple[float, list[dict]]] = {}
+    daily_lock = threading.Lock()
+    app.state.daily_bars_cache = daily_cache
+
+    @app.get("/api/v1/daily-bars")
+    async def daily_bars(symbol: str = Query(...)):
+        symbol = symbol.strip().upper()
+        if not DAILY_SYMBOL.fullmatch(symbol):
+            raise HTTPException(422, "Invalid symbol")
+        with daily_lock:
+            hit = daily_cache.get(symbol)
+        if hit and hit[0] > time.monotonic():
+            return {"symbol": symbol, "bars": hit[1]}
+        try:
+            fetched = await run_in_threadpool(outcomes.fetch_daily, symbol, fetch)
+        except ProviderUnavailable as exc:
+            raise HTTPException(502, str(exc)) from exc
+        except ValueError as exc:  # includes SymbolNotFound
+            raise HTTPException(422, str(exc)) from exc
+        bars = [{"session": b.session, "close": b.close} for b in fetched[-400:]]
+        with daily_lock:
+            daily_cache[symbol] = (time.monotonic() + 3600, bars)
+        return {"symbol": symbol, "bars": bars}
 
     @app.get("/api/v1/datasets/{dataset_id}", response_model=Dataset)
     def dataset(dataset_id: str):

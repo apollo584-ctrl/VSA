@@ -397,3 +397,8 @@ export const uploadResultSchema = z.object({
 export const apiErrorSchema = z.object({
   error: z.object({ code: z.string(), message: z.string(), details: z.unknown().optional() }),
 });
+
+export const dailyBarsSchema = z.object({
+  symbol: z.string(),
+  bars: z.array(z.object({ session: z.string(), close: z.number() })),
+});

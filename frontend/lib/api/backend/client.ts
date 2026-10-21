@@ -182,6 +182,10 @@ export const backendApi = {
 
   getOutcomes() { return request("/outcomes", rawOutcomesSchema); },
   runOutcomes() { return request("/outcomes/run", rawJobStatusSchema, { method: "POST" }); },
+  async getDailyBars(symbol: string) {
+    return request(`/daily-bars?symbol=${encodeURIComponent(symbol)}`, z.object({ symbol: z.string(), bars: z.array(z.object({ session: z.string(), close: z.number() })) }));
+  },
+
   getIntraday() { return request("/intraday", rawIntradaySchema); },
   getAlerts(date?: string) { return request(`/alerts${date ? `?date=${encodeURIComponent(date)}` : ""}`, rawAlertsSchema); },
   getAlertStatus() { return request("/alerts/status", rawJobStatusSchema); },

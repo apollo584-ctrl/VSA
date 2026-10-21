@@ -13,6 +13,14 @@ export function useInstruments() {
   return useQuery({ queryKey: ["instruments"], queryFn: () => api.listInstruments(), staleTime: 5 * 60_000 });
 }
 
+/** Completed daily closes (30 min cache) for the daily-basis moving averages; disabled until a ticker is known. */
+export function useDailyBars(ticker: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["daily-bars", ticker], queryFn: () => api.getDailyBars(ticker!),
+    enabled: !!ticker && enabled, staleTime: 30 * 60_000, retry: 1,
+  });
+}
+
 export function useKnowledge() {
   return useQuery({ queryKey: ["knowledge"], queryFn: () => api.listKnowledge(), staleTime: 30 * 60_000 });
 }

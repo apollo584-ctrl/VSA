@@ -1,7 +1,7 @@
 import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult } from "@/types";
 import { backendApi } from "./backend/client";
 import { ApiError } from "./errors";
-import { analysisSchema, barsResponseSchema, instrumentListSchema, knowledgeListSchema, uploadResultSchema } from "./schemas";
+import { analysisSchema, barsResponseSchema, dailyBarsSchema, instrumentListSchema, knowledgeListSchema, uploadResultSchema } from "./schemas";
 import type { RawAlerts, RawJobStatus, RawTrackRecord } from "./backend/schemas";
 import type { z } from "zod";
 
@@ -87,6 +87,10 @@ export const api = {
   async getTrackRecord(): Promise<RawTrackRecord> {
     if (API_MODE === "mock") return { rows: [], round_trip_cost: 0, min_cases: 30 };
     return backendApi.getTrackRecord();
+  },
+  /** Completed daily closes for the moving averages; mock mode has none (the chart falls back to chart bars). */
+  async getDailyBars(symbol: string) {
+    return validated(dailyBarsSchema, API_MODE === "mock" ? { symbol, bars: [] } : await backendApi.getDailyBars(symbol));
   },
   async getIntraday() { return scanBackend().getIntraday(); },
   async collectIntraday() { return scanBackend().collectIntraday(); },

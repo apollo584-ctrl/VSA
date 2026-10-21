@@ -1,19 +1,20 @@
 "use client";
 
 import {
-  ColorType, CrosshairMode, LineStyle, TickMarkType, createChart,
+  ColorType, CrosshairMode, LineStyle, LineType, TickMarkType, createChart,
   type IChartApi, type IPriceLine, type ISeriesApi, type SeriesMarker, type Time, type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useWorkspace } from "@/hooks/workspace";
 import { readPalette, withAlpha, type ChartPalette } from "@/lib/charting/theme";
 import { fmtDate, fmtDateTime, fmtPrice, fmtTime, fmtVolume, patternCode } from "@/lib/formatting";
+import { MA_PERIODS, dailySmaForBars, smaUpTo, type DailyBar } from "@/lib/charting/movingAverages";
 import { barTimeContaining } from "@/lib/replay";
 import { cn } from "@/lib/utils";
 import type { Analysis, Bar, Layers, Profile, ProfileKind, VsaEvent } from "@/types";
 import { ChartOverlay } from "./ChartOverlay";
 import { ChartProfileControls } from "./ChartProfileControls";
-import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
+import { ExternalLink, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 
 const ABOVE = ["upthrust", "buying_climax", "no_demand", "high_volume_churn", "effort_vs_result", "volume_divergence"];
 /** Volume expansion/contraction recolour their candle instead of carrying a text marker (the chart gets crowded otherwise). */
@@ -62,13 +63,24 @@ interface Props {
   className?: string;
   /** Show only VSA markers in a lean mode (used by the VSA workspace). */
   hideProfile?: boolean;
+  /** Every loaded bar (before any replay cut); the moving averages are computed on these so the 200 line has history. */
+  allBars?: Bar[];
+  /** Hide the pop-out button (set inside the pop-out window itself). */
+  hidePopout?: boolean;
+  /** Completed daily bars: when set on an intraday chart the averages are daily, drawn as a step line. */
+  dailyBars?: DailyBar[] | null;
+}
+
+/** Opens the chart-only window; a fixed name reuses the same window on repeat clicks. */
+export function openChartPopout() {
+  window.open("/chart/popout", "mst-chart-popout", "popup=yes,width=1100,height=750");
 }
 
 /** Bars shown when a chart first opens: about five 30-minute sessions, or six months of daily bars. */
 const RECENT_INTRADAY_BARS = 70;
 const RECENT_DAILY_BARS = 125;
 
-export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile }: Props) {
+export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile, allBars, hidePopout, dailyBars }: Props) {
   const { state, set } = useWorkspace();
   const hostRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -76,6 +88,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const maRefs = useRef<Record<"ma50" | "ma200", ISeriesApi<"Line"> | null>>({ ma50: null, ma200: null });
   const linesRef = useRef<IPriceLine[]>([]);
   const lastFit = useRef<string | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -127,6 +140,9 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     const candle = chart.addCandlestickSeries({ priceLineVisible: false, lastValueVisible: true });
     const volume = chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
     chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    for (const key of ["ma50", "ma200"] as const) {
+      maRefs.current[key] = chart.addLineSeries({ lineWidth: 1, lineType: LineType.WithSteps, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, visible: false });
+    }
     chartRef.current = chart; candleRef.current = candle; volumeRef.current = volume;
 
     const redraw = () => tick();
@@ -173,6 +189,19 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
       upColor: palette.up, downColor: palette.down, borderUpColor: palette.up, borderDownColor: palette.down, wickUpColor: palette.up, wickDownColor: palette.down,
     });
   }, [palette, timeframe]);
+
+  // ---- moving averages (computed on all loaded bars, cut at the last visible bar so a replay never looks ahead)
+  const maSource = allBars ?? bars;
+  useEffect(() => {
+    for (const key of ["ma50", "ma200"] as const) {
+      const series = maRefs.current[key];
+      if (!series) continue;
+      const on = layers[key] && !hideProfile;
+      series.applyOptions({ visible: on, color: key === "ma50" ? palette.hvn : palette.poc });
+      const points = !on ? [] : dailyBars && timeframe !== "1D" ? dailySmaForBars(dailyBars, bars, MA_PERIODS[key]) : smaUpTo(maSource, bars, MA_PERIODS[key]);
+      series.setData(points.map((p) => ({ time: p.time as UTCTimestamp, value: p.value })));
+    }
+  }, [maSource, bars, dailyBars, timeframe, layers.ma50, layers.ma200, hideProfile, palette]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- data
   useEffect(() => {
@@ -321,6 +350,14 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
         >
           {fullscreen ? <Minimize2 size={15} aria-hidden /> : <Maximize2 size={15} aria-hidden />}
         </button>
+        {!hidePopout && (
+          <>
+            <span aria-hidden className="h-px bg-border" />
+            <button type="button" onClick={openChartPopout} aria-label="Open chart in a new window" title="Open chart in a new window" className="grid h-8 w-8 place-items-center text-muted hover:bg-surface-2 hover:text-fg">
+              <ExternalLink size={15} aria-hidden />
+            </button>
+          </>
+        )}
       </div>
       {display && (
         <div className="pointer-events-none absolute left-2 top-1 flex max-w-[calc(100%-4.5rem)] flex-wrap gap-x-3 rounded-md bg-surface/80 px-2 py-0.5 text-xs backdrop-blur-sm" style={{ top: layers.auction ? 38 : 4 }}>
@@ -329,6 +366,8 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
           <span className="num">L {fmtPrice(display.l)}</span>
           <span className={cn("num", display.c >= display.o ? "text-up" : "text-down")}>C {fmtPrice(display.c)}</span>
           <span className="num text-muted">V {fmtVolume(display.v)}</span>
+          {!hideProfile && layers.ma50 && <span className="num" style={{ color: palette.hvn }}>MA 50</span>}
+          {!hideProfile && layers.ma200 && <span className="num" style={{ color: palette.poc }}>MA 200</span>}
         </div>
       )}
       </div>

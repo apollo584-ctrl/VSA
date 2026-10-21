@@ -39,6 +39,8 @@ export type LayerKey =
   | "nodes"
   | "vsa"
   | "structure"
-  | "auction";
+  | "auction"
+  | "ma50"
+  | "ma200";
 
 export type Layers = Record<LayerKey, boolean>;

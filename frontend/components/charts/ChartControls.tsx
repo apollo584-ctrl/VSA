@@ -9,6 +9,8 @@ import type { Bar, LayerKey } from "@/types";
 const LAYER_DEFS: { key: LayerKey; label: string; swatch?: string; dashed?: boolean }[] = [
   { key: "candles", label: "Candles" },
   { key: "volume", label: "Volume" },
+  { key: "ma50", label: "MA 50", swatch: "var(--hvn)" },
+  { key: "ma200", label: "MA 200", swatch: "var(--poc)" },
   { key: "tpo", label: "TPO", swatch: "var(--accent)" },
   { key: "volumeProfile", label: "Volume profile", swatch: "var(--value)" },
   { key: "valueLevels", label: "VAH/VAL/POC", swatch: "var(--poc)" },
@@ -17,6 +19,25 @@ const LAYER_DEFS: { key: LayerKey; label: string; swatch?: string; dashed?: bool
   { key: "structure", label: "Levels", swatch: "var(--ib)", dashed: true },
   { key: "auction", label: "Auction states", swatch: "var(--fg-muted)", dashed: true },
 ];
+
+/** "Averages: Daily | Chart bars" (hidden on 1D charts, where both mean the same thing). */
+export function MaBasisSwitch({ basis, onChange, fellBack }: { basis: "daily" | "bars"; onChange: (b: "daily" | "bars") => void; fellBack?: boolean }) {
+  const opts: { id: "daily" | "bars"; label: string }[] = [{ id: "daily", label: "Daily" }, { id: "bars", label: "Chart bars" }];
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+      <span id="ma-basis-label">Averages</span>
+      <div role="group" aria-labelledby="ma-basis-label" className="flex overflow-hidden rounded-lg border border-border">
+        {opts.map((o) => (
+          <button
+            key={o.id} type="button" aria-pressed={basis === o.id} onClick={() => onChange(o.id)}
+            className={`h-7 px-2.5 font-medium ${basis === o.id ? "bg-accent-soft text-accent" : "hover:bg-surface-2 hover:text-fg"}`}
+          >{o.label}</button>
+        ))}
+      </div>
+      {fellBack && <span className="text-subtle" role="status">Daily data unavailable; showing chart-bar averages.</span>}
+    </div>
+  );
+}
 
 export function LayerControls({ only }: { only?: LayerKey[] }) {
   const { state, toggleLayer } = useWorkspace();
