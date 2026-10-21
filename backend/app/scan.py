@@ -6,6 +6,7 @@ Scans use the unofficial Yahoo chart endpoint (see providers.py) and never persi
 import json
 import logging
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,6 +23,8 @@ logger = logging.getLogger("market_intelligence")
 UNIVERSE_PATH = Path(__file__).parent / "universe" / "sp500.json"
 MIN_AGREEING = 3  # of 4 readings, with none opposed
 WORKERS = 4
+MIN_GAP_SECONDS = 0.2  # minimum spacing between Yahoo requests across all workers
+BACKOFF_SECONDS = (2.0, 6.0, 15.0)  # waits before retrying a rate-limited (HTTP 429) request
 
 UP_STATES = {"higher_price_acceptance", "rejection_below_value"}
 DOWN_STATES = {"lower_price_acceptance", "rejection_above_value"}
@@ -111,8 +114,12 @@ def confluence(a: Analysis) -> tuple[str, int, list[ScanVote]]:
 
 
 class Scanner:
-    def __init__(self, store, fetch=None, universe: list[dict] | None = None):
-        self.store, self.fetch = store, fetch or http_fetch
+    def __init__(self, store, fetch=None, universe: list[dict] | None = None, min_gap: float = MIN_GAP_SECONDS,
+                 backoff: tuple[float, ...] = BACKOFF_SECONDS, sleep=time.sleep):
+        self.store, self._raw_fetch = store, fetch or http_fetch
+        self.min_gap, self.backoff, self._sleep = min_gap, backoff, sleep
+        self._pace_lock = threading.Lock()
+        self._next_slot = 0.0
         self.universe = universe if universe is not None else load_universe()
         self.lock = threading.Lock()
         self.status = ScanStatus(running=False, universe_size=len(self.universe))
@@ -120,6 +127,25 @@ class Scanner:
         self._auto_stop = threading.Event()
         self._auto_thread: threading.Thread | None = None
         self._thread: threading.Thread | None = None
+
+    def fetch(self, url: str) -> bytes:
+        """Paced provider read: requests are spaced out, and an HTTP 429 is retried after a growing wait."""
+        for attempt in range(len(self.backoff) + 1):
+            with self._pace_lock:
+                now = time.monotonic()
+                wait = max(0.0, self._next_slot - now)
+                self._next_slot = max(now, self._next_slot) + self.min_gap
+            if wait:
+                self._sleep(wait)
+            try:
+                return self._raw_fetch(url)
+            except ProviderUnavailable as exc:
+                if "429" not in str(exc) or attempt >= len(self.backoff) or self._stopping.is_set():
+                    raise
+                delay = self.backoff[attempt]
+                with self._pace_lock:  # slow every worker down, not just this one
+                    self._next_slot = max(self._next_slot, time.monotonic() + delay)
+        raise ProviderUnavailable("Market data provider kept rate-limiting requests")
 
     def current_status(self) -> ScanStatus:
         with self.lock:

@@ -156,3 +156,44 @@ def test_auto_scan_setting_is_validated_and_reported(make):
     assert client.post("/api/v1/scan/auto", json={"minutes": 30}).json()["auto_minutes"] == 30
     client.app.state.scanner.wait(30)
     assert client.post("/api/v1/scan/auto", json={"minutes": 0}).json()["auto_minutes"] == 0
+
+
+def test_scanner_retries_rate_limited_request_and_paces():
+    from app.providers import ProviderUnavailable
+    from app.scan import Scanner
+
+    calls, sleeps = [], []
+
+    def flaky(url):
+        calls.append(url)
+        if len(calls) < 3:
+            raise ProviderUnavailable("Market data provider answered HTTP 429")
+        return b"ok"
+
+    scanner = Scanner(None, fetch=flaky, universe=[], min_gap=0.1, backoff=(1.0, 2.0), sleep=sleeps.append)
+    assert scanner.fetch("u") == b"ok"
+    assert len(calls) == 3
+
+
+def test_scanner_gives_up_after_backoff_and_ignores_other_errors():
+    import pytest
+    from app.providers import ProviderUnavailable
+    from app.scan import Scanner
+
+    def limited(url):
+        raise ProviderUnavailable("Market data provider answered HTTP 429")
+
+    scanner = Scanner(None, fetch=limited, universe=[], min_gap=0, backoff=(0.0, 0.0), sleep=lambda s: None)
+    with pytest.raises(ProviderUnavailable):
+        scanner.fetch("u")
+
+    seen = []
+
+    def down(url):
+        seen.append(1)
+        raise ProviderUnavailable("Market data provider could not be reached")
+
+    scanner = Scanner(None, fetch=down, universe=[], min_gap=0, backoff=(0.0,), sleep=lambda s: None)
+    with pytest.raises(ProviderUnavailable):
+        scanner.fetch("u")
+    assert len(seen) == 1
