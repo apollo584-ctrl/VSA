@@ -72,10 +72,10 @@ it("daily SMA uses the last completed day (never the bar's own day) and omits wa
   const out = dailySmaForBars(daily, [today, sameDay], 50);
   expect(exchangeDate(today.t)).toBe("2026-03-02");
   expect(out).toHaveLength(2);
-  expect(out[0]!.value).toBeCloseTo(35.5); // mean of closes 11..60 (through yesterday 03-01)
+  expect(out[0]!.value).toBeCloseTo(35.3); // closes 12..60 (completed days) plus the bar's own close 1, over 50
   expect(out[1]!.value).toBe(out[0]!.value);
   const onLast = dailySmaForBars(daily, [barAt("2026-03-01T15:00:00Z")], 50);
-  expect(onLast[0]!.value).toBeCloseTo(34.5); // mean of 10..59
+  expect(onLast[0]!.value).toBeCloseTo(34.32); // closes 11..59 plus 1
   expect(dailySmaForBars(daily, [barAt("2026-02-10T15:00:00Z")], 50)).toEqual([]);
   expect(dailySmaForBars(daily, [today], 200)).toEqual([]);
 });

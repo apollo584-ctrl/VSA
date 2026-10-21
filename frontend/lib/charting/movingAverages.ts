@@ -35,27 +35,22 @@ const dayFmt = new Intl.DateTimeFormat("en-CA", { timeZone: EXCHANGE_TZ, year: "
 export const exchangeDate = (t: number): string => dayFmt.format(new Date(t * 1000));
 
 /**
- * Daily SMA drawn on intraday bars as a step line. Each chart bar takes the value as of the last COMPLETED
- * day before the bar's own session, so today's bars use yesterday's value (no lookahead). Bars with no
- * completed warmed-up day are omitted.
+ * Daily SMA drawn on intraday bars: the last (period-1) COMPLETED days before the bar's session plus the
+ * bar's own close. Bars without enough completed days are omitted.
  */
 export function dailySmaForBars(dailyBars: DailyBar[], chartBars: Bar[], period: number): MaPoint[] {
   if (period < 1 || dailyBars.length < period) return [];
   const days = [...dailyBars].sort((a, b) => (a.session < b.session ? -1 : a.session > b.session ? 1 : 0));
-  const values: (number | null)[] = [];
-  let sum = 0;
-  for (let i = 0; i < days.length; i++) {
-    sum += days[i]!.close;
-    if (i >= period) sum -= days[i - period]!.close;
-    values.push(i >= period - 1 ? sum / period : null);
-  }
+  const prefix = [0];
+  for (const d of days) prefix.push(prefix[prefix.length - 1]! + d.close);
   const out: MaPoint[] = [];
   let k = -1; // index of the last day strictly before the current bar's session
   for (const b of chartBars) {
     const d = exchangeDate(b.t);
     while (k + 1 < days.length && days[k + 1]!.session < d) k++;
-    const v = k >= 0 ? values[k] : null;
-    if (v !== null && v !== undefined) out.push({ time: b.t, value: v });
+    // Today's partial day counts at the bar's own close: the average moves with price (a curve, not steps)
+    // and uses only completed days plus the bar itself, so there is no lookahead.
+    if (k + 1 >= period - 1 && k >= 0) out.push({ time: b.t, value: (prefix[k + 1]! - prefix[k + 1 - (period - 1)]! + b.c) / period });
   }
   return out;
 }
