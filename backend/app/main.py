@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app import auth
+from app import alerts, auth, outcomes
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
@@ -24,7 +24,7 @@ from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
-from app.study_jobs import IntradayCollector, JobStatus, StudyRunner, is_stale
+from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRunner, is_stale
 
 logger = logging.getLogger("market_intelligence")
 if not logger.handlers:
@@ -53,14 +53,20 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
         load()
         if os.getenv("MSI_AUTO_COLLECT") == "1" and is_stale(store.get_meta("last_collected_at")):
             collector.start()
+        if os.getenv("MSI_AUTO_COLLECT") == "1":
+            alert_timer.start()
         yield
+        alert_timer.shutdown()
         scanner.shutdown()
         study_runner.shutdown()
+        alert_job.shutdown()
         collector.shutdown()
 
     scanner = Scanner(store, fetch=fetch, universe=scan_universe)
     study_runner = StudyRunner(store, fetch=fetch, universe=scan_universe)
     collector = IntradayCollector(store, fetch=fetch, universe=scan_universe)
+    alert_job = AlertJob(store, fetch=fetch, universe=scan_universe)
+    alert_timer = DailyAlertTimer(store, alert_job)
     app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan, dependencies=[Depends(auth.require_auth)])
     app.state.auth_path = auth.auth_path(store.path)
     limiter = auth.LoginLimiter()
@@ -69,6 +75,7 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     app.state.scanner = scanner
     app.state.study_runner = study_runner
     app.state.collector = collector
+    app.state.alert_job = alert_job
     origins = os.getenv("MSI_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
     app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins], allow_credentials=True,
                        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+):3000$",
@@ -253,6 +260,34 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     @app.get("/api/v1/outcomes")
     def outcomes_latest():
         return {"status": study_runner.current_status(), "study": store.latest_study()}
+
+    @app.post("/api/v1/alerts/run", response_model=JobStatus, status_code=202)
+    def alerts_run(response: Response):
+        status, started = alert_job.start()
+        if not started:
+            response.status_code = 200
+        return status
+
+    @app.get("/api/v1/alerts/status", response_model=JobStatus)
+    def alerts_status():
+        return alert_job.current_status()
+
+    @app.get("/api/v1/alerts")
+    def alerts_list(date: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
+        session = date or store.get_meta("last_alert_session")
+        study = store.latest_study()
+        # Study figures come from the study the alert was built on; once that study is replaced they are left out.
+        rows = [{**a, **(alerts.study_context(study, a["concept"]) if study and study["generated_at"] == a["study_generated_at"] else {})}
+                for a in (store.alerts_for(session) if session else [])]
+        return {"session": session, "alerts": rows,
+                "last_run": json.loads(store.get_meta("last_alert_run") or "null")}
+
+    @app.get("/api/v1/track-record")
+    def track_record_list():
+        index = json.loads(store.get_meta("alert_index") or "{}")
+        rows = [{**r, "index": index.get(f"{r['symbol']}|{r['session_date']}")} for r in store.alerts_with_outcomes()]
+        base = {int(h): v for h, v in json.loads(store.get_meta("alert_baseline") or "{}").items()}
+        return {"rows": alerts.track_record(rows, base), "round_trip_cost": alerts.ROUND_TRIP_COST, "min_cases": outcomes.MIN_CASES}
 
     @app.post("/api/v1/intraday/collect", response_model=JobStatus, status_code=202)
     def intraday_collect(response: Response):

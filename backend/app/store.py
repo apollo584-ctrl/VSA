@@ -41,7 +41,54 @@ class Store:
                 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS sessions (
                     token_hash TEXT PRIMARY KEY, created_at TEXT NOT NULL, expires_at TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, symbol TEXT NOT NULL, session_date TEXT NOT NULL, concept TEXT NOT NULL,
+                    direction TEXT NOT NULL, entry_close REAL NOT NULL, study_generated_at TEXT NOT NULL, created_at TEXT NOT NULL,
+                    UNIQUE (symbol, session_date, concept));
+                CREATE TABLE IF NOT EXISTS alert_outcomes (
+                    alert_id INTEGER NOT NULL REFERENCES alerts(id), horizon INTEGER NOT NULL, "return" REAL NOT NULL,
+                    favorable INTEGER NOT NULL, worst_adverse REAL NOT NULL, scored_at TEXT NOT NULL, PRIMARY KEY (alert_id, horizon));
             """)
+
+    def save_alerts(self, alerts: list[dict], created_at: str) -> int:
+        """Insert alerts never seen before (same symbol, session and concept); existing rows are never changed. Returns rows added."""
+        with self.connect() as db:
+            before = db.total_changes
+            db.executemany("INSERT OR IGNORE INTO alerts (symbol, session_date, concept, direction, entry_close, study_generated_at, created_at) "
+                           "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           [(a["symbol"], a["session_date"], a["concept"], a["direction"], a["entry_close"], a["study_generated_at"], created_at)
+                            for a in alerts])
+            return db.total_changes - before
+
+    def open_alerts(self, horizons=(1, 5, 20)) -> list[dict]:
+        """Alerts still missing an outcome for at least one horizon."""
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            rows = db.execute("SELECT * FROM alerts a WHERE (SELECT COUNT(*) FROM alert_outcomes o WHERE o.alert_id = a.id) < ? "
+                              "ORDER BY id", (len(horizons),)).fetchall()
+        return [dict(r) for r in rows]
+
+    def save_alert_outcomes(self, alert_id: int, rows: list[dict], scored_at: str) -> int:
+        with self.connect() as db:
+            before = db.total_changes
+            db.executemany('INSERT OR IGNORE INTO alert_outcomes (alert_id, horizon, "return", favorable, worst_adverse, scored_at) '
+                           "VALUES (?, ?, ?, ?, ?, ?)",
+                           [(alert_id, r["horizon"], r["return"], int(r["favorable"]), r["worst_adverse"], scored_at) for r in rows])
+            return db.total_changes - before
+
+    def alerts_for(self, session_date: str) -> list[dict]:
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            rows = db.execute("SELECT * FROM alerts WHERE session_date=? ORDER BY symbol, concept", (session_date,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def alerts_with_outcomes(self) -> list[dict]:
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            rows = db.execute('SELECT a.id AS alert_id, a.symbol, a.session_date, a.concept, a.direction, a.entry_close, '
+                              'a.study_generated_at, o.horizon, o."return" AS "return", o.favorable, o.worst_adverse, o.scored_at '
+                              "FROM alerts a JOIN alert_outcomes o ON o.alert_id = a.id ORDER BY a.id, o.horizon").fetchall()
+        return [{**dict(r), "favorable": bool(r["favorable"])} for r in rows]
 
     def create_session(self, token_hash: str, created_at: str, expires_at: str):
         with self.connect() as db:

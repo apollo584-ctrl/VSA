@@ -6,11 +6,12 @@ import json
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict
 
-from app import outcomes
+from app import alerts, outcomes
 from app.data import ingest
 from app.providers import YahooChartProvider, http_fetch
 from app.scan import WORKERS, load_universe
@@ -134,6 +135,106 @@ class StudyRunner(Job):
             symbol_bars = dict(self.symbol_bars)
         if symbol_bars:
             self.store.save_study(outcomes.run_study(symbol_bars))
+
+
+NY = ZoneInfo("America/New_York")
+
+
+def expected_session(now: datetime | None = None) -> str:
+    """Latest US session that should be finished by now (weekdays after 16:30 New York; holidays are not modelled)."""
+    t = (now or datetime.now(UTC)).astimezone(NY)
+    d = t.date() if t.time() >= time(16, 30) else t.date() - timedelta(days=1)
+    while d.weekday() > 4:
+        d -= timedelta(days=1)
+    return d.isoformat()
+
+
+class AlertJob(StudyRunner):
+    """Daily alerts for the newest session plus scoring of every open alert. Bars stay in memory for the run only."""
+
+    def finish(self):
+        with self.lock:
+            symbol_bars = {s: b for s, b in self.symbol_bars.items() if b}
+        study = self.store.latest_study()
+        if not study:
+            raise ValueError("No outcome study yet; run the study first")
+        if not symbol_bars:
+            raise ValueError("No daily bars fetched")
+        session = max(b[-1].session for b in symbol_bars.values())
+        now = datetime.now(UTC).isoformat()
+        previous = self.store.get_meta("last_alert_session")
+        # Rebuilt on every run for the newest session: INSERT OR IGNORE keeps existing alerts unchanged, and symbols
+        # that failed to fetch on an earlier run still get their alerts.
+        added = self.store.save_alerts(alerts.build_alerts(symbol_bars, study, session), now)
+        self.store.set_meta("last_alert_session", session)
+        gap = previous if previous and previous != session else None
+        scored = 0
+        for a in self.store.open_alerts():
+            if a["symbol"] in symbol_bars:
+                scored += self.store.save_alert_outcomes(a["id"], alerts.score(a, symbol_bars[a["symbol"]]), now)
+        sessions = {a["session_date"] for a in self.store.alerts_with_outcomes()} | {a["session_date"] for a in self.store.alerts_for(session)}
+        index = json.loads(self.store.get_meta("alert_index") or "{}")
+        base = {h: [] for h in outcomes.HORIZONS}
+        for symbol, bars in symbol_bars.items():
+            pos = {b.session: i for i, b in enumerate(bars)}
+            index.update({f"{symbol}|{s}": pos[s] for s in sessions if s in pos})
+            for r in outcomes.baseline_rows(bars, symbol):
+                if r["date"] in sessions:
+                    base[r["horizon"]].append(r["return"])
+        self.store.set_meta("alert_index", json.dumps(index))
+        self.store.set_meta("alert_baseline", json.dumps(base))
+        run = json.loads(self.store.get_meta("last_alert_run") or "{}")
+        skipped = weekdays_between(gap, session) if gap else run.get("skipped_sessions", 0) if run.get("session") == session else 0
+        self.store.set_meta("last_alert_run", json.dumps({"at": now, "session": session, "added": added, "scored": scored,
+                                                          "previous_session": gap or (run.get("previous_session") if run.get("session") == session else None),
+                                                          "skipped_sessions": skipped, "fetch_errors": self.current_status().errors}))
+
+
+def weekdays_between(start: str, end: str) -> int:
+    """Weekdays strictly between two session dates: sessions with no alerts logged (holidays count, so it can overstate)."""
+    a, b = date.fromisoformat(start), date.fromisoformat(end)
+    return sum(1 for k in range(1, (b - a).days) if (a + timedelta(days=k)).weekday() < 5)
+
+
+class DailyAlertTimer:
+    """Checks every 30 minutes and starts the alert job once per expected session."""
+    MAX_ATTEMPTS = 3
+
+    def __init__(self, store, job: AlertJob, every: float = 1800):
+        self.store, self.job, self.every = store, job, every
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+
+    def start(self):
+        self._thread.start()
+
+    def check(self, now: datetime | None = None) -> bool:
+        """Starts the job until the expected session is logged, at most MAX_ATTEMPTS times per session (a holiday never
+        produces its session, and a busy job does not use up an attempt)."""
+        target = expected_session(now)
+        tries = json.loads(self.store.get_meta("last_alert_attempt") or "{}")
+        n = tries.get("n", 0) if tries.get("session") == target else 0
+        last = json.loads(self.store.get_meta("last_alert_run") or "{}")
+        complete = self.store.get_meta("last_alert_session") == target and not last.get("fetch_errors")
+        if complete or n >= self.MAX_ATTEMPTS:
+            return False
+        started = self.job.start()[1]
+        if started:
+            self.store.set_meta("last_alert_attempt", json.dumps({"session": target, "n": n + 1}))
+        return started
+
+    def _loop(self):
+        while not self._stop.is_set():
+            try:
+                self.check()
+            except Exception as exc:
+                logger.warning(json.dumps({"event": "alert_timer_failed", "error": repr(exc)[:200]}))
+            self._stop.wait(self.every)
+
+    def shutdown(self):
+        self._stop.set()
+        if self._thread.is_alive():
+            self._thread.join()
 
 
 class IntradayCollector(Job):

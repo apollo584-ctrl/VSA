@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
 import { endOfDate } from "@/lib/formatting";
@@ -68,6 +68,35 @@ export function useOutcomes() {
 export function useRunOutcomes() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: () => api.runOutcomes(), onSuccess: () => qc.invalidateQueries({ queryKey: ["outcomes"] }) });
+}
+
+export function useAlerts(date?: string) {
+  return useQuery({ queryKey: ["alerts", date ?? "latest"], queryFn: () => api.getAlerts(date), staleTime: 0, refetchInterval: 60_000 });
+}
+
+export function useTrackRecord() {
+  return useQuery({ queryKey: ["track-record"], queryFn: () => api.getTrackRecord(), staleTime: 0, refetchInterval: 60_000 });
+}
+
+export function useAlertStatus() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["alert-status"], queryFn: () => api.getAlertStatus(), staleTime: 0,
+    refetchInterval: (q) => (q.state.data?.running ? 3_000 : 60_000),
+  });
+  // When a run ends, refresh the data it produced.
+  const running = q.data?.running;
+  const was = useRef(false);
+  useEffect(() => {
+    if (was.current && running === false) { qc.invalidateQueries({ queryKey: ["alerts"] }); qc.invalidateQueries({ queryKey: ["track-record"] }); }
+    was.current = !!running;
+  }, [running, qc]);
+  return q;
+}
+
+export function useRunAlerts() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: () => api.runAlerts(), onSuccess: () => qc.invalidateQueries({ queryKey: ["alert-status"] }) });
 }
 
 export function useIntraday() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, BookText, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Radar, FlaskConical, Settings, Waves, type LucideIcon } from "lucide-react";
+import { BellRing, BookOpen, BookText, ChevronsLeft, ChevronsRight, GitBranch, History, Lightbulb, LayoutDashboard, LineChart, PanelLeft, Radar, FlaskConical, Settings, Waves, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -24,6 +24,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/interpretation", label: "Interpretation", icon: Lightbulb },
       { href: "/scan", label: "Scanner", icon: Radar },
       { href: "/outcomes", label: "Pattern Stats", icon: FlaskConical },
+      { href: "/signals", label: "Signals", icon: BellRing },
     ],
   },
   {

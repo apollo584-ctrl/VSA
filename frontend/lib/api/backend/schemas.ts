@@ -278,6 +278,25 @@ export const rawIntradaySchema = z.object({
     rebased_symbols: z.number(), last_collected_at: iso.nullable().optional(),
   }),
 });
+export const rawAlertSchema = z.object({
+  symbol: z.string(), session_date: z.string(), concept: z.string(), direction: z.enum(["strength", "weakness"]),
+  entry_close: z.number().nullable().optional(), holding_horizons: z.array(z.number()).optional(),
+  study_newer: z.array(z.object({ horizon: z.number(), edge: z.number(), hit_rate: z.number() })).optional(),
+});
+export const rawAlertsSchema = z.object({
+  session: z.string().nullable(), alerts: z.array(rawAlertSchema),
+  last_run: z.object({ at: iso, session: z.string().nullable().optional(), added: z.number().optional(), scored: z.number().optional(),
+    previous_session: z.string().nullable().optional(), skipped_sessions: z.number().optional(), fetch_errors: z.number().optional() }).nullable(),
+});
+export const rawTrackRowSchema = z.object({
+  concept: z.string(), direction: z.enum(["strength", "weakness"]), horizon: z.number(), n: z.number(), hit_rate: z.number(),
+  mean_return: z.number(), mean_return_net: z.number(), baseline_hit_rate: z.number().nullable(), verdict: z.string(),
+});
+export const rawTrackRecordSchema = z.object({ rows: z.array(rawTrackRowSchema), round_trip_cost: z.number(), min_cases: z.number() });
+export type RawAlert = z.infer<typeof rawAlertSchema>;
+export type RawAlerts = z.infer<typeof rawAlertsSchema>;
+export type RawTrackRow = z.infer<typeof rawTrackRowSchema>;
+export type RawTrackRecord = z.infer<typeof rawTrackRecordSchema>;
 export type RawJobStatus = z.infer<typeof rawJobStatusSchema>;
 export type RawOutcomeStat = z.infer<typeof rawOutcomeStatSchema>;
 export type RawOutcomes = z.infer<typeof rawOutcomesSchema>;

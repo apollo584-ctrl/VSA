@@ -2,6 +2,7 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { backendApi } from "./backend/client";
 import { ApiError } from "./errors";
 import { analysisSchema, barsResponseSchema, instrumentListSchema, knowledgeListSchema, uploadResultSchema } from "./schemas";
+import type { RawAlerts, RawJobStatus, RawTrackRecord } from "./backend/schemas";
 import type { z } from "zod";
 
 export type ApiMode = "mock" | "http";
@@ -74,6 +75,19 @@ export const api = {
 
   async getOutcomes() { return scanBackend().getOutcomes(); },
   async runOutcomes() { return scanBackend().runOutcomes(); },
+  async getAlerts(date?: string): Promise<RawAlerts> {
+    if (API_MODE === "mock") return { session: null, alerts: [], last_run: null };
+    return backendApi.getAlerts(date);
+  },
+  async getAlertStatus(): Promise<RawJobStatus> {
+    if (API_MODE === "mock") return { running: false, total: 0, done: 0, errors: 0 };
+    return backendApi.getAlertStatus();
+  },
+  async runAlerts() { return scanBackend().runAlerts(); },
+  async getTrackRecord(): Promise<RawTrackRecord> {
+    if (API_MODE === "mock") return { rows: [], round_trip_cost: 0, min_cases: 30 };
+    return backendApi.getTrackRecord();
+  },
   async getIntraday() { return scanBackend().getIntraday(); },
   async collectIntraday() { return scanBackend().collectIntraday(); },
 

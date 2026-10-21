@@ -4,7 +4,7 @@ import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult
 import { ApiError } from "../errors";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
-  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawIntradaySchema, rawJobStatusSchema, rawAuthStatusSchema,
+  rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawAlertsSchema, rawTrackRecordSchema, rawIntradaySchema, rawJobStatusSchema, rawAuthStatusSchema,
   type RawAnalysis, type RawBar, type RawConcept, type RawDataset,
 } from "./schemas";
 
@@ -183,6 +183,10 @@ export const backendApi = {
   getOutcomes() { return request("/outcomes", rawOutcomesSchema); },
   runOutcomes() { return request("/outcomes/run", rawJobStatusSchema, { method: "POST" }); },
   getIntraday() { return request("/intraday", rawIntradaySchema); },
+  getAlerts(date?: string) { return request(`/alerts${date ? `?date=${encodeURIComponent(date)}` : ""}`, rawAlertsSchema); },
+  getAlertStatus() { return request("/alerts/status", rawJobStatusSchema); },
+  runAlerts() { return request("/alerts/run", rawJobStatusSchema, { method: "POST" }); },
+  getTrackRecord() { return request("/track-record", rawTrackRecordSchema); },
   collectIntraday() { return request("/intraday/collect", rawJobStatusSchema, { method: "POST" }); },
 
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {
