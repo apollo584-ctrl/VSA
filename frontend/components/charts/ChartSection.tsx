@@ -18,7 +18,7 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
     <section aria-label="Price chart" className="flex min-h-0 flex-1 flex-col gap-3 rounded-xl border border-border bg-surface p-5 shadow-[var(--shadow)]">
       <LayerControls only={layerKeys} />
       <AnalysisStatusBanner analysis={analysis} error={market.error} />
-      <div className={cn("min-h-[24rem] flex-1 xl:min-h-[14rem]", className)}>
+      <div className={cn("min-h-[34rem] flex-1", className)}>
         <MarketChart
           bars={market.bars} fitKey={fitKey} timeframe={state.timeframe} analysis={analysis?.status === "ok" ? analysis : null}
           layers={state.layers} profileKind={state.profileKind} selectedEventId={state.selectedEventId}

@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ColorType, CrosshairMode, LineStyle, createChart,
+  ColorType, CrosshairMode, LineStyle, TickMarkType, createChart,
   type IChartApi, type IPriceLine, type ISeriesApi, type SeriesMarker, type Time, type UTCTimestamp,
 } from "lightweight-charts";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
@@ -63,6 +63,10 @@ interface Props {
   /** Show only VSA markers in a lean mode (used by the VSA workspace). */
   hideProfile?: boolean;
 }
+
+/** Bars shown when a chart first opens: about five 30-minute sessions, or six months of daily bars. */
+const RECENT_INTRADAY_BARS = 70;
+const RECENT_DAILY_BARS = 125;
 
 export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile }: Props) {
   const { state, set } = useWorkspace();
@@ -161,7 +165,8 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
       timeScale: {
         borderColor: palette.border,
         timeVisible: timeframe !== "1D",
-        tickMarkFormatter: (t: Time) => (timeframe === "1D" ? fmtDate(t as number) : fmtTime(t as number)),
+        // Intraday: the first tick of each day shows the date, the rest the time (otherwise every day reads "09:30").
+        tickMarkFormatter: (t: Time, type: TickMarkType) => (timeframe === "1D" || type < TickMarkType.Time ? fmtDate(t as number) : fmtTime(t as number)),
       },
     });
     candleRef.current?.applyOptions({
@@ -185,8 +190,12 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     }));
     volumeRef.current.setData(bars.map((b) => ({ time: b.t as UTCTimestamp, value: b.v, color: withAlpha(b.c >= b.o ? palette.up : palette.down, 0.45) })));
     if (lastFit.current !== fitKey && bars.length) {
-      chart.timeScale().fitContent();
-      chart.timeScale().applyOptions({ rightOffset: layers.volumeProfile && !hideProfile ? 22 : 6 });
+      const offset = layers.volumeProfile && !hideProfile ? 22 : 6;
+      chart.timeScale().applyOptions({ rightOffset: offset });
+      // Open on the most recent bars at a readable width; zoom out or scroll left for older history.
+      const recent = timeframe === "1D" ? RECENT_DAILY_BARS : RECENT_INTRADAY_BARS;
+      if (bars.length > recent) chart.timeScale().setVisibleLogicalRange({ from: bars.length - recent, to: bars.length - 1 + offset });
+      else chart.timeScale().fitContent();
       lastFit.current = fitKey;
     }
     tick();
