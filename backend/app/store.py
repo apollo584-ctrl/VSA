@@ -48,6 +48,12 @@ class Store:
                 CREATE TABLE IF NOT EXISTS alert_outcomes (
                     alert_id INTEGER NOT NULL REFERENCES alerts(id), horizon INTEGER NOT NULL, "return" REAL NOT NULL,
                     favorable INTEGER NOT NULL, worst_adverse REAL NOT NULL, scored_at TEXT NOT NULL, PRIMARY KEY (alert_id, horizon));
+                CREATE TABLE IF NOT EXISTS journal_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+                    trade_date TEXT NOT NULL, symbol TEXT NOT NULL, kind TEXT NOT NULL, setup_version TEXT NOT NULL,
+                    prior_vah REAL, prior_val REAL, prior_poc REAL, entry REAL, stop REAL, target REAL, shares REAL,
+                    est_costs_per_share REAL, planned_loss REAL, exit_price REAL, exit_time TEXT, exit_reason TEXT,
+                    fees REAL, net_pnl REAL, r_multiple REAL, skip_reason TEXT, notes TEXT, rule_breach INTEGER NOT NULL DEFAULT 0);
             """)
 
     def save_alerts(self, alerts: list[dict], created_at: str) -> int:
@@ -223,3 +229,41 @@ class Store:
         if row is None:
             raise KeyError(analysis_id)
         return Analysis.model_validate_json(row[0])
+
+    JOURNAL_FIELDS = ["trade_date", "symbol", "kind", "setup_version", "prior_vah", "prior_val", "prior_poc", "entry", "stop", "target",
+                      "shares", "est_costs_per_share", "planned_loss", "exit_price", "exit_time", "exit_reason", "fees", "net_pnl",
+                      "r_multiple", "skip_reason", "notes", "rule_breach"]
+
+    @staticmethod
+    def _journal_row(row) -> dict:
+        return {**dict(row), "rule_breach": bool(row["rule_breach"])}
+
+    def add_journal_entry(self, values: dict, now: str) -> dict:
+        names = self.JOURNAL_FIELDS
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            cursor = db.execute(f"INSERT INTO journal_entries (created_at, updated_at, {', '.join(names)}) "
+                                f"VALUES (?, ?, {', '.join('?' * len(names))})", (now, now, *[values[n] for n in names]))
+            row = db.execute("SELECT * FROM journal_entries WHERE id=?", (cursor.lastrowid,)).fetchone()
+        return self._journal_row(row)
+
+    def update_journal_entry(self, entry_id: int, values: dict, now: str) -> dict:
+        names = self.JOURNAL_FIELDS
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            cursor = db.execute(f"UPDATE journal_entries SET updated_at=?, {', '.join(n + '=?' for n in names)} WHERE id=?",
+                                (now, *[values[n] for n in names], entry_id))
+            if cursor.rowcount == 0:
+                raise KeyError(entry_id)
+            row = db.execute("SELECT * FROM journal_entries WHERE id=?", (entry_id,)).fetchone()
+        return self._journal_row(row)
+
+    def journal_entries(self, date: str | None = None) -> list[dict]:
+        """Newest first."""
+        with self.connect() as db:
+            db.row_factory = sqlite3.Row
+            if date is None:
+                rows = db.execute("SELECT * FROM journal_entries ORDER BY id DESC").fetchall()
+            else:
+                rows = db.execute("SELECT * FROM journal_entries WHERE trade_date=? ORDER BY id DESC", (date,)).fetchall()
+        return [self._journal_row(r) for r in rows]

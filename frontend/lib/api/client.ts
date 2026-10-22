@@ -4,6 +4,7 @@ import { ApiError } from "./errors";
 import { analysisSchema, barsResponseSchema, dailyBarsSchema, instrumentListSchema, knowledgeListSchema, uploadResultSchema } from "./schemas";
 import type { RawAlerts, RawJobStatus, RawTrackRecord } from "./backend/schemas";
 import type { z } from "zod";
+import type { JournalInput } from "@/lib/planTypes";
 
 export type ApiMode = "mock" | "http";
 
@@ -92,6 +93,13 @@ export const api = {
   async getDailyBars(symbol: string) {
     return validated(dailyBarsSchema, API_MODE === "mock" ? { symbol, bars: [] } : await backendApi.getDailyBars(symbol));
   },
+  /** Today's Plan needs the real backend (live bars and the journal database). */
+  async getSetupA(symbols: string[]) { return scanBackend().getSetupA(symbols); },
+  async getJournal(date?: string) { return scanBackend().getJournal(date); },
+  async createJournal(body: JournalInput) { return scanBackend().createJournal(body); },
+  async updateJournal(id: number, body: JournalInput) { return scanBackend().updateJournal(id, body); },
+  async getDaySummary(date: string) { return scanBackend().getDaySummary(date); },
+  journalCsvUrl(): string | null { return API_MODE === "mock" ? null : backendApi.journalCsvUrl(); },
   async getIntraday() { return scanBackend().getIntraday(); },
   async collectIntraday() { return scanBackend().collectIntraday(); },
 

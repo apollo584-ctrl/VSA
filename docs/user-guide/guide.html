@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VSA Dashboard User Guide</title>
+<style>
+  @page { size: Letter; margin: 0.7in 0.75in; }
+  :root { --ink: #1b1f27; --muted: #5b6372; --line: #d9dde4; --accent: #2f6fe0; --soft: #f3f6fb; --warn: #8a5a00; --warnbg: #fff6e0; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; margin: 0; background: #fff; }
+  h1 { font-size: 26pt; margin: 0 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 16pt; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 12pt; margin: 18px 0 4px; break-after: avoid; }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0 6px 20px; padding: 0; }
+  li { margin: 3px 0; }
+  .cover { height: 9.2in; display: flex; flex-direction: column; justify-content: center; break-after: page; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 28px; }
+  .cover .meta { font-size: 9.5pt; color: var(--muted); margin-top: 40px; }
+  .note { background: var(--soft); border-left: 4px solid var(--accent); padding: 8px 12px; margin: 10px 0; border-radius: 4px; }
+  .warn { background: var(--warnbg); border-left: 4px solid #d99a00; padding: 8px 12px; margin: 10px 0; border-radius: 4px; color: #3d2c00; }
+  figure { margin: 10px 0 14px; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 6px; }
+  figure.half img { width: 70%; }
+  figcaption { font-size: 9pt; color: var(--muted); margin-top: 3px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9.8pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); }
+  .page { break-before: page; }
+  .toc li { margin: 2px 0; }
+  .k { font-weight: 600; }
+  .step { display: inline-block; min-width: 20px; height: 20px; border-radius: 10px; background: var(--accent); color: #fff; text-align: center; font-size: 9pt; line-height: 20px; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <h1>VSA Dashboard</h1>
+  <div class="sub">How it works and how to use it for trading research</div>
+  <p>This guide covers every page of the dashboard, the new <b>Today's Plan</b> page, a daily routine you can follow, and the key terms in plain language.</p>
+  <div class="warn" style="margin-top:24px"><b>Important.</b> The dashboard is a research and paper-trading tool. It describes what prices and volume did; it does not predict what they will do, it is not financial advice, and it never places orders. No setup in it has yet been proven to make money after trading costs.</div>
+  <div class="meta">Version 1.0 &middot; 22 October 2026 &middot; Written for Greg</div>
+</section>
+
+<h2>Contents</h2>
+<ol class="toc">
+  <li>The big idea in one page</li>
+  <li>Starting, stopping and using it from your phone</li>
+  <li>The top bar</li>
+  <li>The pages, one by one</li>
+  <li>Today's Plan (checklist, Setup A, calculator, journal)</li>
+  <li>A daily routine</li>
+  <li>Key terms in plain words</li>
+  <li>Rules that keep you safe</li>
+  <li>When something looks wrong</li>
+</ol>
+
+<h2>1. The big idea in one page</h2>
+<p>The dashboard looks at a stock's price bars and trading volume and answers four questions:</p>
+<ol>
+  <li><b>Where was the busy price zone yesterday?</b> Most of yesterday's trading happened inside a band of prices called the <b>value area</b>. Its top is the <b>VAH</b> (value area high), its bottom the <b>VAL</b> (value area low), and the single busiest price is the <b>POC</b> (point of control).</li>
+  <li><b>Is price today being accepted above, below, or back inside that zone?</b> This is the <b>auction state</b>. Several closes above the zone means buyers are "accepting" higher prices; falling back inside means the move was rejected.</li>
+  <li><b>Is volume telling a different story from price?</b> This is <b>VSA</b> (volume spread analysis): for example, a big-volume bar that hardly moves can hint that someone is absorbing the selling.</li>
+  <li><b>Has this kind of signal mattered in the past?</b> The <b>Pattern Stats</b> study checks ten years of daily bars for 500 stocks to see how often each pattern was followed by a move in its direction, compared with a random day.</li>
+</ol>
+<div class="note"><b>Reading order that the plan recommends:</b> data quality &rarr; yesterday's value area &rarr; auction state &rarr; VSA and price action &rarr; anything that argues against the idea &rarr; can you actually trade it at a fair price?</div>
+<p>When several readings agree, that is <i>not</i> several independent proofs: they are built from the same prices. Treat agreement as "worth a closer look", never as "buy".</p>
+
+<h2>2. Starting, stopping and using it from your phone</h2>
+<ul>
+  <li><b>Start:</b> double-click <span class="k">start.bat</span> in the VSA Dashboard folder. It starts the two parts of the app and opens it in its own Edge window at <i>localhost:3000</i>.</li>
+  <li><b>Stop:</b> press <span class="k">Quit</span> at the top right of the app (or run <span class="k">stop.bat</span>).</li>
+  <li><b>From your phone or another PC at home:</b> open <i>http://&lt;this PC's address&gt;:3000</i>. You will be asked for your PIN. Without a PIN set, other devices are refused on purpose.</li>
+  <li><b>Data:</b> prices come free from Yahoo Finance. They can be a little delayed and are not suitable as the price you trade at: always check the live price in your broker.</li>
+</ul>
+
+<h2>3. The top bar</h2>
+<table>
+  <tr><th style="width:26%">Control</th><th>What it does</th></tr>
+  <tr><td>Search box</td><td>Type a ticker (e.g. AAPL) and press Enter to load it. Press <b>/</b> to jump to the box.</td></tr>
+  <tr><td>30m / 1D</td><td>Bar size: 30-minute bars or daily bars.</td></tr>
+  <tr><td>RTH / ETH / ALL</td><td>Regular trading hours only (9:30&ndash;16:00 New York), extended hours, or both. Use RTH unless you have a reason not to.</td></tr>
+  <tr><td>As of</td><td>"Replay": view the analysis as it looked at an earlier moment, using only the bars that existed then. Great for practising without hindsight.</td></tr>
+  <tr><td>Sun/moon icon</td><td>Light or dark theme.</td></tr>
+  <tr><td>Quit</td><td>Stops the app on this PC.</td></tr>
+</table>
+
+<h2 class="page">4. The pages, one by one</h2>
+
+<h3>Overview</h3>
+<figure><img src="img/overview.jpg"><figcaption>Overview: value location, auction state and this session's signals at a glance, with the chart below.</figcaption></figure>
+<p><b>What it shows:</b> the loaded stock's latest price, where it closed relative to yesterday's value area (with the VAH, POC and VAL numbers), the current auction state, and how many strength/weakness signals fired this session.</p>
+<p><b>How to use it:</b> your first stop after loading a stock. In ten seconds you know: above, inside or below yesterday's value? Accepted or rejected? Any signals?</p>
+
+<h3>Chart &amp; Profile</h3>
+<figure><img src="img/chart.jpg"><figcaption>Chart &amp; Profile: candles, volume, 50/200 moving averages and optional overlays.</figcaption></figure>
+<p><b>What it shows:</b> the price chart. Toggle buttons add layers: volume bars, the 50- and 200-day moving averages, TPO or volume profile (a sideways histogram of where trading happened), VAH/VAL/POC lines, high/low-volume nodes, VSA markers, levels and auction states.</p>
+<p><b>How to use it:</b> turn on <i>VAH/VAL/POC</i> to see yesterday's value zone on today's chart. The 50/200 averages give the bigger trend: price above a rising 200-day average is a broad uptrend. The pop-out icon opens the chart in its own window.</p>
+
+<h3>VSA Analysis</h3>
+<figure><img src="img/vsa.jpg"><figcaption>VSA Analysis: markers such as ND (no demand), NS (no supply), SV (stopping volume) above or below bars.</figcaption></figure>
+<p><b>What it shows:</b> bars where volume, bar size and where the bar closed match one of the dashboard's rules. A tick (&#10003;) means later price action confirmed it; a question mark means it is still unconfirmed.</p>
+<p><b>How to use it:</b> click a marker to see the exact rule, the numbers behind it, and alternative explanations. Markers below bars lean "strength", above bars lean "weakness". Use them as context, not triggers.</p>
+
+<h3>Auction Structure</h3>
+<figure><img src="img/auction.jpg"><figcaption>Auction Structure: the current state, a colour timeline of states, and the evidence for each change.</figcaption></figure>
+<p><b>What it shows:</b> session by session, whether price was in balance, attempting a breakout, accepted higher or lower, or rejected. The replay slider steps through the bars one at a time.</p>
+<p><b>How to use it:</b> Setup A depends on "higher-price acceptance" (three closes above yesterday's VAH). This page shows you exactly when that happened and why.</p>
+
+<h3>Interpretation</h3>
+<figure><img src="img/interpretation.jpg"><figcaption>Interpretation: competing scenarios, what supports and challenges each, and what to watch next.</figcaption></figure>
+<p><b>What it shows:</b> the engine's explanation of the evidence as two or more <i>hypotheses</i> (for example "potential weakness" versus "ordinary variation"), with what would strengthen or weaken each.</p>
+<p><b>How to use it:</b> read the "challenged by" lines. If the evidence is mixed, the plan says stand aside. The Quick / Standard / Deep switch changes how much detail you see.</p>
+
+<h3 class="page">Scanner</h3>
+<figure><img src="img/scanner.jpg"><figcaption>Scanner: press Scan now, or set it to run every 15, 30 or 60 minutes.</figcaption></figure>
+<p><b>What it shows:</b> S&amp;P 500 stocks where at least three of four readings (value location, auction state, VSA signals, price action) agree, none disagrees, and the engine sees no contradiction. A full scan takes a few minutes.</p>
+<p><b>How to use it:</b> as a shortlist for your watchlist, filtered to Strength or Weakness. A flag means "aligned evidence", not a prediction.</p>
+
+<h3>Pattern Stats</h3>
+<figure><img src="img/patternstats.jpg"><figcaption>Pattern Stats: how each pattern did historically, older period versus newer period.</figcaption></figure>
+<p><b>What it shows:</b> for every VSA signal and price pattern (gaps, 20-day breakouts, 52-week highs, RSI-2 extremes, moving-average crosses and more), how often price moved the signal's way over 1, 5 or 20 days, compared with a random day.</p>
+<ul>
+  <li><b>Hit rate</b> vs <b>random day</b>: e.g. 63% vs 45% means the move went the expected way 63% of the time, against 45% for any day.</li>
+  <li><b>Edge</b>: the difference in percentage points. A point or two is small and costs can erase it.</li>
+  <li><b>t-stat</b>: roughly, beyond +2 or &minus;2 is unlikely to be pure luck, but with many patterns tested some will look good by chance.</li>
+  <li><b>Holds up</b>: only when the older and newer periods both agree with enough cases. "Too few cases" means don't trust it yet.</li>
+  <li><b>Where it works</b>: splits results by trend (up/down/flat) and volume.</li>
+</ul>
+<p><b>How to use it:</b> this is the most useful page for longer-term investing questions. Look for patterns that hold up in both periods with a meaningful edge, and ignore the rest. The study refreshes itself monthly; <i>Run study</i> refreshes it now.</p>
+
+<h3>Signals</h3>
+<figure><img src="img/signals.jpg"><figcaption>Signals: today's setups from patterns that held up, and a track record of past alerts.</figcaption></figure>
+<p><b>What it shows:</b> stocks where a pattern that <i>held up</i> in Pattern Stats fired on the latest daily bar, with its direction. The <b>Track record</b> tab shows how earlier alerts actually played out.</p>
+<p><b>How to use it:</b> another source for your watchlist. Load chart opens the stock in the analysis pages. Check the track record before trusting any type of alert.</p>
+
+<h3>Knowledge Explorer, Glossary and Analysis History</h3>
+<figure class="half"><img src="img/knowledge.jpg"><figcaption>Knowledge Explorer: definitions, context and alternative explanations for every concept.</figcaption></figure>
+<ul>
+  <li><b>Knowledge Explorer:</b> a card for every concept the engine uses, with what it is, when it matters and what else could explain it. "Knowledge only" means it is described but not automatically detected.</li>
+  <li><b>Glossary:</b> short definitions of every term.</li>
+  <li><b>Analysis History:</b> the analyses you looked at recently on this device, so you can reopen one.</li>
+  <li><b>Settings:</b> appearance, the backend connection and uploading your own price file (CSV).</li>
+</ul>
+
+<h2 class="page">5. Today's Plan</h2>
+<p>The new page that puts your trading plan's routine in one place. It has four parts.</p>
+<figure><img src="img/plan-top.jpg"><figcaption>Top of Today's Plan: the reminder note and the morning checklist.</figcaption></figure>
+
+<h3><span class="step">1</span>Before the session: the checklist</h3>
+<p>Six items from your trading plan: confirm it is a full trading day and note your starting paper money; note economic releases and earnings; freeze the watchlist; confirm the data settings; write down yesterday's VAH, VAL and POC; work out today's risk. Ticks are saved per day on that device and start fresh each morning.</p>
+
+<h3><span class="step">2</span>Watchlist: Setup A status</h3>
+<figure><img src="img/plan-watchlist.jpg"><figcaption>Each stock gets a card showing where Setup A stands and why.</figcaption></figure>
+<p>Add up to 8 tickers and press <b>Check now</b> (it also refreshes every minute during market hours). Each card shows yesterday's VAH, VAL and POC and one of these stages:</p>
+<table>
+  <tr><th style="width:22%">Stage</th><th>Meaning</th></tr>
+  <tr><td>Waiting</td><td>No closes above yesterday's VAH yet inside the 10:00&ndash;15:00 window.</td></tr>
+  <tr><td>Counting (x/3)</td><td>1 or 2 five-minute closes in a row above the VAH. A close at or below it restarts the count.</td></tr>
+  <tr><td>Retest watch</td><td>Three closes achieved. Now watching up to 5 bars for a dip that touches the VAH, stays above the VAL and closes back above the VAH.</td></tr>
+  <tr><td>Triggered</td><td>The retest happened. The card gives the stop (just under the dip) and, once the next bar exists, the entry reference (its open) and a target at twice the risk.</td></tr>
+  <tr><td>Cancelled</td><td>Price closed back at or below the VAH before a proper retest. No trade today.</td></tr>
+  <tr><td>Expired</td><td>No retest within 5 bars. No trade today.</td></tr>
+  <tr><td>Not eligible / No data</td><td>Something is missing: early-close day, missing bars, no usable yesterday, no bars from today yet, or the feed failed.</td></tr>
+</table>
+<p>Orange lines under a card are <b>reasons not to trade</b> (outside the time window, entry too far above the retest, the engine sees contradicting evidence, stale data...). The plan says: if any reason is shown, log a skip instead.</p>
+<p>Only the first attempt each day counts. A cancelled or expired setup does not restart.</p>
+
+<h3><span class="step">3</span>Position size calculator</h3>
+<figure><img src="img/plan-calc-journal.jpg"><figcaption>Calculator (top) and trade journal (bottom). The journal row is a test example.</figcaption></figure>
+<p>Press <b>Use in calculator</b> on a triggered card, or type the numbers yourself. It applies the plan's rules:</p>
+<ul>
+  <li>Risk budget = 0.25% of paper equity (changeable), capped by what is left of today's 1% loss allowance.</li>
+  <li>Shares = budget &divide; (entry &minus; stop + costs per share), rounded down, and never more than 20% of equity in one position.</li>
+  <li>It shows shares, the modeled loss, the target (2&times; risk) and the profit at target after costs, and says which limit decided the size.</li>
+</ul>
+<p><b>Worked example from the plan:</b> $10,000 equity, entry $50.00, stop $49.50, costs $0.05 &rarr; 40 shares (the 20% cap), modeled loss $22, target $51.00, profit at target $38.</p>
+<p><b>Log trade</b> saves the paper trade to the journal. It is greyed out once the daily limit is reached (3 losing trades, or a 1% loss of starting equity), and also while today's results are still loading or can't be loaded.</p>
+
+<h3><span class="step">4</span>Trade journal</h3>
+<ul>
+  <li>Every taken <i>and</i> skipped setup goes here; skipped ones keep the reason.</li>
+  <li>For an open trade press <b>Add exit</b>: exit price, why you exited (stop, target, time, other), fees and the net profit or loss. The journal works out the <b>R multiple</b> (result divided by the planned loss: &minus;1R is a normal full stop, +2R a full target).</li>
+  <li><b>Today / All</b> switches the view; <b>Download CSV</b> exports it for a spreadsheet.</li>
+  <li>The journal is stored by the dashboard on this PC, so it shows on your phone too. Entries cannot be deleted from the page, on purpose: an honest record includes the losers.</li>
+</ul>
+
+<h2 class="page">6. A daily routine</h2>
+<h3>Before the market opens (about 15 minutes)</h3>
+<ol>
+  <li>Start the dashboard. Open <b>Signals</b> and, if you like, run the <b>Scanner</b>.</li>
+  <li>Pick up to 8 stocks for today. Skip anything with earnings today or a price under $10.</li>
+  <li>Open <b>Today's Plan</b>, add them to the watchlist and tick through the checklist.</li>
+  <li>For each stock, glance at <b>Overview</b> and <b>Chart &amp; Profile</b> (value zone, 50/200 averages).</li>
+</ol>
+<h3>During the session (10:00 to 15:00 New York)</h3>
+<ol>
+  <li>Leave Today's Plan open; the cards update every minute.</li>
+  <li>When a card says <b>Triggered</b> with no orange reasons: check the live price and spread in your broker, press <i>Use in calculator</i>, and place the <b>paper</b> trade with the shown stop and target.</li>
+  <li>When there are reasons, or you are unsure, press <b>Log skip</b>.</li>
+  <li>Close any paper position by 15:55.</li>
+</ol>
+<h3>After the close</h3>
+<ol>
+  <li>Add exits for every taken trade. Add a short lesson in the notes.</li>
+  <li>Weekly: download the CSV and look at win rate, average R and how often you followed the rules.</li>
+  <li>The plan's milestone: about 50 qualifying setups over at least 20 trading days before judging whether Setup A is worth anything.</li>
+</ol>
+
+<h3>For longer-term investing</h3>
+<p>The intraday Setup A is a day-trading study. For longer holds, the useful parts are <b>Pattern Stats</b> (which daily patterns held up over 5 and 20 days, and in which trend), <b>Signals</b> with its track record, and the 50/200-day averages on the chart.</p>
+
+<h2>7. Key terms in plain words</h2>
+<table>
+  <tr><th style="width:26%">Term</th><th>Meaning</th></tr>
+  <tr><td>Value area</td><td>The price band where about 70% of yesterday's trading happened.</td></tr>
+  <tr><td>VAH / VAL / POC</td><td>Top of that band / bottom of that band / the single busiest price.</td></tr>
+  <tr><td>Acceptance</td><td>Several closes in a row beyond a level: the market is "agreeing" to trade there.</td></tr>
+  <tr><td>Rejection</td><td>Price went beyond a level but fell back inside.</td></tr>
+  <tr><td>Balance</td><td>Price staying inside the value area: no clear direction.</td></tr>
+  <tr><td>No demand / No supply</td><td>A small up-bar on low volume (buyers absent) / a small down-bar on low volume (sellers absent).</td></tr>
+  <tr><td>Stopping volume / climax</td><td>Very heavy volume at the end of a fall or rise, which can mark exhaustion.</td></tr>
+  <tr><td>Spring / upthrust</td><td>A quick poke below support (or above resistance) that closes back inside.</td></tr>
+  <tr><td>Retest</td><td>Price comes back to a level it broke, to see if it holds.</td></tr>
+  <tr><td>Stop / target</td><td>The price where you accept you were wrong / the price where you take profit.</td></tr>
+  <tr><td>R multiple</td><td>Profit or loss measured in units of the risk you planned. &minus;1R = lost the planned amount.</td></tr>
+  <tr><td>Hit rate / edge / t-stat</td><td>See the Pattern Stats section above.</td></tr>
+  <tr><td>Paper trading</td><td>Pretend trades with no real money, to test a method honestly.</td></tr>
+</table>
+
+<h2>8. Rules that keep you safe</h2>
+<ul>
+  <li><b>Paper first.</b> Real money only after the plan's evaluation, and only with risk you can afford to lose.</li>
+  <li><b>The broker's price is the real price.</b> The dashboard's data is free, may lag, and is only for analysis.</li>
+  <li><b>Small, fixed risk:</b> 0.25% per trade, stop for the day after 3 losses or a 1% loss. These are starting test values from the plan, not proven limits.</li>
+  <li><b>No averaging down, no moving the stop further away, one position at a time, one attempt per stock per day.</b></li>
+  <li><b>Log everything,</b> including skips and losers. A day with no trade is a good result if nothing qualified.</li>
+  <li><b>Gaps and halts</b> can make a real loss bigger than the planned one.</li>
+</ul>
+
+<h2>9. When something looks wrong</h2>
+<table>
+  <tr><th style="width:34%">You see</th><th>What to do</th></tr>
+  <tr><td>"This needs the real backend"</td><td>The app is running in demo mode. Close it and start it with start.bat.</td></tr>
+  <tr><td>Watchlist card says No data</td><td>Yahoo didn't answer or the ticker is wrong. Check the spelling and press Check now again in a minute.</td></tr>
+  <tr><td>"No bars from today's session yet"</td><td>Normal before 9:30 New York time, on weekends and on holidays.</td></tr>
+  <tr><td>"Data is stale"</td><td>The newest bar is over 15 minutes old during market hours. Don't trade from it.</td></tr>
+  <tr><td>Log trade is greyed out</td><td>Either the daily limit is reached, today's results haven't loaded, or a field is missing. The message under the button says which.</td></tr>
+  <tr><td>Phone asks for a PIN</td><td>Enter the PIN you set. To change it, ask Claude to run the PIN script.</td></tr>
+  <tr><td>Scanner is slow</td><td>Normal: it checks about 500 stocks through a rate-limited free feed. Give it a few minutes.</td></tr>
+</table>
+
+</body>
+</html>

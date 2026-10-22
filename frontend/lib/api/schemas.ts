@@ -402,3 +402,40 @@ export const dailyBarsSchema = z.object({
   symbol: z.string(),
   bars: z.array(z.object({ session: z.string(), close: z.number() })),
 });
+
+// ---- Today's Plan (Setup A checker and trade journal; docs/API_CONTRACT.md)
+export const setupAStageSchema = z.enum(["no_data", "not_eligible", "waiting", "counting", "retest_watch", "triggered", "cancelled", "expired"]);
+const nnum = z.number().nullable().optional();
+const tm = z.union([z.string(), z.number()]);
+export const setupASymbolSchema = z.object({
+  symbol: z.string(),
+  stage: setupAStageSchema,
+  acceptance_closes: z.number().default(0),
+  retest_bars_left: z.number().nullable().optional(),
+  prior_vah: nnum, prior_val: nnum, prior_poc: nnum,
+  last_bar_time: tm.nullable().optional(),
+  last_close: nnum,
+  retest: z.object({ time: tm, open: z.number(), high: z.number(), low: z.number(), close: z.number() }).nullable().optional(),
+  entry_reference: nnum, stop: nnum, target: nnum,
+  contradiction: z.boolean().nullable().optional(),
+  no_trade_reasons: z.array(z.string()).default([]),
+  explanation: z.string().default(""),
+});
+export const setupAResponseSchema = z.object({ as_of: tm.nullable().optional(), symbols: z.array(setupASymbolSchema) });
+
+export const journalEntrySchema = z.object({
+  id: z.number(),
+  created_at: z.string().nullable().optional(), updated_at: z.string().nullable().optional(),
+  trade_date: z.string(), symbol: z.string(),
+  kind: z.enum(["taken", "skipped"]),
+  setup_version: z.string().nullable().optional(),
+  prior_vah: nnum, prior_val: nnum, prior_poc: nnum,
+  entry: nnum, stop: nnum, target: nnum, shares: nnum, est_costs_per_share: nnum, planned_loss: nnum,
+  exit_price: nnum, exit_time: z.string().nullable().optional(),
+  exit_reason: z.enum(["stop", "target", "time", "other"]).nullable().optional(),
+  fees: nnum, net_pnl: nnum, r_multiple: nnum,
+  skip_reason: z.string().nullable().optional(), notes: z.string().nullable().optional(),
+  rule_breach: z.boolean().nullable().optional(),
+});
+export const journalListSchema = z.array(journalEntrySchema);
+export const daySummarySchema = z.object({ date: z.string(), trades: z.number(), losses: z.number(), realized_pnl: z.number() });

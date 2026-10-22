@@ -2,6 +2,8 @@
 import { z } from "zod";
 import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult } from "@/types";
 import { ApiError } from "../errors";
+import { daySummarySchema, journalEntrySchema, journalListSchema, setupAResponseSchema } from "../schemas";
+import type { JournalInput } from "@/lib/planTypes";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
   rawAnalysisSchema, rawBarSchema, rawConceptSchema, rawDatasetSchema, rawInstrumentsSchema, rawScanSchema, rawScanStatusSchema, rawOutcomesSchema, rawAlertsSchema, rawTrackRecordSchema, rawIntradaySchema, rawJobStatusSchema, rawAuthStatusSchema,
@@ -191,6 +193,12 @@ export const backendApi = {
   getAlertStatus() { return request("/alerts/status", rawJobStatusSchema); },
   runAlerts() { return request("/alerts/run", rawJobStatusSchema, { method: "POST" }); },
   getTrackRecord() { return request("/track-record", rawTrackRecordSchema); },
+  getSetupA(symbols: string[]) { return request(`/setup-a?symbols=${encodeURIComponent(symbols.join(","))}`, setupAResponseSchema); },
+  getJournal(date?: string) { return request(`/journal${date ? `?date=${encodeURIComponent(date)}` : ""}`, journalListSchema); },
+  createJournal(body: JournalInput) { return request("/journal", journalEntrySchema, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); },
+  updateJournal(id: number, body: JournalInput) { return request(`/journal/${id}`, journalEntrySchema, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); },
+  getDaySummary(date: string) { return request(`/journal/day-summary?date=${encodeURIComponent(date)}`, daySummarySchema); },
+  journalCsvUrl() { return `${base()}/journal/export.csv`; },
   collectIntraday() { return request("/intraday/collect", rawJobStatusSchema, { method: "POST" }); },
 
   async uploadDataset(file: File, metadata: Record<string, unknown>): Promise<UploadResult> {

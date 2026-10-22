@@ -210,3 +210,20 @@ def test_saved_and_preview_evidence_has_complete_receipts(client):
     preview = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"], "persist": False}).json()
     assert preview["vsa_observations"] == saved["vsa_observations"]
     assert preview["price_action_observations"] == saved["price_action_observations"]
+
+
+def test_setup_a_endpoint_validates_symbols_and_isolates_failures(tmp_path):
+    from app.providers import ProviderUnavailable
+
+    def down(url):
+        raise ProviderUnavailable("down")
+
+    with TestClient(create_app(tmp_path / "s.sqlite3", market_fetch=down), client=("127.0.0.1", 50000), base_url="http://localhost") as c:
+        for bad in ("", "AAPL,", "bad symbol", ",".join(f"S{i}" for i in range(9))):
+            assert c.get("/api/v1/setup-a", params={"symbols": bad}).status_code == 422
+        assert c.get("/api/v1/setup-a").status_code == 422
+        body = c.get("/api/v1/setup-a", params={"symbols": "aapl,MSFT"}).json()
+        assert [s["symbol"] for s in body["symbols"]] == ["AAPL", "MSFT"] and {s["stage"] for s in body["symbols"]} == {"no_data"}
+        assert body["as_of"]
+        preflight = c.options("/api/v1/journal/1", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "PUT"})
+        assert preflight.status_code == 200

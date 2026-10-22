@@ -7,6 +7,7 @@ import { toApiError } from "@/lib/api/errors";
 import { endOfDate } from "@/lib/formatting";
 import { clipBars, knownEvents, knownResets, knownStates, knownTransitions } from "@/lib/replay";
 import { useWorkspace } from "./workspace";
+import type { JournalInput } from "@/lib/planTypes";
 import type { Analysis } from "@/types";
 
 export function useInstruments() {
@@ -192,4 +193,35 @@ export function useMarket() {
     error: barsQuery.error ? toApiError(barsQuery.error) : analysisQuery.error ? toApiError(analysisQuery.error) : null,
     refetch: () => { void barsQuery.refetch(); void analysisQuery.refetch(); },
   };
+}
+
+// ---- Today's Plan
+export function useSetupA(symbols: string[]) {
+  return useQuery({
+    queryKey: ["setup-a", symbols.join(",")], queryFn: () => api.getSetupA(symbols), enabled: symbols.length > 0,
+    staleTime: 0, retry: false,
+  });
+}
+
+export function useJournal(date?: string) {
+  return useQuery({ queryKey: ["journal", date ?? "all"], queryFn: () => api.getJournal(date), staleTime: 0, retry: false });
+}
+
+export function useDaySummary(date: string) {
+  return useQuery({ queryKey: ["day-summary", date], queryFn: () => api.getDaySummary(date), staleTime: 0, retry: false });
+}
+
+function invalidateJournal(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ["journal"] });
+  void qc.invalidateQueries({ queryKey: ["day-summary"] });
+}
+
+export function useCreateJournal() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (b: JournalInput) => api.createJournal(b), onSuccess: () => invalidateJournal(qc) });
+}
+
+export function useUpdateJournal() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (v: { id: number; body: JournalInput }) => api.updateJournal(v.id, v.body), onSuccess: () => invalidateJournal(qc) });
 }

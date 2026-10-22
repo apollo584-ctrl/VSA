@@ -357,3 +357,46 @@ class Knowledge(Model):
 
 
 Analysis.model_rebuild()
+
+
+class JournalEntryIn(Model):
+    """Paper-trading journal entry as sent by the client. Timestamps, id and r_multiple are set by the server."""
+    trade_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    symbol: str = Field(pattern=r"^[A-Z][A-Z0-9.\-]{0,15}$")
+    kind: Literal["taken", "skipped"]
+    setup_version: str = Field(default="A-1.0", min_length=1, max_length=40)
+    prior_vah: float | None = None
+    prior_val: float | None = None
+    prior_poc: float | None = None
+    entry: float | None = None
+    stop: float | None = None
+    target: float | None = None
+    shares: float | None = Field(default=None, ge=0)
+    est_costs_per_share: float | None = Field(default=None, ge=0)
+    planned_loss: float | None = Field(default=None, ge=0)
+    exit_price: float | None = None
+    exit_time: str | None = Field(default=None, max_length=40)
+    exit_reason: Literal["stop", "target", "time", "other"] | None = None
+    fees: float | None = Field(default=None, ge=0)
+    net_pnl: float | None = None
+    skip_reason: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=5000)
+    rule_breach: bool = False
+
+    @field_validator("symbol", mode="before")
+    @classmethod
+    def upper_symbol(cls, value):
+        return value.strip().upper() if isinstance(value, str) else value
+
+    @field_validator("trade_date")
+    @classmethod
+    def real_date(cls, value):
+        datetime.strptime(value, "%Y-%m-%d")
+        return value
+
+
+class JournalEntry(JournalEntryIn):
+    id: int
+    created_at: str
+    updated_at: str
+    r_multiple: float | None = None

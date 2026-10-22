@@ -17,11 +17,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app import alerts, auth, outcomes
+from app import alerts, auth, journal, outcomes, setup_a
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, Parameters, Profile, Source, SymbolLoadRequest
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
@@ -85,7 +85,7 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     origins = os.getenv("MSI_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
     app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in origins], allow_credentials=True,
                        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+):3000$",
-                       allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-MSI-Request"], expose_headers=["X-Request-ID", "Retry-After"])
+                       allow_methods=["GET", "POST", "PUT"], allow_headers=["Content-Type", "X-MSI-Request"], expose_headers=["X-Request-ID", "Retry-After"])
 
     @app.middleware("http")
     async def protect_docs(request, call_next):
@@ -329,6 +329,50 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     @app.get("/api/v1/intraday")
     def intraday():
         return {"status": collector.current_status(), "summary": store.intraday_summary()}
+
+    @app.get("/api/v1/setup-a")
+    async def setup_a_check(symbols: str = Query(...)):
+        wanted = []
+        for raw in symbols.split(","):
+            symbol = raw.strip().upper()
+            if not DAILY_SYMBOL.fullmatch(symbol):
+                raise HTTPException(422, f"Invalid symbol: {raw.strip()!r}")
+            if symbol not in wanted:
+                wanted.append(symbol)
+        if not 1 <= len(wanted) <= 8:
+            raise HTTPException(422, "Provide 1 to 8 symbols")
+        return await run_in_threadpool(setup_a.check, wanted, fetch)
+
+    def journal_values(entry: JournalEntryIn) -> dict:
+        values = entry.model_dump()
+        values["r_multiple"] = journal.r_multiple(entry.net_pnl, entry.planned_loss)
+        values["rule_breach"] = int(entry.rule_breach)
+        return values
+
+    @app.get("/api/v1/journal", response_model=list[JournalEntry])
+    def journal_list(date: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")):
+        return store.journal_entries(date)
+
+    @app.post("/api/v1/journal", response_model=JournalEntry, status_code=201)
+    def journal_add(entry: JournalEntryIn):
+        return store.add_journal_entry(journal_values(entry), datetime.now(timezone.utc).isoformat())
+
+    # Registered before the {id} route so "export.csv" and "day-summary" are never read as an id.
+    @app.get("/api/v1/journal/export.csv")
+    def journal_export():
+        return Response(journal.to_csv(store.journal_entries()), media_type="text/csv",
+                        headers={"Content-Disposition": 'attachment; filename="journal.csv"'})
+
+    @app.get("/api/v1/journal/day-summary")
+    def journal_day_summary(date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$")):
+        return journal.day_summary(store.journal_entries(date), date)
+
+    @app.put("/api/v1/journal/{entry_id}", response_model=JournalEntry)
+    def journal_update(entry_id: int, entry: JournalEntryIn):
+        try:
+            return store.update_journal_entry(entry_id, journal_values(entry), datetime.now(timezone.utc).isoformat())
+        except KeyError as exc:
+            raise HTTPException(404, "Journal entry not found") from exc
 
     @app.get("/api/v1/knowledge/concepts",response_model=list[Concept])
     def concepts(category: str | None = None):

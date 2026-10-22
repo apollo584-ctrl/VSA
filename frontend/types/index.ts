@@ -44,3 +44,7 @@ export type LayerKey =
   | "ma200";
 
 export type Layers = Record<LayerKey, boolean>;
+
+// ---- Today's Plan
+export type SetupAStage = "no_data" | "not_eligible" | "waiting" | "counting" | "retest_watch" | "triggered" | "cancelled" | "expired";
+export type { SetupASymbol, SetupAResponse, JournalEntry, JournalInput, DaySummary } from "@/lib/planTypes";
