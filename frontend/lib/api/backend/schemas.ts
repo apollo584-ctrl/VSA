@@ -263,12 +263,21 @@ export const rawOutcomeStatSchema = z.object({
   concept: z.string(), direction: z.enum(["strength", "weakness"]), horizon: z.number(), period: z.enum(["older", "newer"]),
   n_cases: z.number(), n_raw: z.number().optional(), hit_rate: z.number(), baseline_hit_rate: z.number(), edge: z.number(),
   mean_return: z.number().optional(), holds: z.boolean(),
+  t_stat: z.number().nullable().optional(), win_loss_ratio: z.number().nullable().optional(),
+});
+export const rawOutcomeBreakdownSchema = z.object({
+  concept: z.string(), horizon: z.number(), dimension: z.enum(["trend", "volume_bucket"]), value: z.string(),
+  n_cases: z.number(), hit_rate: z.number(), edge: z.number(),
+});
+export const rawOutcomeConceptSchema = z.object({
+  direction: z.enum(["strength", "weakness"]).optional(), group: z.enum(["price", "momentum", "vsa"]), label: z.string(), description: z.string().optional(),
 });
 export const rawOutcomeStudySchema = z.object({
   generated_at: iso, symbols_used: z.array(z.string()), date_range: z.object({ start: z.string().nullable(), end: z.string().nullable() }),
   cutoff_date: z.string().nullable().optional(), horizons: z.array(z.number()), min_cases: z.number(),
   stats: z.array(rawOutcomeStatSchema), holds: z.array(z.object({ concept: z.string(), horizon: z.number(), holds: z.boolean() })),
   method_notes: z.array(z.string()).optional(),
+  breakdowns: z.array(rawOutcomeBreakdownSchema).optional(), concepts: z.record(z.string(), rawOutcomeConceptSchema).optional(),
 });
 export const rawOutcomesSchema = z.object({ status: rawJobStatusSchema, study: rawOutcomeStudySchema.nullable() });
 export const rawIntradaySchema = z.object({
@@ -299,6 +308,7 @@ export type RawTrackRow = z.infer<typeof rawTrackRowSchema>;
 export type RawTrackRecord = z.infer<typeof rawTrackRecordSchema>;
 export type RawJobStatus = z.infer<typeof rawJobStatusSchema>;
 export type RawOutcomeStat = z.infer<typeof rawOutcomeStatSchema>;
+export type RawOutcomeBreakdown = z.infer<typeof rawOutcomeBreakdownSchema>;
 export type RawOutcomes = z.infer<typeof rawOutcomesSchema>;
 export type RawIntraday = z.infer<typeof rawIntradaySchema>;
 

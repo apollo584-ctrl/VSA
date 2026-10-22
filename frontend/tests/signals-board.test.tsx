@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("@/hooks/workspace", () => ({ useWorkspace: () => ({ selectInstrument }) }));
 
 let alerts: RawAlerts;
+let outcomesPayload: unknown = { status: { running: false, total: 0, done: 0, errors: 0 }, study: null };
 const record: RawTrackRecord = {
   round_trip_cost: 0.001, min_cases: 30,
   rows: [
@@ -21,7 +22,7 @@ const loadSymbol = vi.fn((_s: string) => Promise.resolve({ datasetId: "ds-aaa" }
 vi.mock("@/lib/api/client", () => ({
   api: {
     getAlerts: () => Promise.resolve(alerts), getAlertStatus: () => Promise.resolve({ running: false, total: 0, done: 0, errors: 0 }),
-    runAlerts: vi.fn(), getTrackRecord: () => Promise.resolve(record), loadSymbol: (s: string) => loadSymbol(s),
+    runAlerts: vi.fn(), getOutcomes: () => Promise.resolve(outcomesPayload), getTrackRecord: () => Promise.resolve(record), loadSymbol: (s: string) => loadSymbol(s),
   },
 }));
 
@@ -42,6 +43,28 @@ describe("SignalsBoard", () => {
     expect(screen.getByText("Stopping volume")).toBeTruthy();
     expect(screen.getByText(/1d: hit 58% · edge \+5\.0 pts/)).toBeTruthy();
     expect(screen.getByText(/5d: hit 56% · edge \+3\.0 pts/)).toBeTruthy();
+  });
+
+  it("uses the study's labels for alerts and track record, falling back to id text for others", async () => {
+    outcomesPayload = {
+      status: { running: false, total: 0, done: 0, errors: 0 },
+      study: {
+        generated_at: "2026-10-01T00:00:00Z", symbols_used: [], date_range: { start: "2016-01-01", end: "2026-01-01" }, cutoff_date: "2023-01-01",
+        horizons: [1], min_cases: 30, holds: [], stats: [],
+        concepts: { rsi2_oversold: { direction: "strength", group: "momentum", label: "2-day RSI below 10", description: "x" } },
+      },
+    };
+    alerts.alerts = [
+      { ...alerts.alerts[0]!, concept: "rsi2_oversold" },
+      { ...alerts.alerts[0]!, symbol: "BBB", concept: "old_signal" },
+    ];
+    try {
+      wrap();
+      expect(await screen.findByText("2-day RSI below 10")).toBeTruthy();
+      expect(screen.getByText("Old signal")).toBeTruthy();
+    } finally {
+      outcomesPayload = { status: { running: false, total: 0, done: 0, errors: 0 }, study: null };
+    }
   });
 
   it("Load chart loads the symbol, selects it and opens the chart", async () => {

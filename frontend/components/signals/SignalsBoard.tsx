@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StateMessage } from "@/components/common/states";
 import { Badge, Button, Panel, Segmented } from "@/components/ui/primitives";
-import { useAlertStatus, useAlerts, useLoadSymbol, useRunAlerts, useTrackRecord } from "@/hooks/data";
+import { useAlertStatus, useAlerts, useLoadSymbol, useOutcomes, useRunAlerts, useTrackRecord } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 import { fmtDateTime } from "@/lib/formatting";
 import type { RawAlert, RawTrackRow } from "@/lib/api/backend/schemas";
@@ -29,7 +29,14 @@ export function SignalsBoard() {
   );
 }
 
+/** Study labels when the latest study has them; id-derived text for old studies and old alerts. */
+function useLabel() {
+  const concepts = useOutcomes().data?.study?.concepts;
+  return (id: string) => concepts?.[id]?.label ?? words(id);
+}
+
 function Today() {
+  const label = useLabel();
   const alerts = useAlerts();
   const status = useAlertStatus();
   const run = useRunAlerts();
@@ -69,7 +76,7 @@ function Today() {
             <tr><th className="py-2 pr-3 font-medium">Symbol</th><th className="px-3 font-medium">Setup</th><th className="px-3 font-medium">Direction</th><th className="px-3 font-medium">Study edge by horizon</th><th className="pl-3" /></tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {list.map((a) => <AlertRow key={`${a.symbol}-${a.concept}`} a={a} opening={opening === a.symbol} onOpen={() => open(a.symbol)} />)}
+            {list.map((a) => <AlertRow key={`${a.symbol}-${a.concept}`} a={a} label={label(a.concept)} opening={opening === a.symbol} onOpen={() => open(a.symbol)} />)}
           </tbody>
         </table>
       )}
@@ -77,12 +84,12 @@ function Today() {
   );
 }
 
-function AlertRow({ a, opening, onOpen }: { a: RawAlert; opening: boolean; onOpen: () => void }) {
+function AlertRow({ a, label, opening, onOpen }: { a: RawAlert; label: string; opening: boolean; onOpen: () => void }) {
   const strong = dir(a.direction);
   return (
     <tr className="align-top">
       <td className="py-3 pr-3 font-semibold">{a.symbol}</td>
-      <td className="px-3 py-3">{words(a.concept)}</td>
+      <td className="px-3 py-3">{label}</td>
       <td className="px-3 py-3"><Badge tone={strong ? "ok" : "danger"}>{strong ? <ArrowUpRight size={14} aria-hidden /> : <ArrowDownRight size={14} aria-hidden />}{strong ? "Strength" : "Weakness"}</Badge></td>
       <td className="px-3 py-3 text-xs">
         {(a.study_newer ?? []).length === 0 ? <span className="text-subtle">—</span> : (a.study_newer ?? []).map((n) => (
@@ -95,6 +102,7 @@ function AlertRow({ a, opening, onOpen }: { a: RawAlert; opening: boolean; onOpe
 }
 
 function Record() {
+  const label = useLabel();
   const rec = useTrackRecord();
   if (rec.isError) return <StateMessage icon={BellRing} tone="danger" title="Track record unavailable">{errText(rec.error)}</StateMessage>;
   if (rec.isPending) return <StateMessage icon={BellRing} title="Loading track record…" />;
@@ -109,20 +117,20 @@ function Record() {
           <thead className="text-xs text-muted">
             <tr><th className="py-2 pr-3 font-medium">Setup</th><th className="px-3 font-medium">Horizon</th><th className="px-3 font-medium">Cases</th><th className="px-3 font-medium">Hit rate</th><th className="px-3 font-medium">Baseline</th><th className="px-3 font-medium">Mean return</th><th className="px-3 font-medium">Net of cost</th><th className="pl-3 font-medium">Verdict</th></tr>
           </thead>
-          <tbody className="divide-y divide-border">{rows.map((r) => <RecordRow key={`${r.concept}-${r.horizon}`} r={r} />)}</tbody>
+          <tbody className="divide-y divide-border">{rows.map((r) => <RecordRow key={`${r.concept}-${r.horizon}`} r={r} label={label(r.concept)} />)}</tbody>
         </table>
       )}
     </Panel>
   );
 }
 
-function RecordRow({ r }: { r: RawTrackRow }) {
+function RecordRow({ r, label }: { r: RawTrackRow; label: string }) {
   const few = r.verdict === "too few cases yet";
   const strong = dir(r.direction);
   return (
     <tr className="align-top">
       <td className="py-3 pr-3">
-        <div className="font-medium">{words(r.concept)}</div>
+        <div className="font-medium">{label}</div>
         <Badge tone={strong ? "ok" : "danger"}>{strong ? "Strength" : "Weakness"}</Badge>
       </td>
       <td className="px-3 py-3">{r.horizon}d</td>

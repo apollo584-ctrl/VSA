@@ -46,7 +46,7 @@ A result is flagged `strength` or `weakness` when at least three of four reading
 
 ## Outcome study and intraday history
 
-`POST /outcomes/run` starts a background study over the scan universe (daily bars, Yahoo, 10y) and returns the job status: 202 when started, 200 if one is already running. `GET /outcomes` returns `{status, study}`; `study` is the latest saved `outcomes.run_study` result (`generated_at, symbols_used, date_range, cutoff_date, horizons, min_cases, stats, holds, method_notes`) or `null`. Symbols that fail are counted in `errors` and skipped.
+`POST /outcomes/run` starts a background study over the scan universe (daily bars, Yahoo, 10y) and returns the job status: 202 when started, 200 if one is already running. `GET /outcomes` returns `{status, study}`; `study` is the latest saved `outcomes.run_study` result (`generated_at, symbols_used, date_range, cutoff_date, horizons, min_cases, stats, holds, method_notes`, plus optional `breakdowns` and `concepts`) or `null`. Stats rows may carry optional `t_stat` and `win_loss_ratio` (null when not computable). `breakdowns` is a list of `{concept, horizon, dimension: "trend"|"volume_bucket", value, n_cases, hit_rate, edge}` (all periods combined, at least 10 cases). `concepts` maps each daily price-pattern id (inside/outside day, gaps, 20-day and 52-week highs/lows, NR7, three-day streaks, RSI(2) extremes, 200-day crosses, 50-day pullback) to `{direction, group: "price"|"momentum", label, description}`; ids not listed there are the original VSA concepts. Studies saved before these fields existed stay valid. Symbols that fail are counted in `errors` and skipped.
 
 ## Alerts and track record
 

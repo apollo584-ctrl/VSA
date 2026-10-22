@@ -4,24 +4,29 @@ import math
 import urllib.parse
 from collections import defaultdict
 from datetime import UTC, datetime
-from statistics import mean, median
+from statistics import mean, median, stdev
 from zoneinfo import ZoneInfo
 
+from app import patterns
 from app.features import features
 from app.models import Bar, Parameters
 from app.providers import Fetch, ProviderUnavailable, SymbolNotFound, http_fetch
+from app.price_action import detect as detect_price_action
 from app.vsa import detect
 
 NY = ZoneInfo("America/New_York")
 YAHOO_DAILY_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=10y&includePrePost=false"
 HORIZONS = (1, 5, 20)
 MIN_CASES = 30
+MIN_BREAKDOWN_CASES = 10
 CUTOFF_FRACTION = 0.7
 METHOD_NOTES = [
     "Close-to-close: a signal is known at the close of day D; the forward return is close[D+h] / close[D] - 1.",
     "Overlap dedupe: per symbol, concept and horizon only the first signal inside any h-day window is counted as an independent case.",
     "Baseline: the same horizon over every day of the same symbols and period; edge is hit rate minus baseline hit rate.",
     "Older/newer split uses one global cutoff date at 70% of all dates; 'holds' needs 30+ cases and a positive edge in both periods.",
+    "Price patterns use daily bars only and are point-in-time: a pattern on day D uses only data up to the close of D.",
+    "t-stat compares the mean return with the baseline mean (about 2 or more is stronger evidence); win/loss is the average favorable move divided by the average adverse move. Breakdowns split cases by trend and volume.",
     "Worst adverse move uses daily lows (strength) or highs (weakness) after D. Past frequencies, not a forecast.",
 ]
 
@@ -78,18 +83,33 @@ def signals(bars: list[Bar], symbol: str = "", p: Parameters | None = None) -> l
     measurements = features(bars, p)
     index = {b.timestamp: i for i, b in enumerate(bars)}
     records = []
-    for e in detect(bars, measurements, p):
-        if e.direction == "neutral":
-            continue
-        i = index[e.timestamp]
+
+    def context(i: int) -> tuple[str, str, str]:
         f, bar = measurements[i], bars[i]
         trend = f["background"] if f["background"] in ("up", "down") else "flat"
         position = ("above" if bar.close > f["prior_high"] else "below" if bar.close < f["prior_low"] else "inside") \
             if f["prior_high"] is not None else "inside"
         rv = f["relative_volume"]
-        bucket = "low" if rv <= p.low_volume else "high" if rv >= p.high_volume else "normal"
-        records.append({"symbol": symbol, "date": bar.session, "index": i, "concept": e.concept_id, "direction": e.direction,
+        bucket = "normal" if rv is None else "low" if rv <= p.low_volume else "high" if rv >= p.high_volume else "normal"
+        return trend, position, bucket
+
+    for e in [*detect(bars, measurements, p), *(e for e in detect_price_action(bars, measurements, p) if e.concept_id == "failed_breakout")]:
+        if e.direction == "neutral":
+            continue
+        concept = e.concept_id
+        if concept == "breakout":
+            continue  # same event as breakout_20d_high / breakdown_20d_low
+        concept = patterns.EVENT_CONCEPTS.get((concept, e.direction), concept)
+        i = index[e.timestamp]
+        trend, position, bucket = context(i)
+        records.append({"symbol": symbol, "date": bars[i].session, "index": i, "concept": concept, "direction": e.direction,
                         "trend": trend, "range_position": position, "volume_bucket": bucket})
+    for concept, flags in patterns.detect_patterns(bars).items():
+        direction = patterns.PATTERNS[concept][0]
+        for i in flags.nonzero()[0].tolist():
+            trend, position, bucket = context(i)
+            records.append({"symbol": symbol, "date": bars[i].session, "index": i, "concept": concept, "direction": direction,
+                            "trend": trend, "range_position": position, "volume_bucket": bucket})
     return records
 
 
@@ -134,6 +154,21 @@ def baseline_rows(bars: list[Bar], symbol: str) -> list[dict]:
     return rows
 
 
+def t_stat(returns: list[float], base_mean: float) -> float | None:
+    """t statistic of the mean return against the baseline mean; None when it cannot be computed."""
+    if len(returns) < 2:
+        return None
+    sd = stdev(returns)
+    return (mean(returns) - base_mean) / (sd / math.sqrt(len(returns))) if sd > 0 else None
+
+
+def win_loss(rows: list[dict], direction: str) -> float | None:
+    """Average favorable move divided by average adverse move (in the signal's direction); None if either side is empty."""
+    moves = [r["return"] if direction == "strength" else -r["return"] for r in rows]
+    wins, losses = [x for x in moves if x > 0], [-x for x in moves if x < 0]
+    return mean(wins) / mean(losses) if wins and losses else None
+
+
 def run_study(symbol_bars: dict[str, list[Bar]], now: datetime | None = None) -> dict:
     raw, base = [], []
     dates = set()
@@ -149,7 +184,10 @@ def run_study(symbol_bars: dict[str, list[Bar]], now: datetime | None = None) ->
     for r in raw:
         n_raw[(r["concept"], r["horizon"], period(r["date"]))] += 1
     grouped, direction_of = defaultdict(list), {}
+    split = defaultdict(list)
     for r in cases:
+        for dim in ("trend", "volume_bucket"):
+            split[(r["concept"], r["horizon"], dim, r[dim])].append(r)
         grouped[(r["concept"], r["horizon"], period(r["date"]))].append(r)
         direction_of[r["concept"]] = r["direction"]
     base_group = defaultdict(list)
@@ -165,7 +203,8 @@ def run_study(symbol_bars: dict[str, list[Bar]], now: datetime | None = None) ->
         stats.append({"concept": concept, "direction": direction, "horizon": h, "period": per, "n_cases": len(rs),
                       "n_raw": n_raw[(concept, h, per)], "hit_rate": hit, "mean_return": mean(returns),
                       "median_return": median(returns), "avg_worst_adverse": mean(r["worst_adverse"] for r in rs),
-                      "baseline_hit_rate": base_hit, "baseline_mean_return": mean(base_returns), "edge": hit - base_hit})
+                      "baseline_hit_rate": base_hit, "baseline_mean_return": mean(base_returns), "edge": hit - base_hit,
+                      "t_stat": t_stat(returns, mean(base_returns)), "win_loss_ratio": win_loss(rs, direction)})
     by_key = {(s["concept"], s["horizon"], s["period"]): s for s in stats}
     summary = []
     for concept, h in sorted({(s["concept"], s["horizon"]) for s in stats}):
@@ -176,7 +215,20 @@ def run_study(symbol_bars: dict[str, list[Bar]], now: datetime | None = None) ->
     holds_map = {(s["concept"], s["horizon"]): s["holds"] for s in summary}
     for s in stats:
         s["holds"] = holds_map[(s["concept"], s["horizon"])]
+    all_base = defaultdict(list)
+    for (h, _), xs in base_group.items():
+        all_base[h] += xs
+    breakdowns = []
+    for (concept, h, dim, value), rs in sorted(split.items()):
+        if len(rs) < MIN_BREAKDOWN_CASES:
+            continue
+        direction = direction_of[concept]
+        base_hit = sum(1 for x in all_base[h] if (x > 0 if direction == "strength" else x < 0)) / len(all_base[h])
+        hit = sum(r["favorable"] for r in rs) / len(rs)
+        breakdowns.append({"concept": concept, "horizon": h, "dimension": dim, "value": value, "n_cases": len(rs),
+                           "hit_rate": hit, "edge": hit - base_hit})
     return {"generated_at": (now or datetime.now(UTC)).isoformat(), "symbols_used": sorted(symbol_bars),
             "date_range": {"start": ordered[0] if ordered else None, "end": ordered[-1] if ordered else None},
             "cutoff_date": cutoff, "horizons": list(HORIZONS), "min_cases": MIN_CASES,
-            "stats": stats, "holds": summary, "method_notes": METHOD_NOTES}
+            "stats": stats, "holds": summary, "breakdowns": breakdowns,
+            "concepts": patterns.concept_info(), "method_notes": METHOD_NOTES}

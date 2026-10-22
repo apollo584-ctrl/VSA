@@ -6,12 +6,16 @@ import { StateMessage } from "@/components/common/states";
 import { Badge, Button, Panel, Segmented } from "@/components/ui/primitives";
 import { useCollectIntraday, useIntraday, useOutcomes, useRunOutcomes } from "@/hooks/data";
 import { fmtDateTime } from "@/lib/formatting";
-import type { RawJobStatus, RawOutcomeStat } from "@/lib/api/backend/schemas";
+import type { RawJobStatus, RawOutcomeBreakdown, RawOutcomeStat } from "@/lib/api/backend/schemas";
 
 const words = (id: string) => id.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 const pct = (x: number) => `${(100 * x).toFixed(0)}%`;
 const when = (iso?: string | null) => (iso ? fmtDateTime(Date.parse(iso) / 1000, true) : "never");
 const errText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong.");
+
+const GROUPS = [{ id: "vsa", title: "VSA signals" }, { id: "price", title: "Price patterns" }, { id: "momentum", title: "Momentum" }] as const;
+const TREND_VALUES = [["up", "Uptrend"], ["down", "Downtrend"], ["flat", "Flat"]] as const;
+const VOLUME_VALUES = [["low", "Low volume"], ["normal", "Normal volume"], ["high", "High volume"]] as const;
 
 type Row = { concept: string; direction: RawOutcomeStat["direction"]; holds: boolean; older?: RawOutcomeStat; newer?: RawOutcomeStat };
 
@@ -20,6 +24,7 @@ export function OutcomesBoard() {
   const run = useRunOutcomes();
   const [horizon, setHorizon] = useState("5");
   const [onlyHolds, setOnlyHolds] = useState(false);
+  const [view, setView] = useState("results");
 
   if (outcomes.isError) {
     return <StateMessage icon={FlaskConical} tone="danger" title="Pattern stats unavailable">{errText(outcomes.error)}</StateMessage>;
@@ -34,7 +39,11 @@ export function OutcomesBoard() {
     r[s.period] = s;
     rows.set(s.concept, r);
   }
+  const info = study?.concepts ?? {};
+  const label = (id: string) => info[id]?.label ?? words(id);
   const shown = [...rows.values()].filter((r) => !onlyHolds || r.holds).sort((a, b) => a.concept.localeCompare(b.concept));
+  const grouped = GROUPS.map((g) => ({ ...g, rows: shown.filter((r) => (info[r.concept]?.group ?? "vsa") === g.id) })).filter((g) => g.rows.length > 0);
+  const breakdowns = (study?.breakdowns ?? []).filter((b) => String(b.horizon) === horizon);
   const minCases = study?.min_cases ?? 30;
 
   return (
@@ -55,6 +64,7 @@ export function OutcomesBoard() {
         actions={
           <>
             <Segmented<string> label="Horizon" size="sm" value={horizon} onChange={setHorizon} options={(study?.horizons ?? [1, 5, 20]).map((h) => ({ value: String(h), label: `${h} day${h === 1 ? "" : "s"}` }))} />
+            {(study?.breakdowns?.length ?? 0) > 0 && <Segmented<string> label="View" size="sm" value={view} onChange={setView} options={[{ value: "results", label: "Results" }, { value: "breakdown", label: "Where it works" }]} />}
             <Segmented<string> label="Filter" size="sm" value={onlyHolds ? "holds" : "all"} onChange={(v) => setOnlyHolds(v === "holds")} options={[{ value: "all", label: "All setups" }, { value: "holds", label: "Only setups that hold up" }]} />
           </>
         }
@@ -64,31 +74,40 @@ export function OutcomesBoard() {
           ? <p className="text-sm text-muted">Results appear here after the study has run.</p>
           : shown.length === 0
             ? <p className="text-sm text-muted">{onlyHolds ? "No setups hold up at this horizon." : "No signals at this horizon."}</p>
-            : (
-              <table className="w-full min-w-[40rem] text-left text-sm">
-                <thead className="text-xs text-muted">
-                  <tr><th className="py-2 pr-3 font-medium">Signal</th><th className="px-3 font-medium">Older period</th><th className="px-3 font-medium">Newer period</th></tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {shown.map((r) => {
-                    const strong = r.direction === "strength";
-                    return (
-                      <tr key={r.concept} className="align-top">
-                        <td className="py-3 pr-3">
-                          <div className="font-medium">{words(r.concept)}</div>
-                          <div className="mt-1 flex flex-wrap gap-1.5">
-                            <Badge tone={strong ? "ok" : "danger"}>{strong ? <ArrowUpRight size={14} aria-hidden /> : <ArrowDownRight size={14} aria-hidden />}{strong ? "Strength" : "Weakness"}</Badge>
-                            {r.holds && <Badge tone="info">Holds up</Badge>}
-                          </div>
-                        </td>
-                        <Cell s={r.older} min={minCases} />
-                        <Cell s={r.newer} min={minCases} />
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
+            : grouped.map((g) => (
+              <section key={g.id} aria-label={g.title} className="mb-6 last:mb-0">
+                <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">{g.title}</h3>
+                <table className="w-full min-w-[40rem] text-left text-sm">
+                  <thead className="text-xs text-muted">
+                    {view === "breakdown"
+                      ? <tr><th className="py-2 pr-3 font-medium">Signal</th>{[...TREND_VALUES, ...VOLUME_VALUES].map(([v, t]) => <th key={v} className="px-2 font-medium">{t}</th>)}</tr>
+                      : <tr><th className="py-2 pr-3 font-medium">Signal</th><th className="px-3 font-medium">Older period</th><th className="px-3 font-medium">Newer period</th></tr>}
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {g.rows.map((r) => {
+                      const strong = r.direction === "strength";
+                      return (
+                        <tr key={r.concept} className="align-top">
+                          <td className="py-3 pr-3">
+                            <div className="font-medium">{label(r.concept)}</div>
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              <Badge tone={strong ? "ok" : "danger"}>{strong ? <ArrowUpRight size={14} aria-hidden /> : <ArrowDownRight size={14} aria-hidden />}{strong ? "Strength" : "Weakness"}</Badge>
+                              {r.holds && <Badge tone="info">Holds up</Badge>}
+                            </div>
+                            {info[r.concept]?.description && <p className="mt-1 max-w-xs text-xs text-muted">{info[r.concept]?.description}</p>}
+                          </td>
+                          {view === "breakdown"
+                            ? [...TREND_VALUES.map(([v]) => ["trend", v] as const), ...VOLUME_VALUES.map(([v]) => ["volume_bucket", v] as const)].map(([dim, v]) => (
+                              <BreakdownCell key={`${dim}:${v}`} b={breakdowns.find((x) => x.concept === r.concept && x.dimension === dim && x.value === v)} />
+                            ))
+                            : <><Cell s={r.older} min={minCases} /><Cell s={r.newer} min={minCases} /></>}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            ))}
       </Panel>
 
       <IntradayCard />
@@ -104,7 +123,23 @@ function Cell({ s, min }: { s?: RawOutcomeStat; min: number }) {
     <td className={`px-3 py-3 ${few ? "opacity-50" : ""}`}>
       <div>Hit rate <span className="font-semibold">{pct(s.hit_rate)}</span> <span className="text-muted">vs random day {pct(s.baseline_hit_rate)}</span></div>
       <div className="text-xs text-muted">Edge {edge > 0 ? "+" : ""}{edge.toFixed(1)} pts · {s.n_cases} cases</div>
+      {(s.t_stat != null || s.win_loss_ratio != null) && (
+        <div className="text-xs text-muted">
+          {s.t_stat != null && <>t-stat {s.t_stat.toFixed(1)}</>}{s.t_stat != null && s.win_loss_ratio != null && " · "}{s.win_loss_ratio != null && <>win/loss {s.win_loss_ratio.toFixed(2)}</>}
+        </div>
+      )}
       {few && <div className="text-xs text-warn">too few cases</div>}
+    </td>
+  );
+}
+
+function BreakdownCell({ b }: { b?: RawOutcomeBreakdown }) {
+  if (!b) return <td className="px-2 py-3 text-xs text-subtle">—</td>;
+  const edge = 100 * b.edge;
+  return (
+    <td className="px-2 py-3">
+      <div className="font-semibold">{pct(b.hit_rate)}</div>
+      <div className="text-xs text-muted">{edge > 0 ? "+" : ""}{edge.toFixed(1)} pts · {b.n_cases}</div>
     </td>
   );
 }
