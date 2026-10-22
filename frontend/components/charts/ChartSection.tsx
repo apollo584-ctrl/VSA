@@ -29,7 +29,7 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
       <LayerControls only={layerKeys} layers={localLayers ?? undefined} onToggle={onToggle} />
       {!hideProfile && ma.show && <MaBasisSwitch basis={ma.basis} onChange={ma.setBasis} fellBack={ma.fellBack} />}
       <AnalysisStatusBanner analysis={analysis} error={market.error} />
-      <div className={cn("min-h-[34rem] flex-1", className)}>
+      <div className={cn("min-h-[44rem] flex-1 sm:min-h-[34rem]", className)}>
         <MarketChart
           bars={market.bars} fitKey={fitKey} timeframe={state.timeframe} analysis={analysis?.status === "ok" ? analysis : null}
           layers={layers} onLayersChange={localLayers ? setLocalLayers : undefined} profileKind={state.profileKind} selectedEventId={state.selectedEventId}

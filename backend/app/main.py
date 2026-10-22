@@ -26,7 +26,7 @@ from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
-from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRunner, is_stale
+from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRefreshTimer, StudyRunner, is_stale
 
 DAILY_SYMBOL = re.compile(r"^[A-Z][A-Z0-9.\-]{0,15}$")
 logger = logging.getLogger("market_intelligence")
@@ -58,8 +58,10 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             collector.start()
         if os.getenv("MSI_AUTO_COLLECT") == "1":
             alert_timer.start()
+            study_timer.start()
         yield
         alert_timer.shutdown()
+        study_timer.shutdown()
         scanner.shutdown()
         study_runner.shutdown()
         alert_job.shutdown()
@@ -70,6 +72,7 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
     collector = IntradayCollector(store, fetch=fetch, universe=scan_universe)
     alert_job = AlertJob(store, fetch=fetch, universe=scan_universe)
     alert_timer = DailyAlertTimer(store, alert_job)
+    study_timer = StudyRefreshTimer(store, study_runner)
     app = FastAPI(title="Market Structure Intelligence", version="0.1.0", lifespan=lifespan, dependencies=[Depends(auth.require_auth)])
     app.state.auth_path = auth.auth_path(store.path)
     limiter = auth.LoginLimiter()

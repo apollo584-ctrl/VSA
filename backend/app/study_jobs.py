@@ -237,6 +237,60 @@ class DailyAlertTimer:
             self._thread.join()
 
 
+class StudyRefreshTimer:
+    """Checks every 6 hours and re-runs the outcome study when the stored one is older than 30 days."""
+    MAX_AGE = timedelta(days=30)
+    MAX_ATTEMPTS = 3
+    WINDOW = timedelta(hours=24)
+
+    def __init__(self, store, runner: StudyRunner, every: float = 6 * 3600):
+        self.store, self.runner, self.every = store, runner, every
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+
+    def start(self):
+        self._thread.start()
+
+    def due(self, now: datetime) -> bool:
+        study = self.store.latest_study()
+        if not study:
+            return False  # the first study is started by hand
+        try:
+            made = datetime.fromisoformat(str(study["generated_at"]))
+        except (KeyError, ValueError):
+            return True
+        if made.tzinfo is None:
+            made = made.replace(tzinfo=UTC)
+        return now - made > self.MAX_AGE
+
+    def check(self, now: datetime | None = None) -> bool:
+        """Starts the study when it is old, at most MAX_ATTEMPTS times per 24 hours; a busy job does not use up an attempt."""
+        now = now or datetime.now(UTC)
+        if not self.due(now):
+            return False
+        recent = [t for t in json.loads(self.store.get_meta("study_refresh_attempts") or "[]")
+                  if now - datetime.fromisoformat(t) < self.WINDOW]
+        if len(recent) >= self.MAX_ATTEMPTS:
+            return False
+        started = self.runner.start()[1]
+        if started:
+            self.store.set_meta("study_refresh_attempts", json.dumps(recent + [now.isoformat()]))
+        return started
+
+    def _loop(self):
+        while not self._stop.is_set():
+            try:
+                self.check()
+            except Exception as exc:
+                logger.warning(json.dumps({"event": "study_refresh_timer_failed", "error": repr(exc)[:200]}))
+            self._stop.wait(self.every)
+
+    def shutdown(self):
+        self._stop.set()
+        if self._thread.is_alive():
+            self._thread.join()
+
+
 class IntradayCollector(Job):
     def process(self, item):
         source, raw = YahooChartProvider(item["symbol"], 30, period="60d", fetch=self.fetch).read()

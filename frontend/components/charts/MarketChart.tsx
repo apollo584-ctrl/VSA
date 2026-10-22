@@ -143,7 +143,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
     const volume = chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "vol", lastValueVisible: false, priceLineVisible: false });
     chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     for (const key of ["ma50", "ma200"] as const) {
-      maRefs.current[key] = chart.addLineSeries({ lineWidth: 1, lineType: LineType.Curved, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, visible: false });
+      maRefs.current[key] = chart.addLineSeries({ lineWidth: 1, lineType: LineType.Curved, autoscaleInfoProvider: () => null, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, visible: false });
     }
     chartRef.current = chart; candleRef.current = candle; volumeRef.current = volume;
 

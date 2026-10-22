@@ -55,6 +55,8 @@ export function OutcomesBoard() {
         <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-relaxed text-muted">
           <li>Hit rate is how often the price moved the signal&apos;s way over the chosen horizon. Compare it with the random-day baseline, which is the same measure over every day.</li>
           <li>Edge is hit rate minus baseline, in percentage points. Cases are independent signals, not bars.</li>
+          <li>t-stat measures how far the average return differs from the random-day average; for Weakness patterns a negative value is the favorable direction. Roughly, beyond +/-2 is unlikely to be luck, but many patterns are tested at once so some will look good by chance.</li>
+          <li>Edges of a point or two are small; costs and slippage can erase them.</li>
           <li>A setup only &quot;holds up&quot; if the older and newer periods agree. Past results are not a forecast.</li>
         </ul>
       </Panel>

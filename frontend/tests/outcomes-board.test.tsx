@@ -33,7 +33,9 @@ describe("OutcomesBoard", () => {
     expect(await screen.findByText("Stopping volume")).toBeTruthy();
     expect(screen.getByText("VSA signals")).toBeTruthy();
     expect(screen.queryByText("Where it works")).toBeNull();
-    expect(screen.queryByText(/t-stat/)).toBeNull();
+    expect(screen.queryByText(/t-stat \d/)).toBeNull();
+    expect(screen.getByText(/t-stat measures how far/)).toBeTruthy();
+    expect(screen.getByText(/costs and slippage can erase them/)).toBeTruthy();
   });
 
   it("groups new patterns with labels, descriptions, extra stats and a breakdown view", async () => {
