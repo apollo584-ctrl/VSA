@@ -103,22 +103,22 @@ it("basis switch changes and remembers the choice, passes daily bars, and hides 
   const { unmount } = render(<WorkspaceProvider initial={{ symbol: "SPY", timeframe: "30m" }}><ChartPopoutPage /></WorkspaceProvider>);
   expect(screen.getByRole("button", { name: "Daily" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByTestId("chart")).toHaveAttribute("data-daily", "60");
-  await userEvent.click(screen.getByRole("button", { name: "Chart bars" }));
+  await userEvent.click(screen.getByRole("button", { name: "30 mins" }));
   expect(screen.getByTestId("chart")).toHaveAttribute("data-daily", "0");
   await waitFor(() => expect(JSON.parse(localStorage.getItem("mst.workspace.v1")!).maBasis).toBe("bars"));
   unmount(); localStorage.clear();
   render(<WorkspaceProvider initial={{ symbol: "SPY", timeframe: "1D" }}><ChartPopoutPage /></WorkspaceProvider>);
   expect(screen.getByTestId("chart")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Chart bars" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "30 mins" })).toBeNull();
 });
 
 it("falls back to chart bars with a note when the daily request fails or is empty", () => {
   mocks.daily = { data: undefined, isError: true, isSuccess: false };
   const { unmount } = render(<WorkspaceProvider initial={{ symbol: "SPY", timeframe: "30m" }}><ChartPopoutPage /></WorkspaceProvider>);
-  expect(screen.getByRole("status")).toHaveTextContent(/chart-bar averages/i);
+  expect(screen.getByRole("status")).toHaveTextContent(/30-min averages/i);
   expect(screen.getByTestId("chart")).toHaveAttribute("data-daily", "0");
   unmount(); localStorage.clear();
   mocks.daily = { data: { bars: [] }, isError: false, isSuccess: true };
   render(<WorkspaceProvider initial={{ symbol: "SPY", timeframe: "30m" }}><ChartPopoutPage /></WorkspaceProvider>);
-  expect(screen.getByRole("status")).toHaveTextContent(/chart-bar averages/i);
+  expect(screen.getByRole("status")).toHaveTextContent(/30-min averages/i);
 });
