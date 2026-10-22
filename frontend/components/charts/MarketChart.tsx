@@ -69,6 +69,8 @@ interface Props {
   hidePopout?: boolean;
   /** Completed daily bars: when set on an intraday chart the averages are daily, drawn as a step line. */
   dailyBars?: DailyBar[] | null;
+  /** Called by the in-chart controls (profile histogram checkbox). Defaults to writing the workspace layers. */
+  onLayersChange?: (layers: Layers) => void;
 }
 
 /** Opens the chart-only window; a fixed name reuses the same window on repeat clicks. */
@@ -80,7 +82,7 @@ export function openChartPopout() {
 const RECENT_INTRADAY_BARS = 70;
 const RECENT_DAILY_BARS = 125;
 
-export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile, allBars, hidePopout, dailyBars }: Props) {
+export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profileKind, selectedEventId, onSelectEvent, className, hideProfile, allBars, hidePopout, dailyBars, onLayersChange }: Props) {
   const { state, set } = useWorkspace();
   const hostRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -317,7 +319,10 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
       {!hideProfile && <ChartProfileControls
         profiles={analysis?.profiles ?? null} kind={profileKind} visible={layers.volumeProfile}
         onChange={(kind) => set({ profileKind: kind })}
-        onVisibleChange={(visible) => set({ layers: { ...state.layers, volumeProfile: visible } })}
+        onVisibleChange={(visible) => {
+          if (onLayersChange) onLayersChange({ ...layers, volumeProfile: visible });
+          else set({ layers: { ...state.layers, volumeProfile: visible } });
+        }}
       />}
       <div className="relative min-h-0 flex-1">
       <div ref={hostRef} className="absolute inset-0" role="img" aria-label={`Candlestick chart, ${bars.length} bars. VSA events are listed beside the chart.`} />

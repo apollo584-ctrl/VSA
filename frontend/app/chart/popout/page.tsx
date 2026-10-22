@@ -8,6 +8,7 @@ import { useMarket } from "@/hooks/data";
 import { useMaBasis } from "@/hooks/maBasis";
 import { AVERAGES_LAYERS, VSA_PROFILE_LAYERS, useWorkspace } from "@/hooks/workspace";
 import { cn } from "@/lib/utils";
+import type { Layers } from "@/types";
 
 type Mode = "averages" | "vsa";
 const MODES: { id: Mode; label: string }[] = [
@@ -34,7 +35,9 @@ export default function ChartPopoutPage() {
     else void rootRef.current?.requestFullscreen?.().catch(() => undefined);
   };
 
-  const layers = mode === "averages" ? AVERAGES_LAYERS : VSA_PROFILE_LAYERS;
+  // Per-mode local layers so the in-chart histogram checkbox works without writing workspace prefs.
+  const [modeLayers, setModeLayers] = useState<Record<Mode, Layers>>({ averages: AVERAGES_LAYERS, vsa: VSA_PROFILE_LAYERS });
+  const layers = modeLayers[mode];
   const analysis = market.analysis?.status === "ok" ? market.analysis : null;
   const fitKey = `${state.symbol}|${state.timeframe}|${state.session}|${state.date ?? "latest"}`;
   const label = market.instrument?.label ?? state.symbol ?? "No symbol";
@@ -63,7 +66,7 @@ export default function ChartPopoutPage() {
       <div className="min-h-0 flex-1 p-1">
         <MarketChart
           bars={market.bars} allBars={market.allBars} fitKey={fitKey} timeframe={state.timeframe} analysis={analysis}
-          layers={layers} profileKind={state.profileKind} selectedEventId={state.selectedEventId}
+          layers={layers} onLayersChange={(next) => setModeLayers((m) => ({ ...m, [mode]: next }))} profileKind={state.profileKind} selectedEventId={state.selectedEventId}
           onSelectEvent={(id) => set({ selectedEventId: id })} hidePopout dailyBars={ma.dailyBars}
         />
       </div>

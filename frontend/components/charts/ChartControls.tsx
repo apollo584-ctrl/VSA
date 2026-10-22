@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ChevronsRight, History } from "lucide-react"
 import { Badge, Button, Toggle } from "@/components/ui/primitives";
 import { useWorkspace } from "@/hooks/workspace";
 import { fmtDateTime } from "@/lib/formatting";
-import type { Bar, LayerKey } from "@/types";
+import type { Bar, LayerKey, Layers } from "@/types";
 
 const LAYER_DEFS: { key: LayerKey; label: string; swatch?: string; dashed?: boolean }[] = [
   { key: "candles", label: "Candles" },
@@ -39,12 +39,14 @@ export function MaBasisSwitch({ basis, onChange, fellBack }: { basis: "daily" | 
   );
 }
 
-export function LayerControls({ only }: { only?: LayerKey[] }) {
+export function LayerControls({ only, layers, onToggle }: { only?: LayerKey[]; layers?: Layers; onToggle?: (key: LayerKey) => void }) {
   const { state, toggleLayer } = useWorkspace();
+  const current = layers ?? state.layers;
+  const toggle = onToggle ?? toggleLayer;
   return (
     <div role="group" aria-label="Chart layers" className="flex flex-wrap items-center gap-2">
       {LAYER_DEFS.filter((l) => !only || only.includes(l.key)).map((l) => (
-        <Toggle key={l.key} label={l.label} swatch={l.swatch} dashed={l.dashed} checked={state.layers[l.key]} onChange={() => toggleLayer(l.key)} />
+        <Toggle key={l.key} label={l.label} swatch={l.swatch} dashed={l.dashed} checked={current[l.key]} onChange={() => toggle(l.key)} />
       ))}
     </div>
   );
