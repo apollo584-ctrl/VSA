@@ -22,7 +22,7 @@ const LAYER_DEFS: { key: LayerKey; label: string; swatch?: string; dashed?: bool
 
 /** "Averages: Daily | Chart bars" (hidden on 1D charts, where both mean the same thing). */
 export function MaBasisSwitch({ basis, onChange, fellBack }: { basis: "daily" | "bars"; onChange: (b: "daily" | "bars") => void; fellBack?: boolean }) {
-  const opts: { id: "daily" | "bars"; label: string }[] = [{ id: "daily", label: "Daily" }, { id: "bars", label: "Chart bars" }];
+  const opts: { id: "daily" | "bars"; label: string }[] = [{ id: "daily", label: "Daily" }, { id: "bars", label: "30 mins" }];
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
       <span id="ma-basis-label">Averages</span>
@@ -34,7 +34,7 @@ export function MaBasisSwitch({ basis, onChange, fellBack }: { basis: "daily" | 
           >{o.label}</button>
         ))}
       </div>
-      {fellBack && <span className="text-subtle" role="status">Daily data unavailable; showing chart-bar averages.</span>}
+      {fellBack && <span className="text-subtle" role="status">Daily data unavailable; showing 30-min averages.</span>}
     </div>
   );
 }
