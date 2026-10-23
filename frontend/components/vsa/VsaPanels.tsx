@@ -2,6 +2,7 @@
 
 import { Check, Minus } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { ClassificationBadge, HypothesisBadge, ObservationBadge, StatusBadge } from "@/components/common/badges";
 import { NoPatternsState } from "@/components/common/states";
 import { Badge, KeyValue, SectionLabel, Term } from "@/components/ui/primitives";
@@ -11,6 +12,13 @@ import { cn } from "@/lib/utils";
 import type { DetailLevel, VsaEvent } from "@/types";
 
 export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { events: VsaEvent[]; selectedId: string | null; onSelect: (id: string | null) => void; scopeLabel?: string }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  // Selecting an event on the chart scrolls its row into view here; "nearest" leaves rows already on screen alone.
+  useEffect(() => {
+    if (!selectedId) return;
+    const row = listRef.current?.querySelector<HTMLElement>(`[data-event-id="${CSS.escape(selectedId)}"]`);
+    row?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedId]);
   if (!events.length) return <NoPatternsState scope={scopeLabel} />;
   const newest = [...events].sort((a, b) => b.barTime - a.barTime);
   const directional = (e: VsaEvent) => e.direction === "strength" || e.direction === "weakness";
@@ -19,7 +27,7 @@ export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { eve
     { label: "Measurements", items: newest.filter((e) => !directional(e)) },
   ].filter((g) => g.items.length);
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={listRef} className="flex flex-col gap-3">
     {groups.map((g) => (
     <section key={g.label} aria-label={g.label}>
     <h3 className="mb-1 text-xs font-semibold text-subtle">{g.label} <span className="font-normal">({g.items.length})</span></h3>
@@ -28,6 +36,7 @@ export function VsaEventList({ events, selectedId, onSelect, scopeLabel }: { eve
         <li key={e.id}>
           <button
             type="button"
+            data-event-id={e.id}
             onClick={() => onSelect(e.id === selectedId ? null : e.id)}
             aria-pressed={e.id === selectedId}
             className={cn("flex w-full items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors", e.id === selectedId ? "border-accent bg-accent-soft" : "border-border bg-surface-2 hover:bg-surface-3")}
