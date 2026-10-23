@@ -74,7 +74,7 @@ class ScanRunRequest(ScanModel):
 
 
 class ScanAutoRequest(ScanModel):
-    minutes: Literal[0, 15, 30, 60]
+    minutes: Literal[0, 30, 60, 1440]
 
 
 def load_universe() -> list[dict]:

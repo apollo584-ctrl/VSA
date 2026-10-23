@@ -48,7 +48,7 @@ export function ScanBoard() {
         actions={
           <>
             <Segmented<string> label="Auto-scan" size="sm" value={String(status?.auto_minutes ?? 0)} onChange={(v) => auto.mutate(Number(v))}
-              options={[{ value: "0", label: "Auto off" }, { value: "15", label: "15 min" }, { value: "30", label: "30 min" }, { value: "60", label: "60 min" }]} />
+              options={[{ value: "0", label: "Auto off" }, { value: "30", label: "30 min" }, { value: "60", label: "60 min" }, { value: "1440", label: "Daily" }]} />
             <Button variant="primary" size="sm" disabled={status?.running || run.isPending} onClick={() => run.mutate()}>{status?.running ? "Scanning…" : "Scan now"}</Button>
           </>
         }

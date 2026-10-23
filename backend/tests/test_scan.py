@@ -153,6 +153,8 @@ def test_subset_scan_and_persistence_across_restart(make, tmp_path):
 def test_auto_scan_setting_is_validated_and_reported(make):
     client = make(fetch_for())
     assert client.post("/api/v1/scan/auto", json={"minutes": 7}).status_code == 422
+    assert client.post("/api/v1/scan/auto", json={"minutes": 15}).status_code == 422
+    assert client.post("/api/v1/scan/auto", json={"minutes": 1440}).json()["auto_minutes"] == 1440
     assert client.post("/api/v1/scan/auto", json={"minutes": 30}).json()["auto_minutes"] == 30
     client.app.state.scanner.wait(30)
     assert client.post("/api/v1/scan/auto", json={"minutes": 0}).json()["auto_minutes"] == 0
