@@ -104,12 +104,16 @@ def signals(bars: list[Bar], symbol: str = "", p: Parameters | None = None) -> l
         trend, position, bucket = context(i)
         records.append({"symbol": symbol, "date": bars[i].session, "index": i, "concept": concept, "direction": e.direction,
                         "trend": trend, "range_position": position, "volume_bucket": bucket})
-    for concept, flags in patterns.detect_patterns(bars).items():
+    found = patterns.detect_patterns(bars)
+    for concept, flags in found.items():
         direction = patterns.PATTERNS[concept][0]
         for i in flags.nonzero()[0].tolist():
             trend, position, bucket = context(i)
             records.append({"symbol": symbol, "date": bars[i].session, "index": i, "concept": concept, "direction": direction,
                             "trend": trend, "range_position": position, "volume_bucket": bucket})
+    gaps = found.get("gap_up")
+    if gaps is not None:  # failed breakdown and gap up on the same bar
+        records += [{**r, "concept": patterns.GAP_UP_COMBO} for r in records if r["concept"] == "failed_breakout_low" and gaps[r["index"]]]
     return records
 
 

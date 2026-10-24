@@ -77,6 +77,26 @@ def test_pullback_to_50ma_in_uptrend():
     assert fired(bars[:100], "pullback_to_50ma_in_uptrend") == []
 
 
+def test_gap_up_watch_patterns():
+    weak = flat(3) + [bar(3, 101.5, 102, 100, 100.2), bar(4, 100.0, 101, 99, 100.8), bar(5, 102.0, 104, 101, 103.8)]
+    assert fired(weak, "gap_up_weak_close") == [3]  # bar 5 gaps up too but closes near its high
+    closes = [100, 97, 94, 91]
+    down = [bar(i, c, c + 1, c - 1, c) for i, c in enumerate(closes)] + [bar(4, 92.2, 92.5, 89, 90)]
+    assert fired(down, "gap_up_oversold") == [4]
+    assert fired(down[:4], "gap_up_oversold") == [] and fired(flat(10) + [bar(10, 102, 103, 101, 102)], "gap_up_oversold") == []
+
+
+def test_failed_breakdown_gap_up_only_where_both_happen():
+    for seed in range(6):
+        bars = walk(900, seed=seed)
+        records = outcomes.signals(bars, "S")
+        gaps = patterns.detect_patterns(bars)["gap_up"]
+        failed = {r["index"] for r in records if r["concept"] == "failed_breakout_low"}
+        combo = [r for r in records if r["concept"] == patterns.GAP_UP_COMBO]
+        assert all(r["index"] in failed and gaps[r["index"]] and r["direction"] == "strength" for r in combo)
+        assert len(combo) == len([i for i in failed if gaps[i]])
+
+
 def test_every_pattern_has_metadata_and_fires_on_a_random_walk():
     bars = walk()
     found = patterns.detect_patterns(bars)

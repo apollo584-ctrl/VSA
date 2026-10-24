@@ -32,6 +32,9 @@ PATTERNS: dict[str, tuple[str, str, str, str]] = {
     "close_above_200ma_cross": ("strength", "momentum", "Close crosses above 200-day average", "Closed above the 200-day average after closing at or below it the day before."),
     "close_below_200ma_cross": ("weakness", "momentum", "Close crosses below 200-day average", "Closed below the 200-day average after closing at or above it the day before."),
     "pullback_to_50ma_in_uptrend": ("strength", "momentum", "Pullback to rising 50-day average", "In an uptrend (50-day above 200-day and rising) the low touched the 50-day average and the day closed back above it."),
+    # Watch patterns: the only combinations that stayed positive after a stricter 10-year S&P 500 re-test (market-adjusted, counted by month). Small edges; still a past-frequency study.
+    "gap_up_weak_close": ("strength", "price", "Gap up, closed near the low", "The day opened at least 1% above the prior close but closed in the lowest fifth of its range. Watch pattern: it held up in a stricter re-test."),
+    "gap_up_oversold": ("strength", "momentum", "Gap up while 2-day RSI below 10", "The day opened at least 1% above the prior close and the 2-day RSI closed below 10. Watch pattern: it held up in a stricter re-test."),
 }
 
 
@@ -44,7 +47,10 @@ EVENT_CONCEPTS: dict[tuple[str, str], str] = {
 EVENT_PATTERNS: dict[str, tuple[str, str, str, str]] = {
     "failed_breakout_high": ("weakness", "price", "Failed breakout above range", "The high pushed above the prior range high but the day closed back below it: the higher prices were rejected."),
     "failed_breakout_low": ("strength", "price", "Failed breakdown below range", "The low pushed below the prior range low but the day closed back above it: the lower prices were rejected."),
+    "failed_breakdown_gap_up": ("strength", "price", "Failed breakdown with a gap up", "A failed breakdown below the range (see above) on a day that also opened at least 1% above the prior close. Watch pattern: it held up in a stricter re-test."),
 }
+GAP_UP_COMBO = "failed_breakdown_gap_up"  # failed_breakout_low and gap_up on the same bar; built in outcomes.signals
+IBS_LOW = 0.2
 
 
 def concept_info() -> dict[str, dict]:
@@ -110,6 +116,8 @@ def detect_patterns(bars: list[Bar]) -> dict[str, np.ndarray]:
         rsi = np.where(al == 0, np.where(ag == 0, 50.0, 100.0), 100 - 100 / (1 + ag / np.where(al == 0, 1, al)))
         rsi = np.where(np.isnan(ag) | np.isnan(al), np.nan, rsi)
         out["rsi2_oversold"], out["rsi2_overbought"] = rsi < RSI_LOW, rsi > RSI_HIGH
+        out["gap_up_oversold"] = out["gap_up"] & out["rsi2_oversold"]
+        out["gap_up_weak_close"] = out["gap_up"] & (rng > 0) & ((c - low) / np.where(rng > 0, rng, 1) < IBS_LOW)
         ma200, ma50 = _sma(c, 200), _sma(c, 50)
         p200 = _shift(ma200, 1)
         out["close_above_200ma_cross"] = (c > ma200) & (pc <= p200)
