@@ -315,7 +315,7 @@ export function MarketChart({ bars, fitKey, timeframe, analysis, layers, profile
   const display = hover ?? bars[bars.length - 1] ?? null;
 
   return (
-    <div ref={frameRef} className={cn("relative flex h-full min-h-56 w-full flex-col overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
+    <div ref={frameRef} className={cn("relative flex h-full min-h-56 w-full flex-1 flex-col overflow-hidden rounded-md", fullscreen && "h-screen w-screen bg-surface", className)}>
       {!hideProfile && <ChartProfileControls
         profiles={analysis?.profiles ?? null} kind={profileKind} visible={layers.volumeProfile}
         onChange={(kind) => set({ profileKind: kind })}

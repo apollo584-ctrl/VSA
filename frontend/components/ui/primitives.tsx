@@ -2,7 +2,7 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 import { ChevronDown, Info } from "lucide-react";
-import { useId, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 // ---------------- Button ----------------
@@ -48,14 +48,26 @@ export function Badge({ tone, className, children, title }: VariantProps<typeof 
 /** Accessible hover/focus tooltip. Content is also exposed to assistive tech via aria-describedby. */
 export function Tooltip({ content, children, side = "top" }: { content: ReactNode; children: ReactNode; side?: "top" | "bottom" }) {
   const id = useId();
+  const tip = useRef<HTMLSpanElement>(null);
+  // Keep the bubble inside the scrolling page area: nudge it sideways when its centred position would be clipped.
+  const keepInView = () => {
+    const el = tip.current;
+    if (!el) return;
+    el.style.marginLeft = "0px";
+    const box = (el.closest("main") ?? document.documentElement).getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const left = Math.max(box.left, 0) + 8, right = Math.min(box.right, window.innerWidth) - 8;
+    el.style.marginLeft = `${r.left < left ? left - r.left : r.right > right ? Math.min(0, right - r.right) : 0}px`;
+  };
   return (
-    <span className="group relative inline-flex" aria-describedby={id}>
+    <span className="group relative inline-flex" aria-describedby={id} onMouseEnter={keepInView} onFocus={keepInView}>
       {children}
       <span
+        ref={tip}
         role="tooltip"
         id={id}
         className={cn(
-          "pointer-events-none absolute left-1/2 z-50 w-max max-w-72 -translate-x-1/2 rounded-lg border border-border-strong bg-surface-3 px-3 py-2 text-xs font-normal leading-relaxed text-fg opacity-0 shadow-lg transition-opacity group-focus-within:opacity-100 group-hover:opacity-100",
+          "pointer-events-none absolute left-1/2 z-50 w-max max-w-72 -translate-x-1/2 rounded-lg border border-border-strong bg-surface-3 px-3 py-2 text-xs font-normal leading-relaxed text-fg hidden shadow-lg group-focus-within:block group-hover:block",
           side === "top" ? "bottom-full mb-2" : "top-full mt-2",
         )}
       >
