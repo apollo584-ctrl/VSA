@@ -89,9 +89,9 @@ export function GlossaryBrowser() {
       </section>
 
       {filtered.length === 0 ? <StateMessage icon={Search} title="No matching terms">Try another word or clear the category filter.</StateMessage> : (
-        <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((item) => <div key={item.term} className="rounded-xl border border-border bg-surface p-4 shadow-[var(--shadow)] transition-colors hover:border-border-strong">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
               <dt className="font-semibold leading-snug">{item.term}</dt>
               <Badge>{item.group === "Concepts & strategies" ? categoryLabel(data?.find((concept) => concept.name === item.term)?.category ?? "") : item.group}</Badge>
             </div>

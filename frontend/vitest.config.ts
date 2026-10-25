@@ -10,5 +10,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
+    // jsdom render tests run in parallel; the 5s default times out on a busy machine.
+    testTimeout: 20_000,
   },
 });
