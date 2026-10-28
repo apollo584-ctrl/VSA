@@ -101,3 +101,24 @@ describe("clearing the symbol list", () => {
     expect(localStorage.getItem("mst.hiddenInstruments.v1")).toBe("[]");
   });
 });
+
+describe("Refresh button", () => {
+  it("re-fetches the symbol on screen and selects the new copy of the data", async () => {
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-old" }));
+    h.listInstruments.mockResolvedValue([instrument("ds-old", "XOM · 30m")]);
+    h.loadSymbol.mockResolvedValue({ datasetId: "ds-new" });
+    setup();
+    fireEvent.click(await screen.findByRole("button", { name: /Refresh/ }));
+    await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("ds-new"));
+    expect(h.loadSymbol).toHaveBeenCalledWith("XOM");
+  });
+
+  it("is hidden in mock mode and without a symbol on screen", async () => {
+    h.mode = "mock";
+    h.listInstruments.mockResolvedValue([instrument("ds-old", "XOM · 30m")]);
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-old" }));
+    setup();
+    await screen.findByLabelText(/Search instruments/);
+    expect(screen.queryByRole("button", { name: /Refresh/ })).toBeNull();
+  });
+});

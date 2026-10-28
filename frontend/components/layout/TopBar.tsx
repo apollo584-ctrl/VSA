@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, Moon, Power, Search, Sun, X } from "lucide-react";
+import { Lock, Moon, Power, RefreshCw, Search, Sun, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
 import { API_MODE } from "@/lib/api/client";
@@ -143,6 +143,21 @@ function QuitButton() {
   );
 }
 
+/** Re-fetches the latest bars for the symbol on screen (the chart works from a saved copy taken when it was loaded). */
+function RefreshButton({ label, onLoaded }: { label: string; onLoaded: (datasetId: string) => void }) {
+  const load = useLoadSymbol();
+  const ticker = label.split(" · ")[0]!;
+  const failed = load.isError ? (load.error instanceof Error ? load.error.message : "Could not refresh.") : null;
+  return (
+    <>
+      {failed && <span role="alert" className="max-w-48 truncate text-xs text-danger" title={failed}>{failed}</span>}
+      <Button variant="ghost" onClick={() => { load.reset(); load.mutate(ticker, { onSuccess: ({ datasetId }) => onLoaded(datasetId) }); }} disabled={load.isPending} title={`Fetch the latest ${ticker} bars from Yahoo Finance (this symbol only)`}>
+        <RefreshCw size={16} aria-hidden className={cn(load.isPending && "animate-spin")} /> <span className="max-sm:sr-only">{load.isPending ? "Refreshing…" : "Refresh"}</span>
+      </Button>
+    </>
+  );
+}
+
 /** Remote devices only: ends the PIN session and returns to the PIN screen. */
 function LockButton() {
   const { data } = useAuthStatus(API_MODE === "http");
@@ -203,6 +218,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" aria-label={state.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => set({ theme: state.theme === "dark" ? "light" : "dark" })}>
           {state.theme === "dark" ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
         </Button>
+        {API_MODE === "http" && inst && <RefreshButton key={inst.symbol} label={inst.label ?? inst.symbol} onLoaded={selectInstrument} />}
         <LockButton />
         <QuitButton />
       </div>
