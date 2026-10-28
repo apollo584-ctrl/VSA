@@ -10,7 +10,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/instruments` | — | `{items: [{instrument, dataset_ids}]}` for stored datasets (uploaded or loaded by symbol) |
 | POST | `/datasets/upload` | multipart file and metadata JSON string | 201 Dataset |
 | POST | `/datasets/from-symbol` | `{symbol, timeframe_minutes=30 (5, 15 or 30), period="1mo" ("5d", "1mo" or "60d")}` | 201 Dataset; 200 existing Dataset when identical data is already stored |
-| GET | `/daily-bars` | `symbol` (trimmed, upper-cased, `^[A-Z][A-Z0-9.\-]{0,15}$`, else 422) | `{symbol, bars: [{session: "YYYY-MM-DD", close}]}`: last 400 completed daily bars (via the outcome-study daily fetch), cached in memory for 1 hour per symbol; 422 unknown symbol, 502 provider unreachable or unreadable; same auth as every other endpoint |
+| GET | `/daily-bars` | `symbol` (trimmed, upper-cased, `^[A-Z][A-Z0-9.\-]{0,15}$`, else 422) | `{symbol, bars: [{session: "YYYY-MM-DD", open, high, low, close, volume}]}`: last 500 completed daily bars (via the outcome-study daily fetch), cached in memory for 1 hour per symbol; 422 unknown symbol, 502 provider unreachable or unreadable; same auth as every other endpoint |
 | GET | `/setup-a` | `symbols` (1-8 comma-separated, else 422) | Setup A checker, see "Today's Plan" below |
 | GET / POST | `/journal` | `date=YYYY-MM-DD` optional / JournalEntryIn JSON | newest-first entries / 201 entry |
 | PUT | `/journal/{id}` | JournalEntryIn JSON (full replace) | entry; 404 if missing |

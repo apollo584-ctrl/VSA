@@ -5,6 +5,11 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $api = "http://127.0.0.1:8000/api/v1"
 $deadline = (Get-Date).AddMinutes(50)
+$logs = Join-Path $root "backend\logs"
+New-Item -ItemType Directory -Path $logs -Force | Out-Null
+$stamp = Get-Date -Format yyyyMMdd
+Start-Transcript -Path (Join-Path $logs "nightly-$stamp.log") -Append | Out-Null
+try {
 
 function Test-Up {
   try { (Invoke-RestMethod "$api/health" -TimeoutSec 5).status -eq "ok" } catch { $false }
@@ -35,7 +40,9 @@ if (-not (Test-Up)) {
   $bind = if ($env:MSI_SHARE_LAN -eq "0") { "127.0.0.1" } else { "0.0.0.0" }
   Start-Process -FilePath (Join-Path $root "backend\.venv\Scripts\python.exe") `
     -ArgumentList "-m", "uvicorn", "app.main:app", "--host", $bind, "--port", "8000" `
-    -WorkingDirectory (Join-Path $root "backend") -WindowStyle Hidden
+    -WorkingDirectory (Join-Path $root "backend") -WindowStyle Hidden `
+    -RedirectStandardOutput (Join-Path $logs "backend-$stamp.log") `
+    -RedirectStandardError (Join-Path $logs "backend-$stamp.err.log")
   for ($i = 0; $i -lt 30 -and -not (Test-Up); $i++) { Start-Sleep -Seconds 2 }
   if (-not (Test-Up)) { throw "The backend did not start." }
   $started = $true
@@ -57,4 +64,8 @@ if ($started) {
   Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
   Write-Output ("{0} backend stopped" -f (Get-Date -Format s))
+}
+
+} finally {
+  Stop-Transcript | Out-Null
 }

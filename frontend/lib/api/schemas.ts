@@ -400,7 +400,10 @@ export const apiErrorSchema = z.object({
 
 export const dailyBarsSchema = z.object({
   symbol: z.string(),
-  bars: z.array(z.object({ session: z.string(), close: z.number() })),
+  bars: z.array(z.object({
+    session: z.string(), close: z.number(),
+    open: z.number().optional(), high: z.number().optional(), low: z.number().optional(), volume: z.number().optional(),
+  })),
 });
 
 // ---- Today's Plan (Setup A checker and trade journal; docs/API_CONTRACT.md)

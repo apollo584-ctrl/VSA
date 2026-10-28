@@ -4,11 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const selectInstrument = vi.fn();
 const loadSymbol = vi.fn();
+const resolveDataset = vi.fn(async (id: string) => id);
 let workspace = { state: { symbol: null as string | null }, ready: true, selectInstrument };
 let instruments: { symbol: string; label: string }[] = [];
 
 vi.mock("@/hooks/workspace", () => ({ useWorkspace: () => workspace }));
-vi.mock("@/lib/api/client", () => ({ API_MODE: "http" }));
+vi.mock("@/lib/api/client", () => ({ API_MODE: "http", api: { resolveDataset: (id: string) => resolveDataset(id) } }));
 vi.mock("@/hooks/data", () => ({
   useInstruments: () => ({ data: instruments }),
   useLoadSymbol: () => ({ mutate: (s: string, o: { onSuccess: (r: { datasetId: string }) => void }) => { loadSymbol(s); o.onSuccess({ datasetId: "ds-new" }); } }),
@@ -33,6 +34,16 @@ describe("DefaultSymbol", () => {
     instruments = [{ symbol: "ds-spy", label: "SPY · 30m" }];
     mount();
     await waitFor(() => expect(selectInstrument).toHaveBeenCalledWith("ds-spy"));
+    expect(loadSymbol).not.toHaveBeenCalled();
+  });
+
+  it("moves a remembered older copy of a stock to its newest copy", async () => {
+    workspace = { state: { symbol: "ds-xom-old" }, ready: true, selectInstrument };
+    instruments = [{ symbol: "ds-xom-new", label: "XOM · 30m" }];
+    resolveDataset.mockResolvedValueOnce("ds-xom-new");
+    mount();
+    await waitFor(() => expect(selectInstrument).toHaveBeenCalledWith("ds-xom-new"));
+    expect(resolveDataset).toHaveBeenCalledWith("ds-xom-old");
     expect(loadSymbol).not.toHaveBeenCalled();
   });
 

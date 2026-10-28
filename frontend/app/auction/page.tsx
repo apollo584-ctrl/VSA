@@ -24,7 +24,7 @@ export default function AuctionPage() {
     <AnalysisGate market={market}>
       <div className="flex flex-col gap-5 xl:h-full xl:gap-4">
         <AnalysisPageHeader title="Auction Structure" description="How price behaved relative to the prior complete session's value area, session by session." market={market} />
-        <ReplayControls allBars={market.allBars} />
+        {!market.dailyView && <ReplayControls allBars={market.allBars} />}
         <div className="flex flex-col gap-5 xl:min-h-0 xl:flex-1 xl:gap-4">
         <AnalysisBody analysis={a} error={market.error}>{() => (
           <>

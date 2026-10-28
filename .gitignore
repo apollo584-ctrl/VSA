@@ -14,6 +14,7 @@ __pycache__/
 *.tsbuildinfo
 backend/.tmp/
 backend/data/
+backend/logs/
 *.log
 
 # Operating system files

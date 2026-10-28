@@ -65,6 +65,11 @@ export const api = {
     return { datasetId };
   },
 
+  /** The newest dataset id of the same instrument; mock mode has one copy per instrument. */
+  async resolveDataset(id: string): Promise<string> {
+    return API_MODE === "mock" ? id : backendApi.resolveDataset(id);
+  },
+
   /** Scanner calls need the real backend: they fetch live market data. */
   async getAuthStatus() { return backendApi.getAuthStatus(); },
   async login(pin: string) { await backendApi.login(pin); },

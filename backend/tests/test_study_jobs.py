@@ -31,6 +31,11 @@ def fetch_for(failing=()):
     return fetch
 
 
+@pytest.fixture(autouse=True)
+def no_retry_pause(monkeypatch):
+    monkeypatch.setattr("app.study_jobs.RETRY_PAUSE_SECONDS", 0)
+
+
 @pytest.fixture
 def make(tmp_path):
     made = []
@@ -167,3 +172,49 @@ def test_finalize_failure_is_reported_in_status(make, monkeypatch):
     client.app.state.study_runner.wait(30)
     status = client.get("/api/v1/outcomes").json()["status"]
     assert status["running"] is False and "disk full" in status["error"]
+
+
+@pytest.mark.parametrize("permanent", [False, True])
+def test_intraday_retries_failed_symbols_once(make, permanent):
+    attempts = {item["symbol"]: 0 for item in UNIVERSE}
+    good = fetch_for()
+
+    def fetch(url):
+        symbol = re.search(r"/chart/([^?]+)", url).group(1)
+        attempts[symbol] += 1
+        if attempts[symbol] == 1 or (permanent and symbol == "BBB"):
+            raise ValueError("temporary failure")
+        return good(url)
+
+    client = make(fetch)
+    client.post("/api/v1/intraday/collect")
+    client.app.state.collector.wait(30)
+    body = client.get("/api/v1/intraday").json()
+    assert attempts == dict.fromkeys(attempts, 2)
+    assert body["status"]["done"] == body["status"]["total"] == 3
+    assert body["status"]["errors"] == int(permanent)
+    assert body["summary"]["symbols"] == 3 - int(permanent)
+    assert body["status"]["bars_added"] == body["summary"]["bars"] > 0
+
+
+def test_shutdown_interrupts_retry_pause(tmp_path, monkeypatch):
+    import threading
+    from app.study_jobs import IntradayCollector
+
+    monkeypatch.setattr("app.study_jobs.RETRY_PAUSE_SECONDS", 30)
+    failed = threading.Event()
+    attempts = []
+
+    def fetch(url):
+        attempts.append(url)
+        failed.set()
+        raise ValueError("boom")
+
+    collector = IntradayCollector(Store(tmp_path / "stop.sqlite3"), fetch=fetch, universe=UNIVERSE[:1])
+    collector.start()
+    try:
+        assert failed.wait(5)
+    finally:
+        collector.shutdown()
+    assert len(attempts) == 1
+    assert collector.current_status().running is False

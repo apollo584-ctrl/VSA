@@ -6,10 +6,10 @@ import { WorkspaceProvider, useWorkspace } from "@/hooks/workspace";
 import { ApiError } from "@/lib/api/errors";
 import type { Instrument } from "@/types";
 
-const h = vi.hoisted(() => ({ mode: "http", listInstruments: vi.fn(), loadSymbol: vi.fn() }));
+const h = vi.hoisted(() => ({ mode: "http", listInstruments: vi.fn(), loadSymbol: vi.fn(), collectIntraday: vi.fn(), resolveDataset: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
   get API_MODE() { return h.mode; },
-  api: { listInstruments: h.listInstruments, loadSymbol: h.loadSymbol },
+  api: { listInstruments: h.listInstruments, loadSymbol: h.loadSymbol, collectIntraday: h.collectIntraday, resolveDataset: h.resolveDataset },
 }));
 
 const instrument = (symbol: string, label: string): Instrument => ({
@@ -111,6 +111,48 @@ describe("Refresh button", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Refresh/ }));
     await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("ds-new"));
     expect(h.loadSymbol).toHaveBeenCalledWith("XOM");
+  });
+
+  it("refreshes every listed stock, selects the new copy on screen and starts the history update once", async () => {
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-xom" }));
+    h.listInstruments.mockResolvedValue([instrument("ds-xom", "XOM · 30m"), instrument("ds-spy", "SPY · 30m"), instrument("ds-aapl", "AAPL · 30m")]);
+    h.loadSymbol.mockImplementation(async (t: string) => ({ datasetId: `new-${t}` }));
+    h.collectIntraday.mockResolvedValue({ running: true });
+    setup();
+    fireEvent.click(await screen.findByRole("button", { name: /Refresh/ }));
+    await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("new-XOM"));
+    expect(h.loadSymbol.mock.calls.map((c) => c[0]).sort()).toEqual(["AAPL", "SPY", "XOM"]);
+    await waitFor(() => expect(h.collectIntraday).toHaveBeenCalledTimes(1));
+  });
+
+  it("keeps a stock picked while the refresh is still running", async () => {
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-xom" }));
+    h.listInstruments.mockResolvedValue([instrument("ds-xom", "XOM · 30m"), instrument("ds-spy", "SPY · 30m")]);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    h.loadSymbol.mockImplementation(async (t: string) => { await gate; return { datasetId: `new-${t}` }; });
+    h.collectIntraday.mockResolvedValue({ running: true });
+    const box = setup();
+    fireEvent.click(await screen.findByRole("button", { name: /Refresh/ }));
+    fireEvent.change(box, { target: { value: "SPY · 30m" } });
+    fireEvent.mouseDown(await screen.findByRole("option", { name: /SPY · 30m/ }));
+    await waitFor(() => expect(screen.getByTestId("selected").textContent).toBe("ds-spy"));
+    release();
+    await waitFor(() => expect(h.collectIntraday).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId("selected").textContent).toBe("ds-spy");
+  });
+
+  it("reports the stocks that could not refresh", async () => {
+    localStorage.setItem("mst.workspace.v1", JSON.stringify({ symbol: "ds-xom" }));
+    h.listInstruments.mockResolvedValue([instrument("ds-xom", "XOM · 30m"), instrument("ds-spy", "SPY · 30m"), instrument("ds-aapl", "AAPL · 30m")]);
+    h.loadSymbol.mockImplementation(async (t: string) => { if (t === "SPY") throw new ApiError("http_error", "provider down", 502); return { datasetId: `new-${t}` }; });
+    h.collectIntraday.mockResolvedValue({ running: true });
+    setup();
+    fireEvent.click(await screen.findByRole("button", { name: /Refresh/ }));
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("1 of 3 stocks could not refresh");
+    expect(alert.getAttribute("title")).toBe("SPY: provider down");
+    expect(h.collectIntraday).toHaveBeenCalledTimes(1);
   });
 
   it("is hidden in mock mode and without a symbol on screen", async () => {

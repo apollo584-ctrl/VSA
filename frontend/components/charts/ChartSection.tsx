@@ -18,6 +18,8 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
   const { state, set } = useWorkspace();
   const { analysis } = market;
   const ma = useMaBasis(market.instrument);
+  // Real backend on 1D: daily candles from Yahoo; the panels (and this note) use the 30-minute analysis, so no overlays or replay here.
+  const { dailyView } = market;
   const fitKey = `${state.symbol}|${state.timeframe}|${state.session}|${state.date ?? "latest"}`;
   // A page that names its own layers (VSA Analysis) keeps them locally: those on, everything else off, shared prefs untouched.
   const [localLayers, setLocalLayers] = useState<Layers | null>(() =>
@@ -31,13 +33,14 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
       <AnalysisStatusBanner analysis={analysis} error={market.error} />
       <div className={cn("flex min-h-[44rem] flex-1 flex-col sm:min-h-[34rem]", className)}>
         <MarketChart
-          bars={market.bars} fitKey={fitKey} timeframe={state.timeframe} analysis={analysis?.status === "ok" ? analysis : null}
+          bars={market.bars} fitKey={fitKey} timeframe={state.timeframe} analysis={!dailyView && analysis?.status === "ok" ? analysis : null}
           layers={layers} onLayersChange={localLayers ? setLocalLayers : undefined} profileKind={state.profileKind} selectedEventId={state.selectedEventId}
           onSelectEvent={(id) => set({ selectedEventId: id })} hideProfile={hideProfile} allBars={market.allBars} dailyBars={ma.dailyBars}
         />
       </div>
       {market.analysisIsStale && <p className="text-xs text-subtle" role="status">Updating analysis for the selected bar…</p>}
-      <ReplayControls allBars={market.allBars} />
+      {!dailyView && <ReplayControls allBars={market.allBars} />}
+      {dailyView && <p className="text-xs text-subtle" data-testid="daily-note">Daily candles from Yahoo Finance. The panels use 30-minute data.</p>}
       {/* Provenance is the least important line on the card, so it shares the footer row with data quality. */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <QualityIndicators quality={market.barsResponse?.quality} asOf={market.asOf} />
@@ -48,7 +51,7 @@ export function ChartSection({ market, className, hideProfile, layerKeys }: { ma
           </p>
         )}
       </div>
-      {analysis?.analysisTimeframe && analysis.analysisTimeframe !== state.timeframe && (
+      {!dailyView && analysis?.analysisTimeframe && analysis.analysisTimeframe !== state.timeframe && (
         <p className="text-xs text-subtle">Annotations were computed on {analysis.analysisTimeframe} bars and are mapped onto {state.timeframe} bars here.</p>
       )}
     </section>

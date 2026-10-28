@@ -229,7 +229,8 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             raise HTTPException(502, str(exc)) from exc
         except ValueError as exc:  # includes SymbolNotFound
             raise HTTPException(422, str(exc)) from exc
-        bars = [{"session": b.session, "close": b.close} for b in fetched[-400:]]
+        bars = [{"session": b.session, "open": b.open, "high": b.high, "low": b.low, "close": b.close, "volume": b.volume}
+                for b in fetched[-500:]]
         with daily_lock:
             daily_cache[symbol] = (time.monotonic() + 3600, bars)
         return {"symbol": symbol, "bars": bars}

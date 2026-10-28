@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "@/lib/api/client";
+import { API_MODE, api } from "@/lib/api/client";
 import { toApiError } from "@/lib/api/errors";
 import { endOfDate } from "@/lib/formatting";
 import { clipBars, knownEvents, knownResets, knownStates, knownTransitions } from "@/lib/replay";
@@ -139,7 +139,10 @@ function useDebounced<T>(value: T, ms: number): T {
  */
 export function useMarket() {
   const { state } = useWorkspace();
-  const { symbol, timeframe, session, date, replayTime } = state;
+  const { symbol, timeframe, session, date } = state;
+  // Real backend on 1D: display-only daily candles; the panels use the 30-minute analysis and replay does not apply.
+  const dailyView = timeframe === "1D" && API_MODE === "http";
+  const replayTime = dailyView ? null : state.replayTime;
   const instruments = useInstruments();
   const instrument = instruments.data?.find((i) => i.symbol === symbol) ?? null;
 
@@ -167,7 +170,8 @@ export function useMarket() {
     const a = analysisQuery.data;
     // Withhold the entire previous analysis, including during the debounce interval.
     if (!a || !cursorSettled || analysisQuery.isError || !barsQuery.data) return null;
-    if (a.timeframe !== timeframe || a.session !== session) return null;
+    // On 1D the panels keep using the 30-minute analysis (the daily candles are display-only).
+    if ((a.timeframe !== timeframe && timeframe !== "1D") || a.session !== session) return null;
     if ((a.datasetId ?? a.snapshot?.datasetId ?? a.symbol) !== symbol) return null;
     const cut = replayTime ?? windowEnd ?? null;
     if (cut !== null && a.asOf > cut) return null;
@@ -183,7 +187,7 @@ export function useMarket() {
   const analysisIsStale = !!symbol && !analysis && !analysisQuery.isError;
 
   return {
-    symbol, instrument, instruments,
+    symbol, instrument, instruments, dailyView,
     allBars: allBars ?? [], bars, asOf, replaying: replayTime !== null,
     barsResponse: barsQuery.data ?? null,
     analysis,

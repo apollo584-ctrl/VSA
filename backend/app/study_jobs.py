@@ -18,6 +18,7 @@ from app.scan import WORKERS, load_universe
 
 logger = logging.getLogger("market_intelligence")
 STALE_AFTER = timedelta(days=3)
+RETRY_PAUSE_SECONDS = 30
 
 
 class JobStatus(BaseModel):
@@ -81,13 +82,15 @@ class Job:
         pass
 
     def _run(self):
-        def work(item):
+        def work(item, retry=False):
             if self._stopping.is_set():
                 return
             try:
                 add = self.process(item)
             except Exception as exc:  # one bad symbol must never stop the run
                 logger.warning(json.dumps({"event": f"{type(self).__name__}_symbol_failed", "symbol": item["symbol"], "error": repr(exc)[:200]}))
+                if not retry:
+                    return item
                 add = {"errors": 1}
             with self.lock:
                 if not self._stopping.is_set():
@@ -95,7 +98,9 @@ class Job:
         error = None
         try:
             with ThreadPoolExecutor(WORKERS) as pool:
-                list(pool.map(work, self.universe))
+                failed = [item for item in pool.map(work, self.universe) if item is not None]
+                if failed and not self._stopping.wait(RETRY_PAUSE_SECONDS):
+                    list(pool.map(lambda item: work(item, retry=True), failed))
             if not self._stopping.is_set():
                 self.finish()
         except Exception as exc:

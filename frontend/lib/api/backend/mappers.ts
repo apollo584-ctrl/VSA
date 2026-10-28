@@ -61,7 +61,8 @@ export function mapDatasetToInstrument(d: RawDataset, bars: RawBar[]): Instrumen
     name: `${d.source.instrument} · ${tf} · ${d.source.session_mode} session · ${d.source.source_name}`,
     label: `${d.source.instrument} · ${tf}${d.source.is_demo ? " · demo" : ""}`,
     exchange: d.source.exchange,
-    timeframes: [tf],
+    // Daily candles come from the backend's daily-bars feed for the same ticker (see backend client getBars).
+    timeframes: [tf, "1D"],
     sessions: [d.source.session_mode === "regular" ? "RTH" : "ETH"],
     availableDates: [...new Set(bars.map((b) => b.session))].sort(),
     source: mapSource(d.source),

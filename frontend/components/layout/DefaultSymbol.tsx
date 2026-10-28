@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { API_MODE } from "@/lib/api/client";
+import { API_MODE, api } from "@/lib/api/client";
 import { useInstruments, useLoadSymbol } from "@/hooks/data";
 import { useWorkspace } from "@/hooks/workspace";
 
@@ -17,7 +17,14 @@ export function DefaultSymbol() {
   useEffect(() => {
     if (done.current || !ready || API_MODE !== "http" || instruments.data === undefined) return;
     done.current = true;
-    if (state.symbol) return;
+    if (state.symbol) {
+      // A remembered older copy of a stock moves to its newest dataset.
+      const remembered = state.symbol;
+      if (!instruments.data.some((i) => i.symbol === remembered)) {
+        api.resolveDataset(remembered).then((id) => { if (id !== remembered) selectInstrument(id); }).catch(() => {});
+      }
+      return;
+    }
     // An instrument's symbol is its dataset id; the ticker is the first part of its label ("SPY - 30m").
     const spy = instruments.data.find((i) => i.label?.startsWith(`${DEFAULT_SYMBOL} \u00b7 `) && !i.label.endsWith("demo"));
     if (spy) { selectInstrument(spy.symbol); return; }

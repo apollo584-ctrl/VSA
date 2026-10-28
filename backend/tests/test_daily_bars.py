@@ -8,7 +8,7 @@ from app.main import create_app
 from app.providers import ProviderUnavailable
 
 
-def payload(symbol="AAA", days=450):
+def payload(symbol="AAA", days=550):
     start = date(2024, 1, 1)
     stamps, closes = [], []
     d = start
@@ -26,7 +26,7 @@ def client(tmp_path, fetch):
     return TestClient(create_app(tmp_path / "t.sqlite3", market_fetch=fetch), client=("127.0.0.1", 1), base_url="http://localhost")
 
 
-def test_shape_and_last_400(tmp_path):
+def test_shape_and_last_500(tmp_path):
     calls = []
 
     def fetch(url):
@@ -37,10 +37,11 @@ def test_shape_and_last_400(tmp_path):
         r = c.get("/api/v1/daily-bars?symbol=aaa")
     assert r.status_code == 200
     body = r.json()
-    assert body["symbol"] == "AAA" and len(body["bars"]) == 400
-    assert set(body["bars"][0]) == {"session", "close"}
+    assert body["symbol"] == "AAA" and len(body["bars"]) == 500
+    assert set(body["bars"][0]) == {"session", "open", "high", "low", "close", "volume"}
+    assert body["bars"][-1]["volume"] == 1000 and body["bars"][-1]["high"] > body["bars"][-1]["low"]
     assert body["bars"] == sorted(body["bars"], key=lambda b: b["session"])
-    assert body["bars"][-1]["close"] == round(100 + 450 * 0.1, 10) or abs(body["bars"][-1]["close"] - 145.0) < 1e-9
+    assert body["bars"][-1]["close"] == round(100 + 550 * 0.1, 10) or abs(body["bars"][-1]["close"] - 155.0) < 1e-9
 
 
 def test_cache_hit_does_not_refetch(tmp_path):

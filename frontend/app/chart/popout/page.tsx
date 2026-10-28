@@ -38,7 +38,9 @@ export default function ChartPopoutPage() {
   // Per-mode local layers so the in-chart histogram checkbox works without writing workspace prefs.
   const [modeLayers, setModeLayers] = useState<Record<Mode, Layers>>({ averages: AVERAGES_LAYERS, vsa: VSA_PROFILE_LAYERS });
   const layers = modeLayers[mode];
-  const analysis = market.analysis?.status === "ok" ? market.analysis : null;
+  // Real backend on 1D: daily candles only; the 30-minute analysis is not drawn on them.
+  const { dailyView } = market;
+  const analysis = !dailyView && market.analysis?.status === "ok" ? market.analysis : null;
   const fitKey = `${state.symbol}|${state.timeframe}|${state.session}|${state.date ?? "latest"}`;
   const label = market.instrument?.label ?? state.symbol ?? "No symbol";
 

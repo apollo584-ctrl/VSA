@@ -77,6 +77,62 @@ describe("analysis HTTP requests", () => {
   });
 });
 
+describe("daily candles (timeframe 1D)", () => {
+  it("returns Yahoo daily bars as 1D candles at 09:30 ET, honouring to/limit, without 30m warnings", async () => {
+    const dataset = read("dataset_response.json");
+    const daily = { symbol: "X", bars: [
+      { session: "2026-01-15", open: 1, high: 3, low: 0.5, close: 2, volume: 10 },
+      { session: "2026-07-15", open: 2, high: 4, low: 1, close: 3, volume: 20 },
+      { session: "2026-07-16", open: 3, high: 5, low: 2, close: 4, volume: 30 },
+    ] };
+    const urls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      urls.push(url);
+      return new Response(JSON.stringify(url.includes("/daily-bars") ? daily : dataset), { status: 200 });
+    }));
+    const r = await backendApi.getBars({ symbol: dataset.id, timeframe: "1D" });
+    expect(r.timeframe).toBe("1D");
+    expect(r.bars.map((b) => b.t)).toEqual([
+      Date.UTC(2026, 0, 15, 14, 30) / 1000, // EST (UTC-5)
+      Date.UTC(2026, 6, 15, 13, 30) / 1000, // EDT (UTC-4)
+      Date.UTC(2026, 6, 16, 13, 30) / 1000,
+    ]);
+    expect(r.bars[1]).toMatchObject({ o: 2, h: 4, l: 1, c: 3, v: 20 });
+    expect(r.quality.issues).toEqual([]);
+    expect(r.quality.barCount).toBe(3);
+    expect(urls.some((u) => u.includes("/market/bars"))).toBe(false);
+    const cut = await backendApi.getBars({ symbol: dataset.id, timeframe: "1D", to: r.bars[1]!.t, limit: 1 });
+    expect(cut.bars.map((b) => b.c)).toEqual([3]);
+  });
+});
+
+describe("one copy per stock", () => {
+  const withId = (id: string, created_at: string) => ({ ...read("dataset_response.json"), id, created_at });
+  const setup = () => {
+    const sets: Record<string, unknown> = { a: withId("a", "2025-03-01T00:00:00Z"), b: withId("b", "2025-03-03T00:00:00Z"), c: withId("c", "2025-03-02T00:00:00Z"), z: withId("z", "2025-03-01T00:00:00Z") };
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      let value: unknown;
+      if (url.endsWith("/instruments")) value = { items: [{ instrument: "SPY", dataset_ids: ["a", "b", "c"] }, { instrument: "QQQ", dataset_ids: ["z"] }] };
+      else if (url.includes("/datasets/")) value = sets[decodeURIComponent(url.split("/datasets/")[1]!)];
+      else if (url.includes("/market/bars?")) value = read("bars_response.json");
+      else throw new Error(`Unexpected request: ${url}`);
+      return new Response(JSON.stringify(value), { status: 200 });
+    }));
+  };
+
+  it("lists only the newest dataset of each instrument", async () => {
+    setup();
+    expect((await backendApi.listInstruments()).map((i) => i.symbol)).toEqual(["b", "z"]);
+  });
+
+  it("resolves any older dataset id to the newest one, and leaves unknown ids alone", async () => {
+    setup();
+    expect(await backendApi.resolveDataset("a")).toBe("b");
+    expect(await backendApi.resolveDataset("c")).toBe("b");
+    expect(await backendApi.resolveDataset("nope")).toBe("nope");
+  });
+});
+
 describe("loading a typed symbol", () => {
   it("posts only the symbol and caches the returned dataset", async () => {
     const dataset = read("dataset_response.json");

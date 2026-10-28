@@ -28,7 +28,7 @@ describe.skipIf(!live)("live backend integration", () => {
     const instruments = await backendApi.listInstruments();
     const inst = instruments.find((i) => i.symbol === id)!;
     expect(inst.source.kind).toBe("fixture");
-    expect(inst.timeframes).toEqual(["5m"]);
+    expect(inst.timeframes).toEqual(["5m", "1D"]);
     const bars = await backendApi.getBars({ symbol: id });
     expect(barsResponseSchema.safeParse(bars).success).toBe(true);
     expect(bars.bars).toHaveLength(468);

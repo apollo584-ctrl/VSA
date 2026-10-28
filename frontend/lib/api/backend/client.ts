@@ -1,8 +1,8 @@
 /** HTTP client for the Codex backend (docs/API_CONTRACT.md). Base URL includes the /api/v1 prefix. */
 import { z } from "zod";
-import type { Analysis, BarsResponse, Instrument, KnowledgeConcept, UploadResult } from "@/types";
+import type { Analysis, Bar, BarsResponse, Instrument, KnowledgeConcept, UploadResult } from "@/types";
 import { ApiError } from "../errors";
-import { daySummarySchema, journalEntrySchema, journalListSchema, setupAResponseSchema } from "../schemas";
+import { dailyBarsSchema, daySummarySchema, journalEntrySchema, journalListSchema, setupAResponseSchema } from "../schemas";
 import type { JournalInput } from "@/lib/planTypes";
 import { epoch, barsResponse, mapAnalysis, mapConcept, mapDatasetToInstrument, mapQuality, mapSource } from "./mappers";
 import {
@@ -75,6 +75,15 @@ const getDataset = (id: string) => {
   return p;
 };
 
+/** Latest created_at wins; a tie goes to the later id in the list. */
+async function newestDatasetId(ids: string[]): Promise<string> {
+  if (ids.length <= 1) return ids[0]!;
+  const ds = await Promise.all(ids.map(getDataset));
+  let best = 0;
+  ds.forEach((d, n) => { if (Date.parse(d.created_at) >= Date.parse(ds[best]!.created_at)) best = n; });
+  return ids[best]!;
+}
+
 const PAGE = 10000;
 async function fetchAllBars(id: string): Promise<RawBar[]> {
   const out: RawBar[] = [];
@@ -107,6 +116,18 @@ async function snapshotToUi(raw: RawAnalysis): Promise<Analysis> {
   return mapAnalysis(raw, { bars });
 }
 
+const etParts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+/** Unix seconds of 09:30 America/New_York on the given YYYY-MM-DD session (handles daylight saving). */
+export function openEpochET(session: string): number {
+  const [y, m, day] = session.split("-").map(Number) as [number, number, number];
+  for (const hourUtc of [14, 13]) {
+    const ms = Date.UTC(y, m - 1, day, hourUtc, 30);
+    const p = Object.fromEntries(etParts.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+    if (p.hour === "09" && p.minute === "30") return ms / 1000;
+  }
+  return Date.UTC(y, m - 1, day, 14, 30) / 1000;
+}
+
 export const backendApi = {
   async health() {
     return request("/health", z.object({ status: z.string(), engine_version: z.string(), knowledge_version: z.string(), live_data: z.boolean() }));
@@ -114,17 +135,46 @@ export const backendApi = {
 
   async listInstruments(q?: string): Promise<Instrument[]> {
     const { items } = await request("/instruments", rawInstrumentsSchema);
-    const ids = items.flatMap((i) => i.dataset_ids);
+    // One copy per stock: only the newest dataset; older ones stay stored and open by id.
+    const ids = await Promise.all(items.map((i) => newestDatasetId(i.dataset_ids)));
     const all = await Promise.all(ids.map(async (id) => mapDatasetToInstrument(await getDataset(id), await getAllBars(id))));
     const needle = q?.trim().toLowerCase();
     return needle ? all.filter((i) => `${i.label} ${i.name}`.toLowerCase().includes(needle)) : all;
   },
 
-  async getBars(p: { symbol: string; to?: number; limit?: number }): Promise<BarsResponse> {
+  /** The newest dataset of the same instrument as `id` (id unchanged when the instrument is unknown). */
+  async resolveDataset(id: string): Promise<string> {
+    const { items } = await request("/instruments", rawInstrumentsSchema);
+    const item = items.find((i) => i.dataset_ids.includes(id));
+    return item ? newestDatasetId(item.dataset_ids) : id;
+  },
+
+  async getBars(p: { symbol: string; timeframe?: string; to?: number; limit?: number }): Promise<BarsResponse> {
+    if (p.timeframe === "1D") return backendApi.getDailyCandles(p);
     const [d, bars] = await Promise.all([getDataset(p.symbol), getAllBars(p.symbol)]);
     let sel = p.to === undefined ? bars : bars.filter((b) => epoch(b.timestamp) <= p.to!);
     if (p.limit) sel = sel.slice(-p.limit);
     return barsResponse(d, sel);
+  },
+
+  /** Daily candles (Yahoo, via /daily-bars) for the dataset's instrument. Bar time = 09:30 ET of the session, as in mock mode. */
+  async getDailyCandles(p: { symbol: string; to?: number; limit?: number }): Promise<BarsResponse> {
+    const d = await getDataset(p.symbol);
+    const daily = await this.getDailyBars(d.source.instrument);
+    let bars: Bar[] = [];
+    for (const b of daily.bars) {
+      if (b.open === undefined || b.high === undefined || b.low === undefined) continue;
+      bars.push({ t: openEpochET(b.session), o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume ?? 0 });
+    }
+    if (p.to !== undefined) bars = bars.filter((b) => b.t <= p.to!);
+    if (p.limit) bars = bars.slice(-p.limit);
+    return {
+      symbol: d.id, timeframe: "1D", session: "RTH", source: mapSource(d.source), generatedAt: d.created_at, bars,
+      quality: {
+        issues: [], barCount: bars.length, firstBarAt: bars[0]?.t ?? null, lastBarAt: bars[bars.length - 1]?.t ?? null,
+        stale: false, hasVolume: bars.some((b) => b.v > 0), profileEstimated: false,
+      },
+    };
   },
 
   async getAnalysis(p: { symbol: string; asOf?: number; persist?: boolean }): Promise<Analysis> {
@@ -185,7 +235,7 @@ export const backendApi = {
   getOutcomes() { return request("/outcomes", rawOutcomesSchema); },
   runOutcomes() { return request("/outcomes/run", rawJobStatusSchema, { method: "POST" }); },
   async getDailyBars(symbol: string) {
-    return request(`/daily-bars?symbol=${encodeURIComponent(symbol)}`, z.object({ symbol: z.string(), bars: z.array(z.object({ session: z.string(), close: z.number() })) }));
+    return request(`/daily-bars?symbol=${encodeURIComponent(symbol)}`, dailyBarsSchema);
   },
 
   getIntraday() { return request("/intraday", rawIntradaySchema); },

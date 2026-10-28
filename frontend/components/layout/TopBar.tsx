@@ -2,8 +2,9 @@
 
 import { Lock, Moon, Power, RefreshCw, Search, Sun, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge, Button, Segmented } from "@/components/ui/primitives";
-import { API_MODE } from "@/lib/api/client";
+import { API_MODE, api } from "@/lib/api/client";
 import { backendApi } from "@/lib/api/backend/client";
 import { ApiError } from "@/lib/api/errors";
 import { useAuthStatus, useInstruments, useLoadSymbol, useLogout } from "@/hooks/data";
@@ -143,16 +144,52 @@ function QuitButton() {
   );
 }
 
-/** Re-fetches the latest bars for the symbol on screen (the chart works from a saved copy taken when it was loaded). */
-function RefreshButton({ label, onLoaded }: { label: string; onLoaded: (datasetId: string) => void }) {
-  const load = useLoadSymbol();
-  const ticker = label.split(" · ")[0]!;
-  const failed = load.isError ? (load.error instanceof Error ? load.error.message : "Could not refresh.") : null;
+const tickerOf = (label: string) => label.split(" · ")[0]!;
+
+/** Re-fetches every listed stock (3 at a time), selects the new copy of the one on screen, then starts the 503-stock history update. */
+function RefreshButton({ instruments, current, onLoaded }: { instruments: Instrument[]; current: string | null; onLoaded: (datasetId: string) => void }) {
+  const qc = useQueryClient();
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [failures, setFailures] = useState<{ ticker: string; message: string }[]>([]);
+  const [total, setTotal] = useState(0);
+  const running = progress !== null;
+  // The selection at the end of the run decides: a stock picked while refreshing is not replaced.
+  const currentRef = useRef(current);
+  currentRef.current = current;
+
+  async function refreshAll() {
+    const tickers = [...new Set(instruments.map((i) => tickerOf(i.label ?? i.symbol)))];
+    const currentTicker = tickerOf(instruments.find((i) => i.symbol === current)?.label ?? current ?? "");
+    const ids = new Map<string, string>();
+    const failed: { ticker: string; message: string }[] = [];
+    let next = 0, done = 0;
+    setFailures([]); setTotal(tickers.length); setProgress({ done: 0, total: tickers.length });
+    const worker = async () => {
+      while (next < tickers.length) {
+        const ticker = tickers[next++]!;
+        try { ids.set(ticker, (await api.loadSymbol(ticker)).datasetId); }
+        catch (e) { failed.push({ ticker, message: e instanceof Error ? e.message : "Could not refresh." }); }
+        setProgress({ done: ++done, total: tickers.length });
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(3, tickers.length) }, worker));
+    await qc.invalidateQueries({ queryKey: ["instruments"] });
+    const newId = ids.get(currentTicker);
+    if (newId && currentRef.current === current) onLoaded(newId);
+    try { await api.collectIntraday(); } catch { /* already running or unavailable: the list refresh still counts */ }
+    void qc.invalidateQueries({ queryKey: ["intraday"] });
+    setFailures(failed); setProgress(null);
+  }
+
   return (
     <>
-      {failed && <span role="alert" className="max-w-48 truncate text-xs text-danger" title={failed}>{failed}</span>}
-      <Button variant="ghost" onClick={() => { load.reset(); load.mutate(ticker, { onSuccess: ({ datasetId }) => onLoaded(datasetId) }); }} disabled={load.isPending} title={`Fetch the latest ${ticker} bars from Yahoo Finance (this symbol only)`}>
-        <RefreshCw size={16} aria-hidden className={cn(load.isPending && "animate-spin")} /> <span className="max-sm:sr-only">{load.isPending ? "Refreshing…" : "Refresh"}</span>
+      {failures.length > 0 && !running && (
+        <span role="alert" className="max-w-48 truncate text-xs text-danger" title={failures.map((f) => `${f.ticker}: ${f.message}`).join("\n")}>
+          {failures.length} of {total} stocks could not refresh
+        </span>
+      )}
+      <Button variant="ghost" onClick={refreshAll} disabled={running} title="Fetch the latest bars for every stock in your list and update the 503-stock history in the background">
+        <RefreshCw size={16} aria-hidden className={cn(running && "animate-spin")} /> <span className="max-sm:sr-only">{running ? `Refreshing ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…` : "Refresh"}</span>
       </Button>
     </>
   );
@@ -218,7 +255,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" aria-label={state.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} onClick={() => set({ theme: state.theme === "dark" ? "light" : "dark" })}>
           {state.theme === "dark" ? <Sun size={17} aria-hidden /> : <Moon size={17} aria-hidden />}
         </Button>
-        {API_MODE === "http" && inst && <RefreshButton key={inst.symbol} label={inst.label ?? inst.symbol} onLoaded={selectInstrument} />}
+        {API_MODE === "http" && visible.length > 0 && <RefreshButton instruments={visible} current={state.symbol} onLoaded={select} />}
         <LockButton />
         <QuitButton />
       </div>
