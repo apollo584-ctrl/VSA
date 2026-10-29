@@ -2,6 +2,8 @@
   "instrument": "DEMO",
   "timeframe_minutes": 5,
   "exchange": "XNYS",
+  "market": "equity_xnys",
+  "contract": null,
   "session_mode": "regular",
   "timestamp_convention": "bar_start",
   "timezone": "America/New_York",
