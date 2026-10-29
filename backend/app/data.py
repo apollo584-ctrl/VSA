@@ -48,7 +48,57 @@ def _grain_open_days(first: date, last: date) -> list[date]:
     return days
 
 
+def _intraday_quality(bars: list[Bar], source: Source, p: Parameters) -> Quality:
+    step = source.timeframe_minutes
+    sessions_seen: dict[str, set[int]] = {}
+    for b in bars:
+        slot = markets.grain_slot(b.timestamp, step)
+        sessions_seen.setdefault(b.session, set()).add(slot.session_index)
+    expected = [d.isoformat() for d in _grain_open_days(date.fromisoformat(bars[0].session),
+                                                        date.fromisoformat(bars[-1].session))]
+    absent = [s for s in expected if s not in sessions_seen]
+    incomplete = [s for s in sorted(sessions_seen) if sessions_seen[s] != {0, 1}]
+    ratios = [max(a.close / b.open, b.open / a.close) for a, b in zip(bars, bars[1:])]
+    suspected = any(ratio >= p.split_ratio for ratio in ratios)
+    warnings = []
+    if absent:
+        warnings.append("Missing grain trading days; no bars were filled.")
+    if incomplete:
+        warnings.append("Some trade dates lack the evening or the day session; no bars were filled.")
+    if suspected:
+        warnings.append("Large adjacent price discontinuity: possible gap or contract roll. Cross-bar analysis is disabled.")
+    if any(b.volume == 0 for b in bars):
+        warnings.append("Zero-volume placeholder bars exist; they carry no trading information.")
+    warnings.append(grade.YAHOO_LIMITATION)
+    warnings.append(grade.SPECS_LIMITATION)
+    warnings.append("Grain closures use the XNYS holiday list as a stand-in; CME grain holiday schedule not verified.")
+    warnings.append("Quiet periods with no trades are absent bars, not errors")
+    return Quality(warnings=warnings, missing_bars=0, absent_sessions=absent,
+                   incomplete_sessions=incomplete, split_suspected=suspected)
+
+
+def _slots_per_day(trade_date: date, step: int) -> int:
+    total = 0
+    for start, end in markets.session_windows(trade_date, markets.get_market("cbot_grains")):
+        total += -(-int((end - start).total_seconds() // 60) // step)
+    return total
+
+
+def _thin_fraction(bars: list[Bar], quality_: Quality, step: int) -> float:
+    """Share of expected in-session slots with no bar between the first and last complete trade dates."""
+    seen = sorted({b.session for b in bars})
+    if not seen:
+        return 0.0
+    first, last = date.fromisoformat(seen[0]), date.fromisoformat(seen[-1])
+    days = {d.isoformat() for d in _grain_open_days(first, last)}
+    expected = sum(_slots_per_day(date.fromisoformat(d), step) for d in days)
+    have = sum(1 for b in bars if b.session in days)
+    return 0.0 if expected <= 0 else max(0, expected - have) / expected
+
+
 def _futures_quality(bars: list[Bar], source: Source, p: Parameters) -> Quality:
+    if source.timeframe_minutes != 1440:
+        return _intraday_quality(bars, source, p)
     present = {b.session for b in bars}
     expected = [d.isoformat() for d in _grain_open_days(date.fromisoformat(bars[0].session),
                                                         date.fromisoformat(bars[-1].session))]
@@ -69,9 +119,92 @@ def _futures_quality(bars: list[Bar], source: Source, p: Parameters) -> Quality:
                    incomplete_sessions=[], split_suspected=suspected)
 
 
+INTRADAY_VOLUME_LIMITATION = ("Intraday volume is partial (about 90% of the daily total) and intraday "
+                              "closes are last trades, not settlements")
+
+
+def _ingest_grain_intraday(raw: bytes, rows: list[dict], source: Source) -> tuple[Dataset, list[Bar]]:
+    step = source.timeframe_minutes
+    if step not in markets.GRAIN_STEP_MINUTES:
+        raise ValueError("Intraday grain data must use 5, 15 or 30 minute bars")
+    if source.timestamp_convention != "bar_start":
+        raise ValueError("Intraday grain data must use bar_start timestamps")
+    if not source.contract:
+        raise ValueError("Grain data requires a contract")
+    expiry = markets.contract_last_trade_date(source.contract)
+    market = markets.get_market("cbot_grains")
+    chicago = ZoneInfo("America/Chicago")
+    stamps = []
+    awareness = set()
+    for index, row in enumerate(rows):
+        label = f"Row {index + 2}"
+        try:
+            stamp = pd.Timestamp(row["timestamp"].strip())
+            if pd.isna(stamp):
+                raise ValueError("missing")
+            awareness.add(stamp.tzinfo is not None)
+            if stamp.tzinfo is None:
+                stamp = stamp.tz_localize(chicago, ambiguous="raise", nonexistent="raise")
+            if stamp.nanosecond:
+                raise ValueError("sub-microsecond precision")
+            stamps.append(stamp.tz_convert("UTC"))
+        except Exception as exc:
+            raise ValueError(f"{label}: invalid, ambiguous, or nonexistent timestamp") from exc
+    if len(awareness) != 1:
+        raise ValueError("Do not mix naive and offset-aware timestamp conventions")
+    if any(b <= a for a, b in zip(stamps, stamps[1:])):
+        raise ValueError("Timestamps must be strictly increasing; duplicates are rejected")
+    names = ["open", "high", "low", "close", "volume"]
+    bars: list[Bar] = []
+    for index, (row, stamp) in enumerate(zip(rows, stamps)):
+        label = f"Row {index + 2}"
+        start = stamp.to_pydatetime()
+        try:
+            slot = markets.grain_slot(start, step)
+        except ValueError as exc:
+            raise ValueError(f"{label}: {exc}") from exc
+        if slot.trade_date > expiry:
+            raise ValueError(f"{label}: bar after contract expiry (possible contract roll)")
+        try:
+            values = [float(row[name]) for name in names]
+        except ValueError as exc:
+            raise ValueError(f"{label}: OHLCV must be numeric") from exc
+        o, h, low, c, v = values
+        if not np.isfinite(values).all() or min(o, h, low, c) <= 0 or v < 0:
+            raise ValueError(f"{label}: finite positive OHLC and nonnegative volume required")
+        if max(o, h, low, c) > 1e9 or v > 1e15:
+            raise ValueError(f"{label}: numerical safety bounds are OHLC <= 1e9 and volume <= 1e15")
+        if low > min(o, c) or h < max(o, c) or low > h:
+            raise ValueError(f"{label}: inconsistent OHLC")
+        bars.append(Bar(timestamp=start, available_at=start + timedelta(minutes=step),
+                        session=slot.trade_date.isoformat(), open=o, high=h, low=low, close=c, volume=v))
+    if (bars[-1].timestamp - bars[0].timestamp).days > 366 * 5:
+        raise ValueError("A dataset may span at most five years")
+    root = markets.contract_parts(source.contract)[0]
+    tick = market.tick_size_for(root)
+    placeholders = sum(1 for b in bars if b.volume == 0 and b.open == b.high == b.low == b.close)
+    moving_zero = sum(1 for b in bars if b.volume == 0 and not (b.open == b.high == b.low == b.close))
+    off_grid = 0
+    if tick is not None:
+        off_grid = bins.off_grid_count([x for b in bars for x in (b.open, b.high, b.low, b.close)], tick)
+    qual = quality(bars, source)
+    extra = [INTRADAY_VOLUME_LIMITATION]
+    if moving_zero:
+        extra.append(f"{moving_zero} zero-volume bar(s) where the price moved")
+    thin = _thin_fraction(bars, qual, step)
+    if thin > 0.30:
+        extra.append(f"Thin trading: {thin:.0%} of expected in-session bars are absent")
+    result = grade.grade_futures(step, True, len(bars), placeholders, off_grid, market.spec_status, extra)
+    dataset = Dataset(id=str(uuid4()), content_sha256=hashlib.sha256(raw).hexdigest(), source=source,
+                      created_at=datetime.now(UTC), row_count=len(bars), first_timestamp=bars[0].timestamp,
+                      last_available_at=bars[-1].available_at, quality=qual,
+                      data_grade=result.grade, grade_basis=result.basis, limitations=list(result.limitations))
+    return dataset, bars
+
+
 def _ingest_futures(raw: bytes, rows: list[dict], source: Source) -> tuple[Dataset, list[Bar]]:
     if source.timeframe_minutes != 1440:
-        raise ValueError("Intraday grain data is not supported yet")
+        return _ingest_grain_intraday(raw, rows, source)
     expiry = markets.contract_last_trade_date(source.contract)
     market = markets.get_market("cbot_grains")
     names = ["open", "high", "low", "close", "volume"]

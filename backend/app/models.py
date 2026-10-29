@@ -110,6 +110,21 @@ class SymbolLoadRequest(Model):
         return value
 
 
+class ContractLoadRequest(Model):
+    contract: str
+    timeframe_minutes: Literal[5, 15, 30] = 30
+    period: Literal["5d", "1mo", "60d"] = "60d"
+
+    @field_validator("contract")
+    @classmethod
+    def valid_contract(cls, value):
+        from app.markets import contract_parts
+
+        value = value.strip().upper()
+        contract_parts(value)  # ValueError -> 422
+        return value
+
+
 class Bar(Model):
     timestamp: datetime
     available_at: datetime

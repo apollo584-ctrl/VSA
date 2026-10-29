@@ -204,3 +204,58 @@ def possibly_incomplete(trade_date: date, market: MarketSpec) -> bool:
     # The evening session before a trade date that follows a weekday holiday may not exist.
     prev = trade_date - timedelta(days=1)
     return trade_date in POSSIBLY_INCOMPLETE_DATES or (prev.weekday() < 5 and is_holiday(prev))
+
+
+GRAIN_STEP_MINUTES = (5, 15, 30)
+
+
+@dataclass(frozen=True)
+class GrainSlot:
+    trade_date: date
+    session_index: int  # 0 evening, 1 day
+    slot_index: int
+    expected_end_utc: datetime
+    is_short: bool
+    is_last_slot: bool
+
+
+def grain_slot(stamp_utc: datetime, step_minutes: int) -> GrainSlot:
+    """Place a grain bar start in the Chicago session grid; ValueError when it is not a valid start."""
+    if step_minutes not in GRAIN_STEP_MINUTES:
+        raise ValueError(f"step_minutes must be one of {GRAIN_STEP_MINUTES}, got {step_minutes!r}")
+    ts = _aware_utc(stamp_utc)
+    market = get_market("cbot_grains")
+    local = ts.astimezone(_CHI)
+    if local.weekday() == 4 and local.time() >= time(13, 20):
+        raise ValueError("start is after the Friday close (closed until Sunday 19:00 CT)")
+    trade_date = trade_date_for(ts, market)
+    if trade_date is None:
+        raise ValueError("start is on a closed day (weekend or holiday)")
+    wins = session_windows(trade_date, market)
+    for idx, (start, end) in enumerate(wins):
+        if start <= ts < end:
+            break
+    else:
+        raise ValueError("start is outside the session windows (break 07:45-08:30 or after 13:20 CT)")
+    step = timedelta(minutes=step_minutes)
+    offset = ts - start
+    if offset % step != timedelta(0):
+        raise ValueError(f"start is not aligned to the {step_minutes}-minute grid of its session")
+    raw_end = ts + step
+    return GrainSlot(
+        trade_date=trade_date,
+        session_index=idx,
+        slot_index=offset // step,
+        expected_end_utc=min(raw_end, end),
+        is_short=raw_end > end,
+        is_last_slot=raw_end >= end,
+    )
+
+
+def tpo_period(stamp_utc: datetime, minutes: int = 30) -> int:
+    """30-minute TPO period number counted from 19:00 CT the evening before the trade date."""
+    if minutes != 30:
+        raise ValueError("TPO periods are 30 minutes")
+    slot = grain_slot(stamp_utc, 30)
+    anchor = session_windows(slot.trade_date, get_market("cbot_grains"))[0][0]
+    return int((_aware_utc(stamp_utc) - anchor) // timedelta(minutes=30))

@@ -8,6 +8,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -17,11 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app import alerts, auth, grade, journal, markets, outcomes, setup_a
+from app import alerts, auth, grade, journal, markets, outcomes, providers, setup_a
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
@@ -113,14 +114,24 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
         except KeyError as exc:
             raise HTTPException(404, "Dataset not found") from exc
 
-    def require_profile_allowed(dataset):
-        """Refuse profile/analysis work on a grain dataset whose grade does not allow it."""
+    def require_profile_allowed(dataset, purpose="profile"):
+        """Refuse profile/analysis work on a grain dataset whose STORED grade does not allow it."""
         if dataset.source.market != "cbot_grains":
             return
-        result = grade.grade_futures(dataset.source.timeframe_minutes, True, dataset.row_count, 0, 0,
-                                     markets.get_market("cbot_grains").spec_status)
-        if not result.intraday_profile_allowed:
-            raise HTTPException(422, {"reason": result.reason, "data_grade": dataset.data_grade})
+        timeframe = dataset.source.timeframe_minutes
+        if timeframe == 1440:
+            raise HTTPException(422, {"reason": "Daily bars cannot support an intraday profile",
+                                      "data_grade": dataset.data_grade})
+        if purpose == "analyze":
+            raise HTTPException(422, {"reason": "Analysis is not supported yet for intraday grain data",
+                                      "data_grade": dataset.data_grade})
+        if timeframe in (5, 15, 30) and dataset.data_grade == "B":
+            return
+        if dataset.data_grade == "C":
+            reason = "Placeholder bars or off-grid prices lower the grade"
+        else:
+            reason = "No usable bars: every bar is a placeholder or there are none"
+        raise HTTPException(422, {"reason": reason, "data_grade": dataset.data_grade})
 
     def cutoff(bars, as_of):
         if as_of is not None and (as_of.tzinfo is None or as_of.utcoffset() is None):
@@ -219,6 +230,22 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             response.status_code = 200
         return dataset
 
+    @app.post("/api/v1/datasets/from-contract", response_model=Dataset, status_code=201,
+              responses={200: {"model": Dataset, "description": "Identical data already stored; existing dataset returned"}})
+    async def load_contract(request: ContractLoadRequest, response: Response):
+        provider = providers.YahooFuturesIntradayProvider(request.contract, request.timeframe_minutes, request.period, fetch=fetch)
+        try:
+            source, raw = await run_in_threadpool(provider.read)
+            dataset, bars = await run_in_threadpool(ingest, raw, source)
+        except ProviderUnavailable as exc:
+            raise HTTPException(502, str(exc)) from exc
+        except ValueError as exc:  # includes SymbolNotFound
+            raise HTTPException(422, str(exc)) from exc
+        dataset, created = await run_in_threadpool(store.save_or_find_dataset, dataset, bars, raw)
+        if not created:
+            response.status_code = 200
+        return dataset
+
     daily_cache: dict[str, tuple[float, list[dict]]] = {}
     daily_lock = threading.Lock()
     app.state.daily_bars_cache = daily_cache
@@ -255,13 +282,25 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
         return cutoff(bars, as_of)[offset:offset + limit]
 
     @app.get("/api/v1/profiles", response_model=list[Profile])
-    def get_profiles(dataset_id: str, as_of: datetime | None = None, bin_size: float = Query(0.25, ge=0.000001, le=10000),
+    def get_profiles(dataset_id: str, as_of: datetime | None = None, bin_size: float | None = Query(None, ge=0.000001, le=10000),
                      value_area_fraction: float = Query(0.7, gt=0, le=1), composite: bool = False):
         dataset, bars = dataset_or_404(dataset_id)
         require_profile_allowed(dataset)
         bars = cutoff(bars, as_of)
-        p = Parameters(bin_size=bin_size, value_area_fraction=value_area_fraction,
-                       tpo_minutes=max(30, dataset.source.timeframe_minutes))
+        if dataset.source.market == "cbot_grains":
+            tick = markets.get_market("cbot_grains").tick_size_for(markets.contract_parts(dataset.source.contract)[0])
+            if tick is None:
+                raise HTTPException(422, "Contract tick size is unknown")
+            if bin_size is None:
+                bin_size = float(tick)
+            elif Decimal(str(bin_size)) % tick != 0:
+                raise HTTPException(422, f"bin_size must be a whole multiple of the contract tick ({tick})")
+            tpo_minutes = 30
+        else:
+            if bin_size is None:
+                bin_size = 0.25
+            tpo_minutes = max(30, dataset.source.timeframe_minutes)
+        p = Parameters(bin_size=bin_size, value_area_fraction=value_area_fraction, tpo_minutes=tpo_minutes)
         try:
             if quality(bars, dataset.source, p).split_suspected:
                 raise ValueError("Possible split or large discontinuity: profile calculation blocked")
@@ -405,7 +444,7 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
               responses={200: {"model": Analysis, "description": "Non-persisted preview (persist=false)"}})
     def analyze(request: AnalyzeRequest, response: Response):
         dataset, bars = dataset_or_404(request.dataset_id)
-        require_profile_allowed(dataset)
+        require_profile_allowed(dataset, "analyze")
         try:
             result = interpret(dataset, bars, request)
         except ValueError as exc:

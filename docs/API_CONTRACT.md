@@ -10,6 +10,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/instruments` | — | `{items: [{instrument, dataset_ids}]}` for stored datasets (uploaded or loaded by symbol) |
 | POST | `/datasets/upload` | multipart file and metadata JSON string | 201 Dataset |
 | POST | `/datasets/from-symbol` | `{symbol, timeframe_minutes=30 (5, 15 or 30), period="1mo" ("5d", "1mo" or "60d")}` | 201 Dataset; 200 existing Dataset when identical data is already stored |
+| POST | `/datasets/from-contract` | `{contract, timeframe_minutes=30 (5, 15 or 30), period="60d" ("5d", "1mo" or "60d")}`; `contract` is trimmed, upper-cased and must be a listed CBOT grain contract such as `ZCZ26`, else 422 | 201 Dataset; 200 existing Dataset when identical data is already stored; 422 Not Found, no completed bars left or ingest rejection; 502 provider unreachable or unreadable. See "Loading a contract" below |
 | GET | `/daily-bars` | `symbol` (trimmed, upper-cased, `^[A-Z][A-Z0-9.\-]{0,15}$`, else 422) | `{symbol, bars: [{session: "YYYY-MM-DD", open, high, low, close, volume}]}`: last 500 completed daily bars (via the outcome-study daily fetch), cached in memory for 1 hour per symbol; 422 unknown symbol, 502 provider unreachable or unreadable; same auth as every other endpoint |
 | GET | `/setup-a` | `symbols` (1-8 comma-separated, else 422) | Setup A checker, see "Today's Plan" below |
 | GET / POST | `/journal` | `date=YYYY-MM-DD` optional / JournalEntryIn JSON | newest-first entries / 201 entry |
@@ -17,7 +18,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/journal/export.csv`, `/journal/day-summary?date=` | — | CSV of every entry; `{date, trades, losses, realized_pnl}` |
 | GET | `/datasets/{id}` | dataset UUID | Dataset |
 | GET | `/market/bars` | dataset_id; optional as_of, offset=0, limit=1000 (max 10000) | Bar array |
-| GET | `/profiles` | dataset_id; optional as_of, bin_size=.25, value_area_fraction=.7, composite=false | Profile array |
+| GET | `/profiles` | dataset_id; optional as_of, bin_size (equity default .25; grain default = contract tick), value_area_fraction=.7, composite=false | Profile array |
 | GET | `/knowledge/concepts` | optional category | Concept array |
 | GET | `/knowledge/concepts/{id}` | concept ID | Concept |
 | GET | `/knowledge/concepts/{id}/related` | concept ID | related Concept array |
@@ -25,6 +26,14 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/analyses/{id}` | analysis UUID | persisted Analysis |
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
+
+
+### CBOT grain gate (profiles and analyze)
+- `/profiles` for a grain dataset uses the stored `data_grade`/`grade_basis`, not a recompute. Daily (1440) bars: 422 `{"reason": "Daily bars cannot support an intraday profile", "data_grade"}`. Intraday (5/15/30) with stored grade B: allowed. Stored grade C or none: 422 `{reason, data_grade}` naming placeholder bars, off-grid prices or no usable bars. Equity datasets are unchanged.
+- `POST /analyze` on any intraday grain dataset returns 422 `{"reason": "Analysis is not supported yet for intraday grain data", "data_grade"}`. Daily grain is still refused by the gate.
+- `bin_size` is optional. Equity default 0.25. Grain default is the contract root tick; a given grain `bin_size` must be a whole multiple of the tick, else 422 `bin_size must be a whole multiple of the contract tick (<tick>)`.
+- Grain TPO periods are fixed at 30 minutes whatever the bar size. Equities keep max(30, timeframe).
+- Initial balance is "not computed" for grain profiles.
 
 ## Authentication
 
@@ -41,6 +50,10 @@ Clients on 127.0.0.1 / ::1 that address the server as `localhost`, `127.0.0.1` o
 Provider responses are validated before CSV conversion: the returned symbol must match the request (case-insensitive; no implicit aliases), and timestamps and all five OHLCV arrays must have equal lengths. Malformed response structures, invalid timestamps and identity/array mismatches return 502 without storing a dataset. Explicit provider `Not Found` errors and valid empty series retain their 422 rejection behavior.
 
 `POST /datasets/from-symbol` fetches recent completed bars for a ticker from Yahoo Finance's unofficial chart endpoint, converts them to the canonical CSV and runs them through the same validation and storage as an upload; the result is an ordinary immutable Dataset (`source_name` `yahoo_finance_chart_{period}`, `is_demo=false`, declared `split_adjusted`). `symbol` is trimmed and upper-cased and must match the instrument pattern. Only regular-session bars of an XNYS session are kept: bars still forming, empty bars and bars outside the session window (such as Yahoo's trailing 16:00 print) are dropped, never repaired. The data are delayed, the endpoint is undocumented and may be rate-limited or change, and use should respect the provider's terms; this is for testing and personal analysis. It is not a real-time feed (`/health` keeps `live_data=false`). Unknown symbols and symbols with no completed regular-session bars return 422 with a `detail` message; an unreachable or unreadable provider returns 502. Failures store nothing. Repeating a load that yields byte-identical data and provenance returns the existing dataset (200) instead of storing a duplicate; newer bars create a new dataset, since datasets are immutable.
+
+## Loading a contract
+
+`POST /datasets/from-contract` fetches intraday bars for one CBOT grain contract from the unofficial Yahoo chart endpoint (`<contract>.CBT`, bar-start timestamps in Chicago time) and stores them as a grain dataset (`market` cbot_grains, `Source.contract` set), mirroring `/datasets/from-symbol`. Returned symbol, instrument type FUTURE and exchange CBT must match, else 502. Drop rules (dropped, never repaired): rows with any null value; bars of a trade date whose session is not complete yet (this includes the forming bar and the still-open trade date); and a partial first trade date (no 19:00 CT evening slot in the response). If nothing is left, 422. Everything else passes through to ingest, which fails closed (422). The stored dataset gets its data grade from ingest; `/profiles` then follows the CBOT grain gate above.
 
 ## Today's Plan: Setup A checker and trade journal
 

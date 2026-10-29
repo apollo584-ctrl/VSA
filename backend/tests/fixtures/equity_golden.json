@@ -1,0 +1,1063 @@
+{
+ "composite": {
+  "as_of": "2025-03-10T20:00:00Z",
+  "bin_size": 0.25,
+  "data_grade": null,
+  "extremes": {
+   "excess": "indeterminate_from_OHLCV",
+   "poor_extremes": "indeterminate_from_OHLCV"
+  },
+  "grade_basis": null,
+  "hvns": [
+   101.875
+  ],
+  "id": "profile:composite:2025-03-03:2025-03-10",
+  "initial_balance": {
+   "complete": false,
+   "high": null,
+   "low": null,
+   "method": "first_regular_session_minutes"
+  },
+  "limitations": [
+   "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+   "Single prints are estimated occupied bins with exactly one TPO period.",
+   "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+  ],
+  "lvns": [
+   104.875,
+   105.375
+  ],
+  "price_bin_center": [
+   99.875,
+   100.125,
+   100.375,
+   100.625,
+   100.875,
+   101.125,
+   101.375,
+   101.625,
+   101.875,
+   102.125,
+   102.375,
+   102.625,
+   102.875,
+   103.125,
+   103.375,
+   103.625,
+   103.875,
+   104.125,
+   104.375,
+   104.625,
+   104.875,
+   105.125,
+   105.375,
+   105.625,
+   105.875,
+   106.125
+  ],
+  "price_bin_lower": [
+   99.75,
+   100.0,
+   100.25,
+   100.5,
+   100.75,
+   101.0,
+   101.25,
+   101.5,
+   101.75,
+   102.0,
+   102.25,
+   102.5,
+   102.75,
+   103.0,
+   103.25,
+   103.5,
+   103.75,
+   104.0,
+   104.25,
+   104.5,
+   104.75,
+   105.0,
+   105.25,
+   105.5,
+   105.75,
+   106.0
+  ],
+  "range_extension": {
+   "above": null,
+   "below": null
+  },
+  "scope": "composite",
+  "session": "2025-03-03/2025-03-10",
+  "single_print_bins": [
+   105.375,
+   105.625,
+   105.875,
+   106.125
+  ],
+  "tpo": {
+   "achieved_value_fraction": 0.7068965517241379,
+   "counts": [
+    2.0,
+    3.0,
+    7.0,
+    8.0,
+    11.0,
+    13.0,
+    16.0,
+    17.0,
+    19.0,
+    18.0,
+    19.0,
+    18.0,
+    17.0,
+    15.0,
+    12.0,
+    10.0,
+    8.0,
+    5.0,
+    4.0,
+    2.0,
+    2.0,
+    2.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "estimated": true,
+   "method": "estimated_tpo_range_occupancy",
+   "poc": 101.875,
+   "shape": {
+    "alternatives": [
+     "b_lower_heavy"
+    ],
+    "ambiguity": "high",
+    "classification": "upward_elongated",
+    "features": {
+     "concentration": 0.08189655172413793,
+     "directional_progress": 0.6935483870967735,
+     "mode_count": 1.0,
+     "total": 232.0,
+     "weighted_skewness": 0.41931933908565366
+    },
+    "interpretation": "Net upward progress accompanies the observed distribution.",
+    "limitations": [
+     "Heuristic classification, not a calibrated probability or proof of participant intent.",
+     "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+    ]
+   },
+   "vah": 103.5,
+   "val": 101.0
+  },
+  "volume": {
+   "achieved_value_fraction": 0.7291590604843617,
+   "counts": [
+    3208.3333333333335,
+    8725.0,
+    14700.0,
+    20083.333333333336,
+    26216.666666666668,
+    31641.666666666668,
+    37758.33333333333,
+    43166.66666666667,
+    44849.99999999999,
+    44700.0,
+    44849.99999999999,
+    44700.0,
+    41641.66666666666,
+    35975.0,
+    30150.0,
+    24823.809523809527,
+    18840.476190476187,
+    14015.47619047619,
+    8361.309523809525,
+    2802.9761904761904,
+    1669.642857142857,
+    1669.642857142857,
+    812.5,
+    812.5,
+    812.5,
+    812.5
+   ],
+   "estimated": true,
+   "method": "estimated_uniform_volume_per_touched_bin",
+   "poc": 101.875,
+   "shape": {
+    "alternatives": [
+     "b_lower_heavy"
+    ],
+    "ambiguity": "high",
+    "classification": "upward_elongated",
+    "features": {
+     "concentration": 0.08187294633077764,
+     "directional_progress": 0.6935483870967735,
+     "mode_count": 1.0,
+     "total": 547800.0,
+     "weighted_skewness": 0.21063810521299722
+    },
+    "interpretation": "Net upward progress accompanies the observed distribution.",
+    "limitations": [
+     "Heuristic classification, not a calibrated probability or proof of participant intent.",
+     "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+    ]
+   },
+   "vah": 103.5,
+   "val": 101.0
+  }
+ },
+ "sessions": [
+  {
+   "as_of": "2025-03-03T21:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    101.125
+   ],
+   "id": "profile:session:2025-03-03:2025-03-03",
+   "initial_balance": {
+    "complete": true,
+    "high": 100.425,
+    "low": 99.8,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [],
+   "price_bin_center": [
+    99.875,
+    100.125,
+    100.375,
+    100.625,
+    100.875,
+    101.125,
+    101.375,
+    101.625,
+    101.875,
+    102.125
+   ],
+   "price_bin_lower": [
+    99.75,
+    100.0,
+    100.25,
+    100.5,
+    100.75,
+    101.0,
+    101.25,
+    101.5,
+    101.75,
+    102.0
+   ],
+   "range_extension": {
+    "above": 1.6400000000000006,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-03",
+   "single_print_bins": [
+    102.125
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7567567567567568,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     3.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 100.375,
+    "shape": {
+     "alternatives": [
+      "b_lower_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.13513513513513514,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 37.0,
+      "weighted_skewness": 0.012457763158562571
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 101.75,
+    "val": 100.25
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7704262050995719,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11558.333333333334,
+     11541.666666666666,
+     11525.0,
+     7091.666666666666,
+     1533.3333333333333
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 101.125,
+    "shape": {
+     "alternatives": [
+      "P_upper_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.129071282337614,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 89550.0,
+      "weighted_skewness": -0.009016611442119144
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 101.75,
+    "val": 100.25
+   }
+  },
+  {
+   "as_of": "2025-03-04T21:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    101.625
+   ],
+   "id": "profile:session:2025-03-04:2025-03-04",
+   "initial_balance": {
+    "complete": true,
+    "high": 100.925,
+    "low": 100.3,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [],
+   "price_bin_center": [
+    100.375,
+    100.625,
+    100.875,
+    101.125,
+    101.375,
+    101.625,
+    101.875,
+    102.125,
+    102.375,
+    102.625
+   ],
+   "price_bin_lower": [
+    100.25,
+    100.5,
+    100.75,
+    101.0,
+    101.25,
+    101.5,
+    101.75,
+    102.0,
+    102.25,
+    102.5
+   ],
+   "range_extension": {
+    "above": 1.6400000000000006,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-04",
+   "single_print_bins": [
+    102.625
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7567567567567568,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     3.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 100.875,
+    "shape": {
+     "alternatives": [
+      "b_lower_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.13513513513513514,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 37.0,
+      "weighted_skewness": 0.012457763158562571
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 102.25,
+    "val": 100.75
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7704262050995719,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11558.333333333334,
+     11541.666666666666,
+     11525.0,
+     7091.666666666666,
+     1533.3333333333333
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 101.625,
+    "shape": {
+     "alternatives": [
+      "P_upper_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.129071282337614,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 89550.0,
+      "weighted_skewness": -0.009016611442119144
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 102.25,
+    "val": 100.75
+   }
+  },
+  {
+   "as_of": "2025-03-05T21:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    102.125
+   ],
+   "id": "profile:session:2025-03-05:2025-03-05",
+   "initial_balance": {
+    "complete": true,
+    "high": 101.425,
+    "low": 100.8,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [],
+   "price_bin_center": [
+    100.875,
+    101.125,
+    101.375,
+    101.625,
+    101.875,
+    102.125,
+    102.375,
+    102.625,
+    102.875,
+    103.125
+   ],
+   "price_bin_lower": [
+    100.75,
+    101.0,
+    101.25,
+    101.5,
+    101.75,
+    102.0,
+    102.25,
+    102.5,
+    102.75,
+    103.0
+   ],
+   "range_extension": {
+    "above": 1.6400000000000006,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-05",
+   "single_print_bins": [
+    103.125
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7567567567567568,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     3.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 101.375,
+    "shape": {
+     "alternatives": [
+      "b_lower_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.13513513513513514,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 37.0,
+      "weighted_skewness": 0.012457763158562571
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 102.75,
+    "val": 101.25
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7704262050995719,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11558.333333333334,
+     11541.666666666666,
+     11525.0,
+     7091.666666666666,
+     1533.3333333333333
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 102.125,
+    "shape": {
+     "alternatives": [
+      "P_upper_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.129071282337614,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 89550.0,
+      "weighted_skewness": -0.009016611442119144
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 102.75,
+    "val": 101.25
+   }
+  },
+  {
+   "as_of": "2025-03-06T21:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    102.625
+   ],
+   "id": "profile:session:2025-03-06:2025-03-06",
+   "initial_balance": {
+    "complete": true,
+    "high": 101.925,
+    "low": 101.3,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [],
+   "price_bin_center": [
+    101.375,
+    101.625,
+    101.875,
+    102.125,
+    102.375,
+    102.625,
+    102.875,
+    103.125,
+    103.375,
+    103.625
+   ],
+   "price_bin_lower": [
+    101.25,
+    101.5,
+    101.75,
+    102.0,
+    102.25,
+    102.5,
+    102.75,
+    103.0,
+    103.25,
+    103.5
+   ],
+   "range_extension": {
+    "above": 1.6400000000000006,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-06",
+   "single_print_bins": [
+    103.625
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7567567567567568,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     3.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 101.875,
+    "shape": {
+     "alternatives": [
+      "b_lower_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.13513513513513514,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 37.0,
+      "weighted_skewness": 0.012457763158562571
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 103.25,
+    "val": 101.75
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7704262050995719,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11558.333333333334,
+     11541.666666666666,
+     11525.0,
+     7091.666666666666,
+     1533.3333333333333
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 102.625,
+    "shape": {
+     "alternatives": [
+      "P_upper_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.129071282337614,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 89550.0,
+      "weighted_skewness": -0.009016611442119144
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 103.25,
+    "val": 101.75
+   }
+  },
+  {
+   "as_of": "2025-03-07T21:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    103.125
+   ],
+   "id": "profile:session:2025-03-07:2025-03-07",
+   "initial_balance": {
+    "complete": true,
+    "high": 102.425,
+    "low": 101.8,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [],
+   "price_bin_center": [
+    101.875,
+    102.125,
+    102.375,
+    102.625,
+    102.875,
+    103.125,
+    103.375,
+    103.625,
+    103.875,
+    104.125
+   ],
+   "price_bin_lower": [
+    101.75,
+    102.0,
+    102.25,
+    102.5,
+    102.75,
+    103.0,
+    103.25,
+    103.5,
+    103.75,
+    104.0
+   ],
+   "range_extension": {
+    "above": 1.6400000000000006,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-07",
+   "single_print_bins": [
+    104.125
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7567567567567568,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     3.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 102.375,
+    "shape": {
+     "alternatives": [
+      "b_lower_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.13513513513513514,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 37.0,
+      "weighted_skewness": 0.012457763158562571
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 103.75,
+    "val": 102.25
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7704262050995719,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11558.333333333334,
+     11541.666666666666,
+     11525.0,
+     7091.666666666666,
+     1533.3333333333333
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 103.125,
+    "shape": {
+     "alternatives": [
+      "P_upper_heavy"
+     ],
+     "ambiguity": "high",
+     "classification": "upward_elongated",
+     "features": {
+      "concentration": 0.129071282337614,
+      "directional_progress": 0.9116997792494469,
+      "mode_count": 1.0,
+      "total": 89550.0,
+      "weighted_skewness": -0.009016611442119144
+     },
+     "interpretation": "Net upward progress accompanies the observed distribution.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 103.75,
+    "val": 102.25
+   }
+  },
+  {
+   "as_of": "2025-03-10T20:00:00Z",
+   "bin_size": 0.25,
+   "data_grade": null,
+   "extremes": {
+    "excess": "indeterminate_from_OHLCV",
+    "poor_extremes": "indeterminate_from_OHLCV"
+   },
+   "grade_basis": null,
+   "hvns": [
+    104.125
+   ],
+   "id": "profile:session:2025-03-10:2025-03-10",
+   "initial_balance": {
+    "complete": true,
+    "high": 102.925,
+    "low": 102.3,
+    "method": "first_regular_session_minutes"
+   },
+   "limitations": [
+    "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
+    "Single prints are estimated occupied bins with exactly one TPO period.",
+    "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
+   ],
+   "lvns": [
+    104.875,
+    105.375
+   ],
+   "price_bin_center": [
+    102.375,
+    102.625,
+    102.875,
+    103.125,
+    103.375,
+    103.625,
+    103.875,
+    104.125,
+    104.375,
+    104.625,
+    104.875,
+    105.125,
+    105.375,
+    105.625,
+    105.875,
+    106.125
+   ],
+   "price_bin_lower": [
+    102.25,
+    102.5,
+    102.75,
+    103.0,
+    103.25,
+    103.5,
+    103.75,
+    104.0,
+    104.25,
+    104.5,
+    104.75,
+    105.0,
+    105.25,
+    105.5,
+    105.75,
+    106.0
+   ],
+   "range_extension": {
+    "above": 3.075000000000003,
+    "below": 0.0
+   },
+   "scope": "session",
+   "session": "2025-03-10",
+   "single_print_bins": [
+    105.375,
+    105.625,
+    105.875,
+    106.125
+   ],
+   "tpo": {
+    "achieved_value_fraction": 0.7446808510638298,
+    "counts": [
+     2.0,
+     3.0,
+     5.0,
+     5.0,
+     4.0,
+     5.0,
+     5.0,
+     4.0,
+     4.0,
+     2.0,
+     2.0,
+     2.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "estimated": true,
+    "method": "estimated_tpo_range_occupancy",
+    "poc": 102.875,
+    "shape": {
+     "alternatives": [
+      "D_balanced"
+     ],
+     "ambiguity": "high",
+     "classification": "b_lower_heavy",
+     "features": {
+      "concentration": 0.10638297872340426,
+      "directional_progress": 0.48648648648648535,
+      "mode_count": 1.0,
+      "total": 47.0,
+      "weighted_skewness": 0.5647380141094612
+     },
+     "interpretation": "Activity concentrated lower; liquidation or lower-price acceptance are possible, unproven explanations.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 104.5,
+    "val": 102.5
+   },
+   "volume": {
+    "achieved_value_fraction": 0.7032793127245901,
+    "counts": [
+     3208.3333333333335,
+     8725.0,
+     11491.666666666666,
+     11358.333333333334,
+     11516.666666666668,
+     11765.47619047619,
+     11748.809523809525,
+     12482.142857142857,
+     8361.309523809525,
+     2802.9761904761904,
+     1669.642857142857,
+     1669.642857142857,
+     812.5,
+     812.5,
+     812.5,
+     812.5
+    ],
+    "estimated": true,
+    "method": "estimated_uniform_volume_per_touched_bin",
+    "poc": 104.125,
+    "shape": {
+     "alternatives": [
+      "D_balanced"
+     ],
+     "ambiguity": "high",
+     "classification": "b_lower_heavy",
+     "features": {
+      "concentration": 0.12475904904690512,
+      "directional_progress": 0.48648648648648535,
+      "mode_count": 1.0,
+      "total": 100050.0,
+      "weighted_skewness": 0.6753345563016384
+     },
+     "interpretation": "Activity concentrated lower; liquidation or lower-price acceptance are possible, unproven explanations.",
+     "limitations": [
+      "Heuristic classification, not a calibrated probability or proof of participant intent.",
+      "Bin size, estimated occupancy, incomplete sessions and composite mixing can change the result."
+     ]
+    },
+    "vah": 104.25,
+    "val": 102.75
+   }
+  }
+ ]
+}

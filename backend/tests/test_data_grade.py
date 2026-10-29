@@ -152,3 +152,10 @@ def test_equity_analysis_serializes_with_only_new_keys():
     assert {k for k in full if k not in stripped} == NEW_KEYS
     for p in full["profile_analysis"]:
         assert p["data_grade"] is None and p["grade_basis"] is None
+
+
+def test_extra_limitations_appended_and_default_unchanged():
+    r = grade_futures(30, True, 100, 0, 0, "verified", ["extra note"])
+    assert r.grade == "B" and r.limitations == [YAHOO_LIMITATION, "extra note"]
+    assert grade_futures(30, True, 100, 0, 0, "verified").limitations == [YAHOO_LIMITATION]
+    assert "extra note" in grade_futures(30, True, 100, 5, 0, "verified", ["extra note"]).limitations
