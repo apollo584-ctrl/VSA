@@ -5,6 +5,7 @@ import secrets
 import re
 import subprocess
 import threading
+from typing import Literal
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -283,7 +284,8 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
 
     @app.get("/api/v1/profiles", response_model=list[Profile])
     def get_profiles(dataset_id: str, as_of: datetime | None = None, bin_size: float | None = Query(None, ge=0.000001, le=10000),
-                     value_area_fraction: float = Query(0.7, gt=0, le=1), composite: bool = False):
+                     value_area_fraction: float = Query(0.7, gt=0, le=1),
+                     value_area_method: Literal["two_row", "one_bin"] = "two_row", composite: bool = False):
         dataset, bars = dataset_or_404(dataset_id)
         require_profile_allowed(dataset)
         bars = cutoff(bars, as_of)
@@ -300,7 +302,8 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             if bin_size is None:
                 bin_size = 0.25
             tpo_minutes = max(30, dataset.source.timeframe_minutes)
-        p = Parameters(bin_size=bin_size, value_area_fraction=value_area_fraction, tpo_minutes=tpo_minutes)
+        p = Parameters(bin_size=bin_size, value_area_fraction=value_area_fraction,
+                       value_area_method=value_area_method, tpo_minutes=tpo_minutes)
         try:
             if quality(bars, dataset.source, p).split_suspected:
                 raise ValueError("Possible split or large discontinuity: profile calculation blocked")

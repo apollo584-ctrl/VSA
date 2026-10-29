@@ -20,7 +20,7 @@ def test_volume_conservation_and_tpo_deduplication(source):
 def test_value_area_contiguous_and_zero_weights():
     bars = [make_bar(0)]
     result = distribution(np.array([1., 5., 2., 1.]), np.arange(4) + .5, bars,
-                          Parameters(bin_size=1, value_area_fraction=.7), "test")
+                          Parameters(bin_size=1, value_area_fraction=.7, value_area_method="one_bin"), "test")
     assert result.poc == 1.5
     assert result.val == 1 and result.vah == 3
     assert result.achieved_value_fraction == pytest.approx(7 / 9)
