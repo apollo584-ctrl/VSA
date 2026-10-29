@@ -18,11 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from app import alerts, auth, grade, journal, markets, outcomes, setup_a
+from app import alerts, auth, grade, journal, markets, outcomes, providers, setup_a
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
@@ -218,6 +218,22 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
               responses={200: {"model": Dataset, "description": "Identical data already stored; existing dataset returned"}})
     async def load_symbol(request: SymbolLoadRequest, response: Response):
         provider = YahooChartProvider(request.symbol, request.timeframe_minutes, request.period, fetch=fetch)
+        try:
+            source, raw = await run_in_threadpool(provider.read)
+            dataset, bars = await run_in_threadpool(ingest, raw, source)
+        except ProviderUnavailable as exc:
+            raise HTTPException(502, str(exc)) from exc
+        except ValueError as exc:  # includes SymbolNotFound
+            raise HTTPException(422, str(exc)) from exc
+        dataset, created = await run_in_threadpool(store.save_or_find_dataset, dataset, bars, raw)
+        if not created:
+            response.status_code = 200
+        return dataset
+
+    @app.post("/api/v1/datasets/from-contract", response_model=Dataset, status_code=201,
+              responses={200: {"model": Dataset, "description": "Identical data already stored; existing dataset returned"}})
+    async def load_contract(request: ContractLoadRequest, response: Response):
+        provider = providers.YahooFuturesIntradayProvider(request.contract, request.timeframe_minutes, request.period, fetch=fetch)
         try:
             source, raw = await run_in_threadpool(provider.read)
             dataset, bars = await run_in_threadpool(ingest, raw, source)
