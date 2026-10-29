@@ -36,10 +36,10 @@ export default function VsaPage() {
           </Panel>
           <Panel title="Reading the chart" collapsible defaultOpen={false}>
             <ul className="space-y-2 text-xs leading-relaxed text-muted">
-              <li>Only strength and weakness signals are marked on the chart. Neutral measurements (compression, relative volume and similar) are listed under Detected events and appear on the chart only while selected.</li>
+              <li>Only potential strength and potential weakness hypotheses are marked on the chart. Neutral measurements (compression, relative volume and similar) are listed under Detected events and appear on the chart only while selected.</li>
               <li>Markers show a pattern code and its status: <b className="text-fg">?</b> provisional, <b className="text-fg">✓</b> confirmed, <b className="text-fg">×</b> invalidated, <b className="text-fg">~</b> expired.</li>
               <li>Volume expansion bars are drawn <span className="font-semibold" style={{ color: "#22e07a" }}>bright green</span> and volume contraction bars <span className="font-semibold" style={{ color: "#c0392b" }}>dark red</span> instead of carrying a label.</li>
-              <li>A marker sits above or below its bar according to the engine&apos;s contextual label (weakness, strength or neutral). It is not a trade instruction.</li>
+              <li>A marker sits above or below its bar according to the engine&apos;s contextual label (potential weakness, potential strength or neutral). It is a hypothesis, not a trade instruction.</li>
             </ul>
           </Panel>
         </aside>
