@@ -27,10 +27,12 @@ def grade_futures(
     placeholder_bars: int,
     off_grid_prices: int,
     spec_status: str,
+    extra_limitations: list[str] | None = None,
 ) -> GradeResult:
     limitations = [YAHOO_LIMITATION]
     if spec_status != "verified":
         limitations.append(SPECS_LIMITATION)
+    limitations.extend(extra_limitations or [])
 
     if timeframe_minutes == 1440:
         return GradeResult("C", "daily bars", limitations, False, "Daily bars cannot support an intraday profile")

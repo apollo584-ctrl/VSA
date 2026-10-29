@@ -117,6 +117,9 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
         """Refuse profile/analysis work on a grain dataset whose grade does not allow it."""
         if dataset.source.market != "cbot_grains":
             return
+        if dataset.source.timeframe_minutes in (5, 15, 30):  # TEMPORARY until U4 gates on the stored grade
+            raise HTTPException(422, {"reason": "Intraday grain profiles are not supported yet",
+                                      "data_grade": dataset.data_grade})
         result = grade.grade_futures(dataset.source.timeframe_minutes, True, dataset.row_count, 0, 0,
                                      markets.get_market("cbot_grains").spec_status)
         if not result.intraday_profile_allowed:
