@@ -97,11 +97,11 @@ def confluence(a: Analysis) -> tuple[str, int, list[ScanVote]]:
     vsa = [o for o in current(a.vsa_observations) if o.status in ("provisional", "confirmed")]
     s, w = sum(o.direction == "strength" for o in vsa), sum(o.direction == "weakness" for o in vsa)
     if s or w:
-        votes.append(ScanVote(factor="vsa", vote=1 if s > w else -1 if w > s else 0, text=f"Active VSA this session: {s} strength, {w} weakness"))
+        votes.append(ScanVote(factor="vsa", vote=1 if s > w else -1 if w > s else 0, text=f"Active VSA this session: {s} potential strength, {w} potential weakness (hypotheses)"))
     pa = current([o for o in a.price_action_observations if o.concept_id != "swing_structure"])
     s, w = sum(o.direction == "strength" for o in pa), sum(o.direction == "weakness" for o in pa)
     if s or w:
-        votes.append(ScanVote(factor="price_action", vote=1 if s > w else -1 if w > s else 0, text=f"Price action this session: {s} strength, {w} weakness"))
+        votes.append(ScanVote(factor="price_action", vote=1 if s > w else -1 if w > s else 0, text=f"Price action this session: {s} potential strength, {w} potential weakness (hypotheses)"))
     up, down = sum(v.vote > 0 for v in votes), sum(v.vote < 0 for v in votes)
     if a.contradicting_evidence:
         # The engine itself reports opposing evidence; majority voting must not hide it.

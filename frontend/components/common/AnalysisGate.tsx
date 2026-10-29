@@ -105,12 +105,12 @@ export function SignalsCard({ analysis }: { analysis: Analysis }) {
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="ok">{strengths} strength</Badge>
-        <Badge tone="danger">{active.length - strengths} weakness</Badge>
+        <Badge tone="ok">{strengths} potential strength</Badge>
+        <Badge tone="danger">{active.length - strengths} potential weakness</Badge>
         {balance && <Badge tone={balance === "mixed" || balance === "contradictory" ? "warn" : "neutral"}>Evidence {humanize(balance).toLowerCase()}</Badge>}
       </div>
       <p className="text-xs text-muted">
-        {latest ? <>Latest: <span className="text-fg">{humanize(latest.type)}</span> ({latest.status}) at {fmtDateTime(latest.barTime)}</> : "No active strength or weakness signal this session."}
+        {latest ? <>Latest: <span className="text-fg">{humanize(latest.type)}</span> ({latest.status}) at {fmtDateTime(latest.barTime)}</> : "No active potential strength or weakness hypothesis this session."}
       </p>
     </div>
   );
