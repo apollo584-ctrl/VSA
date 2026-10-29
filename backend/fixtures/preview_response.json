@@ -1667,6 +1667,8 @@
     "instrument": "DEMO",
     "timeframe_minutes": 5,
     "exchange": "XNYS",
+    "market": "equity_xnys",
+    "contract": null,
     "session_mode": "regular",
     "timestamp_convention": "bar_start",
     "timezone": "America/New_York",
@@ -2211,7 +2213,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-04:2025-03-04",
@@ -2346,7 +2350,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-05:2025-03-05",
@@ -2469,7 +2475,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     }
   ],
   "composite_profile": {
@@ -2613,7 +2621,9 @@
       "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
       "Single prints are estimated occupied bins with exactly one TPO period.",
       "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-    ]
+    ],
+    "data_grade": null,
+    "grade_basis": null
   },
   "composite_unavailable_reason": null,
   "vsa_observations": [],
@@ -15856,5 +15866,8 @@
     "Incomplete data can omit context and follow-through; auction references require a complete prior session.",
     "Insufficient same-slot session history for time-of-day relative volume."
   ],
-  "plain_english_summary": "No significant directional pattern. Estimated volume profile: upward_elongated. Auction classification: balance. No active directional VSA pattern meets the configured rules. The profile describes activity but cannot establish directional intent."
+  "plain_english_summary": "No significant directional pattern. Estimated volume profile: upward_elongated. Auction classification: balance. No active directional VSA pattern meets the configured rules. The profile describes activity but cannot establish directional intent.",
+  "data_grade": null,
+  "grade_basis": null,
+  "limitations": []
 }

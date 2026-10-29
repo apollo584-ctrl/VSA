@@ -9,10 +9,15 @@ class Model(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+DataGrade = Literal["A", "B", "C"]
+
+
 class Source(Model):
     instrument: str = Field(pattern=r"^[A-Z][A-Z0-9.\-]{0,15}$")
-    timeframe_minutes: Literal[1, 5, 15, 30, 60] = 5
-    exchange: Literal["XNYS"] = "XNYS"
+    timeframe_minutes: Literal[1, 5, 15, 30, 60, 1440] = 5
+    exchange: Literal["XNYS", "CBOT"] = "XNYS"
+    market: Literal["equity_xnys", "cbot_grains"] = "equity_xnys"
+    contract: str | None = Field(default=None, pattern=r"^[A-Z]{1,3}[FGHJKMNQUVXZ][0-9]{2}$")
     session_mode: Literal["regular", "extended"] = "regular"
     timestamp_convention: Literal["bar_start", "bar_end"] = "bar_start"
     timezone: str = "America/New_York"
@@ -23,6 +28,22 @@ class Source(Model):
 
     @model_validator(mode="after")
     def compatible_adjustments(self):
+        if self.market == "equity_xnys":
+            if self.exchange != "XNYS":
+                raise ValueError("Equity sources must use exchange XNYS")
+            if self.contract is not None:
+                raise ValueError("Equity sources cannot carry a futures contract")
+            if self.timeframe_minutes == 1440:
+                raise ValueError("Daily bars are only supported for futures sources")
+        else:
+            if self.exchange != "CBOT":
+                raise ValueError("CBOT grain sources must use exchange CBOT")
+            if self.timezone != "America/Chicago":
+                raise ValueError("CBOT grain sources must use timezone America/Chicago")
+            if self.contract is None:
+                raise ValueError("CBOT grain sources require a contract")
+            if self.instrument != self.contract:
+                raise ValueError("Instrument must equal the contract code")
         if self.session_mode == "regular" and self.timeframe_minutes == 60:
             raise ValueError("60-minute bars cannot tile the 390-minute regular session; use 30 minutes or less")
         if (self.price_adjustment == "split_adjusted") != (self.volume_adjustment == "split_adjusted"):
@@ -33,6 +54,7 @@ class Source(Model):
 class Parameters(Model):
     bin_size: float = Field(default=0.25, ge=0.000001, le=10000)
     value_area_fraction: float = Field(default=0.7, gt=0, le=1)
+    value_area_method: Literal["two_row", "one_bin"] = "two_row"
     tpo_minutes: Literal[30, 60] = 30
     initial_balance_minutes: int = Field(default=60, ge=30, le=120)
     lookback: int = Field(default=20, ge=3, le=200)
@@ -53,6 +75,12 @@ class Parameters(Model):
     node_separation_bins: int = Field(default=3, ge=2, le=100)
     trend_progress: float = Field(default=0.6, gt=0, lt=1)
     split_ratio: float = Field(default=1.8, gt=1, le=10)
+    atr_period: int = Field(default=14, ge=3, le=100)
+    regime_window: int = Field(default=100, ge=20, le=500)
+    regime_low: float = Field(default=0.75, gt=0, lt=1)
+    regime_high: float = Field(default=1.25, gt=1, le=10)
+    trend_method: Literal["slope", "close_difference"] = "slope"
+    trend_atr_threshold: float = Field(default=1.0, gt=0, le=10)
 
     @model_validator(mode="after")
     def history_fits(self):
@@ -89,6 +117,21 @@ class SymbolLoadRequest(Model):
         return value
 
 
+class ContractLoadRequest(Model):
+    contract: str
+    timeframe_minutes: Literal[5, 15, 30] = 30
+    period: Literal["5d", "1mo", "60d"] = "60d"
+
+    @field_validator("contract")
+    @classmethod
+    def valid_contract(cls, value):
+        from app.markets import contract_parts
+
+        value = value.strip().upper()
+        contract_parts(value)  # ValueError -> 422
+        return value
+
+
 class Bar(Model):
     timestamp: datetime
     available_at: datetime
@@ -117,6 +160,9 @@ class Dataset(Model):
     first_timestamp: datetime
     last_available_at: datetime
     quality: Quality
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
+    limitations: list[str] = []
 
 
 class ConditionResult(Model):
@@ -250,6 +296,8 @@ class Profile(Model):
     range_extension: dict[str, float | None]
     extremes: dict[str, str]
     limitations: list[str]
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
 
 
 class Scenario(Model):
@@ -322,6 +370,9 @@ class Analysis(Model):
     invalidation_conditions: list[str]
     uncertainties: list[str]
     plain_english_summary: str
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
+    limitations: list[str] = []
 
     @model_validator(mode="after")
     def snapshot_identity(self):
@@ -400,3 +451,47 @@ class JournalEntry(JournalEntryIn):
     created_at: str
     updated_at: str
     r_multiple: float | None = None
+
+
+class StructureLevels(Model):
+    poc: float | None = None
+    vah: float | None = None
+    val: float | None = None
+
+
+class StructureProfile(Model):
+    session: str
+    bin_size: float
+    value_area_method: str
+    volume: StructureLevels
+    tpo: StructureLevels
+    shape: str
+    hvns: list[float]
+    lvns: list[float]
+    single_print_bins: list[float]
+
+
+class StructureVolatility(Model):
+    atr: float | None = None
+    atr_period: int
+    regime: str | None = None
+    trend_background: str | None = None
+    trend_move_atr: float | None = None
+
+
+class StructureResponse(Model):
+    contract_version: Literal["1"] = "1"
+    market: Literal["cbot_grains"] = "cbot_grains"
+    root: str
+    contract: str
+    as_of: datetime | None = None
+    dataset_id: str | None = None
+    data_grade: DataGrade | None = None
+    timeframe_minutes: int | None = None
+    latest_session: str | None = None
+    session_profile: StructureProfile | None = None
+    prior_session_profile: StructureProfile | None = None
+    volatility: StructureVolatility | None = None
+    value_location: None = None
+    auction_state: None = None
+    limitations: list[str] = []

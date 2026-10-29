@@ -1667,6 +1667,8 @@
     "instrument": "DEMO",
     "timeframe_minutes": 5,
     "exchange": "XNYS",
+    "market": "equity_xnys",
+    "contract": null,
     "session_mode": "regular",
     "timestamp_convention": "bar_start",
     "timezone": "America/New_York",
@@ -2478,7 +2480,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-04:2025-03-04",
@@ -2613,7 +2617,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-05:2025-03-05",
@@ -2748,7 +2754,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-06:2025-03-06",
@@ -2883,7 +2891,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-07:2025-03-07",
@@ -3018,7 +3028,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     },
     {
       "id": "profile:session:2025-03-10:2025-03-10",
@@ -3183,7 +3195,9 @@
         "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
         "Single prints are estimated occupied bins with exactly one TPO period.",
         "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-      ]
+      ],
+      "data_grade": null,
+      "grade_basis": null
     }
   ],
   "composite_profile": {
@@ -3389,7 +3403,9 @@
       "OHLCV does not reveal exact volume-at-price, intrabar path or order flow.",
       "Single prints are estimated occupied bins with exactly one TPO period.",
       "Inclusive range endpoints; bin centers represent touched intervals, not actual trade prices."
-    ]
+    ],
+    "data_grade": null,
+    "grade_basis": null
   },
   "composite_unavailable_reason": null,
   "vsa_observations": [
@@ -35702,5 +35718,8 @@
     "Rule thresholds and shape ambiguity are heuristic; no predictive accuracy has been established.",
     "Follow-through confirmation describes price behavior, not proof of an accumulation/distribution hypothesis."
   ],
-  "plain_english_summary": "Potential local weakness. Estimated volume profile: b_lower_heavy. Auction classification: higher_price_acceptance. Local weakness classifications may reflect a change in auction pressure; continuation or ordinary noise remain plausible."
+  "plain_english_summary": "Potential local weakness. Estimated volume profile: b_lower_heavy. Auction classification: higher_price_acceptance. Local weakness classifications may reflect a change in auction pressure; continuation or ordinary noise remain plausible.",
+  "data_grade": null,
+  "grade_basis": null,
+  "limitations": []
 }

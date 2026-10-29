@@ -227,3 +227,95 @@ def test_setup_a_endpoint_validates_symbols_and_isolates_failures(tmp_path):
         assert body["as_of"]
         preflight = c.options("/api/v1/journal/1", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "PUT"})
         assert preflight.status_code == 200
+
+
+def _contract_chart(contract="ZCZ26", days=("2026-10-13", "2026-10-14"), minutes=30):
+    import pandas as pd
+
+    stamps = []
+    for day in days:
+        d = pd.Timestamp(day, tz="America/Chicago")
+        for start, end in ((d - pd.Timedelta(hours=5), d + pd.Timedelta(hours=7, minutes=45)),
+                           (d + pd.Timedelta(hours=8, minutes=30), d + pd.Timedelta(hours=13, minutes=20))):
+            t = start
+            while t < end:
+                stamps.append(t)
+                t += pd.Timedelta(minutes=minutes)
+    n = len(stamps)
+    base = [450 + (i % 8) * .25 for i in range(n)]
+    quote = {"open": base, "high": [b + .5 for b in base], "low": [b - .25 for b in base],
+             "close": [b + .25 for b in base], "volume": [100 + i for i in range(n)]}
+    meta = {"symbol": f"{contract}.CBT", "exchangeName": "CBT", "instrumentType": "FUTURE",
+            "dataGranularity": f"{minutes}m"}
+    return {"chart": {"result": [{"meta": meta, "timestamp": [int(s.timestamp()) for s in stamps],
+                                  "indicators": {"quote": [quote]}}], "error": None}}
+
+
+def _contract_client(tmp_path, fetch):
+    return TestClient(create_app(tmp_path / "c.sqlite3", market_fetch=fetch), client=("127.0.0.1", 50000), base_url="http://localhost")
+
+
+def test_from_contract_loads_grade_b_dataset_without_network(tmp_path):
+    calls = []
+
+    def fetch(url):
+        calls.append(url)
+        return json.dumps(_contract_chart()).encode()
+
+    with _contract_client(tmp_path, fetch) as c:
+        first = c.post("/api/v1/datasets/from-contract", json={"contract": " zcz26 "})
+        assert first.status_code == 201, first.text
+        dataset = first.json()
+        assert dataset["source"]["market"] == "cbot_grains" and dataset["source"]["contract"] == "ZCZ26"
+        assert dataset["source"]["timeframe_minutes"] == 30 and dataset["data_grade"] == "B"
+        assert calls == ["https://query1.finance.yahoo.com/v8/finance/chart/ZCZ26.CBT?interval=30m&range=60d&includePrePost=false"]
+        profiles = c.get("/api/v1/profiles", params={"dataset_id": dataset["id"]})
+        assert profiles.status_code == 200, profiles.text
+        again = c.post("/api/v1/datasets/from-contract", json={"contract": "ZCZ26"})
+        assert again.status_code == 200 and again.json()["id"] == dataset["id"]
+
+
+def test_from_contract_five_minute_bars(tmp_path):
+    with _contract_client(tmp_path, lambda url: json.dumps(_contract_chart(minutes=5)).encode()) as c:
+        response = c.post("/api/v1/datasets/from-contract", json={"contract": "ZCZ26", "timeframe_minutes": 5, "period": "5d"})
+        assert response.status_code == 201, response.text
+        assert response.json()["source"]["timeframe_minutes"] == 5
+
+
+@pytest.mark.parametrize("body", [{"contract": "ZCX26"}, {"contract": "AAPL"}, {"contract": ""},
+                                  {"contract": "ZCZ26", "timeframe_minutes": 60}, {"contract": "ZCZ26", "period": "10y"}])
+def test_from_contract_rejects_invalid_requests_without_fetching(tmp_path, body):
+    def fetch(url):
+        raise AssertionError("no network call expected")
+
+    with _contract_client(tmp_path, fetch) as c:
+        assert c.post("/api/v1/datasets/from-contract", json=body).status_code == 422
+
+
+def test_from_contract_upstream_failures(tmp_path):
+    from app.providers import ProviderUnavailable
+
+    def down(url):
+        raise ProviderUnavailable("Market data provider could not be reached")
+
+    with _contract_client(tmp_path, down) as c:
+        assert c.post("/api/v1/datasets/from-contract", json={"contract": "ZCZ26"}).status_code == 502
+        assert c.get("/api/v1/instruments").json()["items"] == []
+    missing = {"chart": {"result": None, "error": {"code": "Not Found", "description": "No data found"}}}
+    with _contract_client(tmp_path, lambda url: json.dumps(missing).encode()) as c:
+        response = c.post("/api/v1/datasets/from-contract", json={"contract": "ZCZ26"})
+        assert response.status_code == 422 and "ZCZ26.CBT" in response.json()["detail"]
+
+
+def test_legacy_analysis_without_value_area_method_reads_as_one_bin(client):
+    dataset = upload(client).json()
+    original = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    assert original["parameters"]["value_area_method"] == "two_row"
+    legacy = {k: v for k, v in original.items() if k != "parameters"}
+    legacy["id"] = "legacy-value-area"
+    legacy["parameters"] = {k: v for k, v in original["parameters"].items() if k != "value_area_method"}
+    with client.app.state.store.connect() as db:
+        db.execute("INSERT INTO analyses VALUES (?, ?, ?)", (legacy["id"], dataset["id"], json.dumps(legacy)))
+    reopened = client.get("/api/v1/analyses/legacy-value-area").json()
+    assert reopened["parameters"]["value_area_method"] == "one_bin"
+    assert client.get(f'/api/v1/analyses/{original["id"]}').json()["parameters"]["value_area_method"] == "two_row"

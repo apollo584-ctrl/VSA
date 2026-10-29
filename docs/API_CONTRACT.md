@@ -10,6 +10,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/instruments` | — | `{items: [{instrument, dataset_ids}]}` for stored datasets (uploaded or loaded by symbol) |
 | POST | `/datasets/upload` | multipart file and metadata JSON string | 201 Dataset |
 | POST | `/datasets/from-symbol` | `{symbol, timeframe_minutes=30 (5, 15 or 30), period="1mo" ("5d", "1mo" or "60d")}` | 201 Dataset; 200 existing Dataset when identical data is already stored |
+| POST | `/datasets/from-contract` | `{contract, timeframe_minutes=30 (5, 15 or 30), period="60d" ("5d", "1mo" or "60d")}`; `contract` is trimmed, upper-cased and must be a listed CBOT grain contract such as `ZCZ26`, else 422 | 201 Dataset; 200 existing Dataset when identical data is already stored; 422 Not Found, no completed bars left or ingest rejection; 502 provider unreachable or unreadable. See "Loading a contract" below |
 | GET | `/daily-bars` | `symbol` (trimmed, upper-cased, `^[A-Z][A-Z0-9.\-]{0,15}$`, else 422) | `{symbol, bars: [{session: "YYYY-MM-DD", open, high, low, close, volume}]}`: last 500 completed daily bars (via the outcome-study daily fetch), cached in memory for 1 hour per symbol; 422 unknown symbol, 502 provider unreachable or unreadable; same auth as every other endpoint |
 | GET | `/setup-a` | `symbols` (1-8 comma-separated, else 422) | Setup A checker, see "Today's Plan" below |
 | GET / POST | `/journal` | `date=YYYY-MM-DD` optional / JournalEntryIn JSON | newest-first entries / 201 entry |
@@ -17,7 +18,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/journal/export.csv`, `/journal/day-summary?date=` | — | CSV of every entry; `{date, trades, losses, realized_pnl}` |
 | GET | `/datasets/{id}` | dataset UUID | Dataset |
 | GET | `/market/bars` | dataset_id; optional as_of, offset=0, limit=1000 (max 10000) | Bar array |
-| GET | `/profiles` | dataset_id; optional as_of, bin_size=.25, value_area_fraction=.7, composite=false | Profile array |
+| GET | `/profiles` | dataset_id; optional as_of, bin_size (equity default .25; grain default = contract tick), value_area_fraction=.7, value_area_method=two_row (or one_bin), composite=false | Profile array |
 | GET | `/knowledge/concepts` | optional category | Concept array |
 | GET | `/knowledge/concepts/{id}` | concept ID | Concept |
 | GET | `/knowledge/concepts/{id}/related` | concept ID | related Concept array |
@@ -25,6 +26,14 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/analyses/{id}` | analysis UUID | persisted Analysis |
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
+
+
+### CBOT grain gate (profiles and analyze)
+- `/profiles` for a grain dataset uses the stored `data_grade`/`grade_basis`, not a recompute. Daily (1440) bars: 422 `{"reason": "Daily bars cannot support an intraday profile", "data_grade"}`. Intraday (5/15/30) with stored grade B: allowed. Stored grade C or none: 422 `{reason, data_grade}` naming placeholder bars, off-grid prices or no usable bars. Equity datasets are unchanged.
+- `POST /analyze` on any intraday grain dataset returns 422 `{"reason": "Analysis is not supported yet for intraday grain data", "data_grade"}`. Daily grain is still refused by the gate.
+- `bin_size` is optional. Equity default 0.25. Grain default is the contract root tick; a given grain `bin_size` must be a whole multiple of the tick, else 422 `bin_size must be a whole multiple of the contract tick (<tick>)`.
+- Grain TPO periods are fixed at 30 minutes whatever the bar size. Equities keep max(30, timeframe).
+- Initial balance is "not computed" for grain profiles.
 
 ## Authentication
 
@@ -41,6 +50,10 @@ Clients on 127.0.0.1 / ::1 that address the server as `localhost`, `127.0.0.1` o
 Provider responses are validated before CSV conversion: the returned symbol must match the request (case-insensitive; no implicit aliases), and timestamps and all five OHLCV arrays must have equal lengths. Malformed response structures, invalid timestamps and identity/array mismatches return 502 without storing a dataset. Explicit provider `Not Found` errors and valid empty series retain their 422 rejection behavior.
 
 `POST /datasets/from-symbol` fetches recent completed bars for a ticker from Yahoo Finance's unofficial chart endpoint, converts them to the canonical CSV and runs them through the same validation and storage as an upload; the result is an ordinary immutable Dataset (`source_name` `yahoo_finance_chart_{period}`, `is_demo=false`, declared `split_adjusted`). `symbol` is trimmed and upper-cased and must match the instrument pattern. Only regular-session bars of an XNYS session are kept: bars still forming, empty bars and bars outside the session window (such as Yahoo's trailing 16:00 print) are dropped, never repaired. The data are delayed, the endpoint is undocumented and may be rate-limited or change, and use should respect the provider's terms; this is for testing and personal analysis. It is not a real-time feed (`/health` keeps `live_data=false`). Unknown symbols and symbols with no completed regular-session bars return 422 with a `detail` message; an unreachable or unreadable provider returns 502. Failures store nothing. Repeating a load that yields byte-identical data and provenance returns the existing dataset (200) instead of storing a duplicate; newer bars create a new dataset, since datasets are immutable.
+
+## Loading a contract
+
+`POST /datasets/from-contract` fetches intraday bars for one CBOT grain contract from the unofficial Yahoo chart endpoint (`<contract>.CBT`, bar-start timestamps in Chicago time) and stores them as a grain dataset (`market` cbot_grains, `Source.contract` set), mirroring `/datasets/from-symbol`. Returned symbol, instrument type FUTURE and exchange CBT must match, else 502. Drop rules (dropped, never repaired): rows with any null value; bars of a trade date whose session is not complete yet (this includes the forming bar and the still-open trade date); and a partial first trade date (no 19:00 CT evening slot in the response). If nothing is left, 422. Everything else passes through to ingest, which fails closed (422). The stored dataset gets its data grade from ingest; `/profiles` then follows the CBOT grain gate above.
 
 ## Today's Plan: Setup A checker and trade journal
 
@@ -88,6 +101,11 @@ UTF-8 header, exactly: `timestamp,open,high,low,close,volume`. Each row is one c
 ```
 
 `price_adjustment`, `volume_adjustment`, `instrument` and `source_name` are required. Split-adjusted prices require split-adjusted volume; unadjusted prices require raw volume. `is_demo` is uploader-declared, as is adjustment provenance. CSVs are not combined or resampled. Timeframes are 1/5/15/30 minutes for regular sessions and also 60 for extended sessions. Partial bars are rejected. Extended-session details and limitations are in `PRODUCT_SPEC.md`.
+
+### CBOT grain daily uploads
+`market: "cbot_grains"` with `timeframe_minutes: 1440` and a `contract` (for example `ZCZ26`) is ingested as daily bars. Each timestamp cell must be an ISO date `YYYY-MM-DD`, strictly increasing, on a grain open day (weekday and not on the XNYS-stand-in holiday list; unverified), and on or before the contract's last trade date (the open day before the 15th of the delivery month); later bars are rejected as "bar after contract expiry (possible contract roll)". Volume 0 is allowed. Intraday grain data is rejected ("Intraday grain data is not supported yet"). Each bar's `available_at` is the end of that trade date's last session (13:20 America/Chicago), so nothing is visible before the session closes. The Dataset carries `data_grade` (daily is "C"), `grade_basis` and `limitations` (Yahoo unverified, specs unverified, placeholder and off-grid counts). `GET /profiles` and `POST /analyze` on such a dataset return 422 with `detail: {reason, data_grade}`. Dataset read, list and bar endpoints work normally. Equity datasets keep `data_grade: null`.
+
+Optional futures fields (additive; equity sources are unchanged): `Source.market` (`equity_xnys` default, or `cbot_grains`) and `Source.contract` (e.g. `ZCZ26`, pattern `^[A-Z]{1,3}[FGHJKMNQUVXZ][0-9]{2}$`). `exchange` is `XNYS` or `CBOT`; `timeframe_minutes` also allows `1440` (daily, futures only). `equity_xnys` requires exchange XNYS, no contract and an intraday timeframe; `cbot_grains` requires exchange CBOT, timezone `America/Chicago`, a contract, and `instrument` equal to the contract. Dataset, Profile and Analysis carry optional `data_grade` (`A`, `B`, `C` or null) and `grade_basis`; Dataset and Analysis also carry `limitations` (list, empty by default). For equities these stay null/empty. Futures data from Yahoo is unofficial and unverified against CME; grade `A` is never assigned. Stored records without these fields still load.
 
 The Dataset response contains `id`, `content_sha256` (original bytes), `source`, `created_at`, `row_count`, `first_timestamp`, `last_available_at` and `quality`. Quality reports warnings, missing bar count, absent session dates, incomplete session dates and split suspicion. It counts the full known schedule for each session spanned, including leading/trailing gaps; an in-progress session therefore counts as incomplete.
 
@@ -169,3 +187,40 @@ const analysis = await response.json();
 ```
 
 CORS defaults to `http://localhost:3000` and `http://127.0.0.1:3000`; override with comma-separated `MSI_CORS_ORIGINS`. No frontend files were edited. Synthetic mock responses and metadata are in `backend/fixtures/`; their fixed UUIDs are mock identifiers and cannot be used against a fresh database. Actual upload responses supply real IDs.
+
+## Value area method (step 3.2a)
+
+`Parameters.value_area_method` and the `/profiles` query parameter `value_area_method` accept `two_row` (default) or `one_bin`. Profile output shape is unchanged.
+
+- Default change: value areas (VAL, VAH, achieved_value_fraction, developing value path) now use `two_row`. Pass `one_bin` to get the previous results.
+- `two_row`: start at the POC bin (ties: lowest price). Each step sums the next two bins above and the next two bins below the area (one bin if only one remains on a side, 0 if none) and adds the larger pair; on a tie the lower side is added. Repeat until the enclosed weight is at least `value_area_fraction` x total, or no bins remain.
+- `one_bin`: grow one bin at a time toward the larger neighbour (ties: lower).
+
+## ATR, volatility regime and slope trend (step 3.2b)
+
+New `Parameters` (all validated): `atr_period` int 14 (3..100); `regime_window` int 100 (20..500); `regime_low` float 0.75 (0 < x < 1); `regime_high` float 1.25 (1 < x <= 10); `trend_method` `slope` (default) or `close_difference`; `trend_atr_threshold` float 1.0 (0 < x <= 10). `regime_low` must be below 1 and `regime_high` above 1.
+
+All values are prior-only: bar i uses only bars before i.
+
+- True range of bar j = max(high - low, |high - previous close|, |low - previous close|); the first bar in the data uses high - low.
+- `atr` = simple mean of the true ranges of the `atr_period` bars before bar i; null with fewer prior bars.
+- `atr_median` = median of the non-null `atr` values of up to `regime_window` prior bars; null with fewer than 20 values.
+- `volatility_regime` = `low` if atr / atr_median < `regime_low`, `high` if > `regime_high`, else `normal`; `indeterminate` if atr or atr_median is null or the median is zero.
+- `trend_slope` = ordinary least-squares slope of the closes of the lookback history window, in price per bar. `trend_move_atr` = `trend_slope` x (history length - 1) / `atr` (fitted move in ATRs); null if atr is null or zero, or history is shorter than `minimum_history`.
+- `background`: with `close_difference` it is the previous rule (last minus first close of the history window: up, down, or indeterminate). With `slope` it is `up` if `trend_move_atr` >= `trend_atr_threshold`, `down` if <= -threshold, `flat` in between, and `indeterminate` if `trend_move_atr` is null (including zero ATR).
+- New per-bar feature keys: `atr`, `atr_median`, `volatility_regime`, `trend_slope`, `trend_move_atr`. Existing keys are unchanged.
+
+Default change: `background` now uses `slope`. Pass `trend_method=close_difference` for the previous results. Stored analyses saved before this step are read with `trend_method=close_difference`; stored data is not rewritten.
+
+## Market structure summary (step 3.3a)
+
+`GET /api/v1/structure?contract=ZCZ26&as_of=<iso, optional>` returns a read-only structure summary for one CBOT grain contract. It reads only stored datasets (no network, no provider call); load data first with `POST /datasets/from-contract`.
+
+- `contract` is validated with the same rules as from-contract; invalid -> 422. `as_of` must carry a UTC offset (naive -> 422); bars are cut with `available_at <= as_of`, so later data cannot change the output. Only trade dates whose session had ended by `as_of` (or by the current time when `as_of` is omitted) are used for profiles and volatility; a date still in progress is ignored, and when none is complete the profiles stay null with the limitation "No complete trade date as of the requested time".
+- Dataset choice: stored `cbot_grains` datasets for the contract with timeframe 30, 15 or 5 minutes; largest timeframe first, then the most recent bar.
+- Fields (always present): `contract_version` ("1"), `market` ("cbot_grains"), `root`, `contract`, `as_of` (the cutoff requested or null), `dataset_id`, `data_grade` (the STORED grade), `timeframe_minutes`, `latest_session` (trade date), `session_profile`, `prior_session_profile`, `volatility`, `value_location`, `auction_state`, `limitations` (list of text).
+- `session_profile` / `prior_session_profile`: `{session, bin_size, value_area_method, volume:{poc,vah,val}, tpo:{poc,vah,val}, shape, hvns, lvns, single_print_bins}` for the last two trade dates in the cut bars, built by the same code as `GET /profiles` (bin size = contract tick). The prior profile is null when only one session exists.
+- `volatility`: `{atr, atr_period, regime, trend_background, trend_move_atr}` from the last cut bar with default parameters; individual parts can be null.
+- `value_location` and `auction_state` are always null for intraday grain data.
+- Null means "unsupported or unavailable"; the reason is in `limitations`. No stored intraday data for a valid contract is a 200 with every data field null and a limitation naming `POST /api/v1/datasets/from-contract` (never 404). A dataset whose stored grade is C or none, or that fails the profile gate, returns a 200 with `data_grade` set, profiles and volatility null, and the gate reason in `limitations`. The dataset's own limitations are always copied into `limitations`.
+- Versioning: `contract_version` changes only on a breaking change (removed or renamed field, changed meaning); adding fields does not bump it.
