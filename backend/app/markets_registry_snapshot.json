@@ -6,42 +6,50 @@
   "ZC": {
    "tick_size": "0.25",
    "price_unit": "US cents/bu",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "HKNUZ"
   },
   "ZS": {
    "tick_size": "0.25",
    "price_unit": "US cents/bu",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "FHKNQUX"
   },
   "ZW": {
    "tick_size": "0.25",
    "price_unit": "US cents/bu",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "HKNUZ"
   },
   "KE": {
    "tick_size": "0.25",
    "price_unit": "US cents/bu",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "HKNUZ"
   },
   "ZM": {
    "tick_size": "0.10",
    "price_unit": "USD/short ton",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "FHKNQUVZ"
   },
   "ZL": {
    "tick_size": "0.01",
    "price_unit": "US cents/lb",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "FHKNQUVZ"
   },
   "ZO": {
    "tick_size": "0.25",
    "price_unit": "US cents/bu",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "HKNUZ"
   },
   "ZR": {
    "tick_size": "0.005",
    "price_unit": "USD/cwt",
-   "session_template": "cbot_grains"
+   "session_template": "cbot_grains",
+   "listed_months": "FHKNUX"
   }
  }
 }

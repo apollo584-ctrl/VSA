@@ -33,7 +33,7 @@ def test_registry_env_overrides(tmp_path, monkeypatch):
     p = tmp_path / "r.json"
     p.write_text(json.dumps({"instruments": [{"symbol": "ZC", "specs": {
         "tick_size": {"value": "0.5"}, "price_unit": {"value": "x"},
-        "session_template": {"value": "cbot_grains"}}}]}))
+        "session_template": {"value": "cbot_grains"}, "listed_months": {"value": "HKNUZ"}}}]}))
     monkeypatch.setenv("AG_REGISTRY_PATH", str(p))
     assert m.get_market("cbot_grains").tick_size_for("ZC") == Decimal("0.5")
 

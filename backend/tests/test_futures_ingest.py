@@ -40,17 +40,21 @@ def test_last_trade_date_weekend_and_holiday():
     # 15 Dec 2026 is a Tuesday: day before is Monday 14th
     assert contract_last_trade_date("ZCZ26") == date(2026, 12, 14)
     # 15 Nov 2026 is a Sunday: 14th Sat, 13th Fri
-    assert contract_last_trade_date("ZCX26") == date(2026, 11, 13)
-    # 15 Jun 2026 Monday: previous open day is Friday 12th
-    assert contract_last_trade_date("ZCM26") == date(2026, 6, 12)
+    assert contract_last_trade_date("ZSX26") == date(2026, 11, 13)
+    # 15 Mar 2027 is a Monday: 14th Sunday, 13th Saturday, so Friday the 12th
+    assert contract_last_trade_date("ZCH27") == date(2027, 3, 12)
     # 15 Jan 2027 Friday: 14th Thursday
-    assert contract_last_trade_date("ZCF27") == date(2027, 1, 14)
+    assert contract_last_trade_date("ZSF27") == date(2027, 1, 14)
     # 15 Jan 2024 is MLK Monday: 14th Sunday, so Friday the 12th
-    assert contract_last_trade_date("ZCF24") == date(2024, 1, 12)
-    # 15 Feb 2027 is Presidents Day Monday: 14th Sunday, so Friday the 12th
-    assert contract_last_trade_date("ZCG27") == date(2027, 2, 12)
-    # 16 Feb 2026 holiday is not the 14th; 15 Feb 2026 Sunday -> Friday 13th
-    assert contract_last_trade_date("ZCG26") == date(2026, 2, 13)
+    assert contract_last_trade_date("ZSF24") == date(2024, 1, 12)
+
+
+@pytest.mark.parametrize("bad", ["ZZZ26", "ZNZ26", "ZCG26", "ZCF27", "ZLG26", "SBH26"])
+def test_unsupported_root_or_month_rejected(bad):
+    with pytest.raises(ValueError):
+        contract_parts(bad)
+    with pytest.raises(ValueError):
+        contract_last_trade_date(bad)
 
 
 def test_happy_path():
@@ -142,3 +146,9 @@ def test_api_gating_and_roundtrip(tmp_path):
         assert client.get("/api/v1/profiles", params={"dataset_id": eq.json()["id"]}).status_code == 200
     stored, _ = Store(path).dataset(fut["id"])
     assert stored == Dataset.model_validate(fut)
+
+
+@pytest.mark.parametrize("contract", ["ZZZ26", "ZNZ26", "ZCG26"])
+def test_ingest_rejects_unsupported_root_or_unlisted_month(contract):
+    with pytest.raises(ValueError):
+        ingest(GOOD, src(contract))

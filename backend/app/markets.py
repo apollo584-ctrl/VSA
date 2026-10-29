@@ -59,6 +59,7 @@ def _extract_registry(data: dict) -> dict[str, dict]:
             "tick_size": str(s["tick_size"]["value"]),
             "price_unit": s["price_unit"]["value"],
             "session_template": s["session_template"]["value"],
+            "listed_months": s["listed_months"]["value"],
         }
     return out
 
@@ -172,6 +173,11 @@ def contract_parts(contract: str) -> tuple[str, str, int]:
     root, code, yy = contract[:-3], contract[-3], contract[-2:]
     if not root or not root.isalpha() or not root.isupper() or code not in MONTH_CODES or not yy.isdigit():
         raise ValueError(f"invalid contract: {contract!r}")
+    table = load_grain_table()
+    if root not in GRAIN_ROOTS or root not in table:
+        raise ValueError(f"unsupported contract root: {root!r}")
+    if code not in table[root].get("listed_months", ""):
+        raise ValueError(f"month {code} is not a listed month for {root}")
     return root, code, 2000 + int(yy)
 
 
