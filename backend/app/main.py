@@ -23,11 +23,12 @@ from app import alerts, auth, grade, journal, markets, outcomes, providers, setu
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, StructureResponse, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
+from app.structure import build_structure, pick_dataset
 from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRefreshTimer, StudyRunner, is_stale
 
 DAILY_SYMBOL = re.compile(r"^[A-Z][A-Z0-9.\-]{0,15}$")
@@ -310,6 +311,29 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             return [profile(bars, dataset.source, p, "composite")] if composite else profiles(bars, dataset.source, p)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/v1/structure", response_model=StructureResponse)
+    def get_structure(contract: str, as_of: datetime | None = None):
+        try:
+            root = markets.contract_parts(contract)[0]
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        if as_of is not None and (as_of.tzinfo is None or as_of.utcoffset() is None):
+            raise HTTPException(422, "as_of requires a UTC offset")
+        chosen = pick_dataset(store.datasets_for_contract(contract))
+        if chosen is None:
+            return build_structure(contract, root, as_of, None, [], None, None)
+        dataset, bars = dataset_or_404(chosen.id)
+        bars = cutoff(bars, as_of)
+        gate_reason, session_profiles = None, None
+        try:
+            require_profile_allowed(dataset)
+            session_profiles = get_profiles(dataset.id, as_of, None, 0.7, "two_row", False)
+        except HTTPException as exc:
+            if exc.status_code != 422:
+                raise
+            gate_reason = exc.detail.get("reason") if isinstance(exc.detail, dict) else str(exc.detail)
+        return build_structure(contract, root, as_of, dataset, bars, session_profiles, gate_reason)
 
     def scan_snapshot():
         results = [ScanResult.model_validate_json(raw) for raw in store.scan_results()]

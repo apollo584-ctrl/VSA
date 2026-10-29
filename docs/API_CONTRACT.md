@@ -211,3 +211,16 @@ All values are prior-only: bar i uses only bars before i.
 - New per-bar feature keys: `atr`, `atr_median`, `volatility_regime`, `trend_slope`, `trend_move_atr`. Existing keys are unchanged.
 
 Default change: `background` now uses `slope`. Pass `trend_method=close_difference` for the previous results. Stored analyses saved before this step are read with `trend_method=close_difference`; stored data is not rewritten.
+
+## Market structure summary (step 3.3a)
+
+`GET /api/v1/structure?contract=ZCZ26&as_of=<iso, optional>` returns a read-only structure summary for one CBOT grain contract. It reads only stored datasets (no network, no provider call); load data first with `POST /datasets/from-contract`.
+
+- `contract` is validated with the same rules as from-contract; invalid -> 422. `as_of` must carry a UTC offset (naive -> 422); bars are cut with `available_at <= as_of`, so later data cannot change the output.
+- Dataset choice: stored `cbot_grains` datasets for the contract with timeframe 30, 15 or 5 minutes; largest timeframe first, then the most recent bar.
+- Fields (always present): `contract_version` ("1"), `market` ("cbot_grains"), `root`, `contract`, `as_of` (the cutoff requested or null), `dataset_id`, `data_grade` (the STORED grade), `timeframe_minutes`, `latest_session` (trade date), `session_profile`, `prior_session_profile`, `volatility`, `value_location`, `auction_state`, `limitations` (list of text).
+- `session_profile` / `prior_session_profile`: `{session, bin_size, value_area_method, volume:{poc,vah,val}, tpo:{poc,vah,val}, shape, hvns, lvns, single_print_bins}` for the last two trade dates in the cut bars, built by the same code as `GET /profiles` (bin size = contract tick). The prior profile is null when only one session exists.
+- `volatility`: `{atr, atr_period, regime, trend_background, trend_move_atr}` from the last cut bar with default parameters; individual parts can be null.
+- `value_location` and `auction_state` are always null for intraday grain data.
+- Null means "unsupported or unavailable"; the reason is in `limitations`. No stored intraday data for a valid contract is a 200 with every data field null and a limitation naming `POST /api/v1/datasets/from-contract` (never 404). A dataset whose stored grade is C or none, or that fails the profile gate, returns a 200 with `data_grade` set, profiles and volatility null, and the gate reason in `limitations`. The dataset's own limitations are always copied into `limitations`.
+- Versioning: `contract_version` changes only on a breaking change (removed or renamed field, changed meaning); adding fields does not bump it.

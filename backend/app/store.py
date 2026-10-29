@@ -207,6 +207,13 @@ class Store:
                 return found
         return None
 
+    def datasets_for_contract(self, contract: str) -> list[Dataset]:
+        """Stored CBOT grain datasets for one contract (read-only)."""
+        with self.connect() as db:
+            rows = db.execute("SELECT metadata FROM datasets WHERE metadata LIKE ?", ('%"cbot_grains"%',)).fetchall()
+        found = [Dataset.model_validate_json(row[0]) for row in rows]
+        return [d for d in found if d.source.market == "cbot_grains" and d.source.contract == contract]
+
     def instruments(self):
         with self.connect() as db:
             rows = db.execute("SELECT metadata FROM datasets ORDER BY id").fetchall()
