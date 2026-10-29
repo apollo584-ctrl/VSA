@@ -195,3 +195,19 @@ CORS defaults to `http://localhost:3000` and `http://127.0.0.1:3000`; override w
 - Default change: value areas (VAL, VAH, achieved_value_fraction, developing value path) now use `two_row`. Pass `one_bin` to get the previous results.
 - `two_row`: start at the POC bin (ties: lowest price). Each step sums the next two bins above and the next two bins below the area (one bin if only one remains on a side, 0 if none) and adds the larger pair; on a tie the lower side is added. Repeat until the enclosed weight is at least `value_area_fraction` x total, or no bins remain.
 - `one_bin`: grow one bin at a time toward the larger neighbour (ties: lower).
+
+## ATR, volatility regime and slope trend (step 3.2b)
+
+New `Parameters` (all validated): `atr_period` int 14 (3..100); `regime_window` int 100 (20..500); `regime_low` float 0.75 (0 < x < 1); `regime_high` float 1.25 (1 < x <= 10); `trend_method` `slope` (default) or `close_difference`; `trend_atr_threshold` float 1.0 (0 < x <= 10). `regime_low` must be below 1 and `regime_high` above 1.
+
+All values are prior-only: bar i uses only bars before i.
+
+- True range of bar j = max(high - low, |high - previous close|, |low - previous close|); the first bar in the data uses high - low.
+- `atr` = simple mean of the true ranges of the `atr_period` bars before bar i; null with fewer prior bars.
+- `atr_median` = median of the non-null `atr` values of up to `regime_window` prior bars; null with fewer than 20 values.
+- `volatility_regime` = `low` if atr / atr_median < `regime_low`, `high` if > `regime_high`, else `normal`; `indeterminate` if atr or atr_median is null or the median is zero.
+- `trend_slope` = ordinary least-squares slope of the closes of the lookback history window, in price per bar. `trend_move_atr` = `trend_slope` x (history length - 1) / `atr` (fitted move in ATRs); null if atr is null or zero, or history is shorter than `minimum_history`.
+- `background`: with `close_difference` it is the previous rule (last minus first close of the history window: up, down, or indeterminate). With `slope` it is `up` if `trend_move_atr` >= `trend_atr_threshold`, `down` if <= -threshold, `flat` in between, and `indeterminate` if `trend_move_atr` is null (including zero ATR).
+- New per-bar feature keys: `atr`, `atr_median`, `volatility_regime`, `trend_slope`, `trend_move_atr`. Existing keys are unchanged.
+
+Default change: `background` now uses `slope`. Pass `trend_method=close_difference` for the previous results. Stored analyses saved before this step are read with `trend_method=close_difference`; stored data is not rewritten.

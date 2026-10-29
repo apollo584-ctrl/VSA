@@ -18,14 +18,14 @@ def candidate_bars():
     return ascending() + [make_bar(8, o=101.6, h=103, low=101.2, c=101.3, volume=5000)]
 
 
-def candidate(bars, p=Parameters()):
+def candidate(bars, p=Parameters(trend_method="close_difference")):
     return next(o for o in vsa.detect(bars, features(bars, p), p)
                 if o.concept_id == "upthrust" and o.timestamp == bars[8].timestamp)
 
 
 def test_conditions_report_measured_values_and_configured_thresholds():
     bars = candidate_bars()
-    p = Parameters(wick_fraction=0.5, close_extreme=0.2)
+    p = Parameters(wick_fraction=0.5, close_extreme=0.2, trend_method="close_difference")
     found = candidate(bars, p)
     conditions = {c.id: c for c in found.conditions_met}
     assert conditions["above_prior_high"].actual == 103
@@ -37,7 +37,7 @@ def test_conditions_report_measured_values_and_configured_thresholds():
     assert conditions["up_background"].actual == "up"
     assert all(c.met is True for c in found.conditions_met)
     with pytest.raises(StopIteration):
-        candidate(bars, Parameters(wick_fraction=0.9))
+        candidate(bars, Parameters(wick_fraction=0.9, trend_method="close_difference"))
     assert check("missing", "Unavailable baseline", "relative_volume", None, ">=", 2).met is None
     assert check("boundary", "Inclusive boundary", "value", 2, ">=", 2).met is True
     assert check("boundary", "Strict boundary", "value", 2, ">", 2).met is False
@@ -69,7 +69,7 @@ def test_first_resolution_has_complete_timestamps_and_causal_history(status, clo
 
 
 def test_expiration_occurs_at_exact_horizon_without_inventing_followthrough():
-    p = Parameters(confirmation_bars=2)
+    p = Parameters(confirmation_bars=2, trend_method="close_difference")
     bars = candidate_bars()
     bars += [make_bar(9, o=102, h=103, low=101.2, c=103),
              make_bar(10, o=102, h=103, low=101.2, c=101.2)]
@@ -96,7 +96,7 @@ def test_missing_bars_and_session_boundaries_do_not_invent_resolution(next_bar):
 
 def test_each_observation_owns_its_measurements():
     bars = candidate_bars() + [make_bar(9, o=101.2, h=101.3, low=100.8, c=101)]
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     measured = features(bars, p)
     before = deepcopy(measured)
     results = vsa.detect(bars, measured, p)
@@ -110,7 +110,7 @@ def test_each_observation_owns_its_measurements():
 
 
 def test_price_action_and_auction_receipts_report_their_actual_rules(source):
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     bars = [make_bar(i, h=high) for i, high in enumerate([101, 102, 105, 103, 102])]
     pivot = next(o for o in price_action.detect(bars, features(bars, p), p) if o.concept_id == "swing_structure")
     assert pivot.conditions_met[0].actual == 105
