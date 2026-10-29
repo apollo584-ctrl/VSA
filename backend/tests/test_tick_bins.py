@@ -110,3 +110,12 @@ def test_bin_edges_are_tick_multiples():
         for e in edges:
             assert e % D(tick) == 0
             assert (e / size) == (e / size).to_integral_value()
+
+
+def test_float32_rounded_yahoo_prices_are_on_grid():
+    from app import bins
+    for price in (67.69000244140625, 68.27999877929688, 67.4000015258789, 453.0):
+        assert not bins.snap_to_tick(price, "0.01" if price < 100 else "0.25")[1]
+    # a real one-hundredth-of-a-cent miss stays off-grid
+    assert bins.snap_to_tick(67.695, "0.01")[1]
+    assert bins.snap_to_tick(432.7499, "0.25")[1]

@@ -4,7 +4,9 @@ from __future__ import annotations
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Iterable
 
-_OFF_GRID_TOLERANCE = Decimal("0.000001")
+_OFF_GRID_TOLERANCE = Decimal("0.000001")  # fraction of a tick
+# Yahoo returns prices rounded to 32-bit floats (relative error up to about 6e-8); allow 2**-23 of the price.
+_FLOAT32_REL_TOLERANCE = Decimal("0.00000012")
 
 
 def _dec(value) -> Decimal:
@@ -20,7 +22,7 @@ def snap_to_tick(price, tick) -> tuple[Decimal, bool]:
     if t <= 0:
         raise ValueError("tick must be positive")
     snapped = (p / t).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * t
-    off_grid = abs(p - snapped) > _OFF_GRID_TOLERANCE * t
+    off_grid = abs(p - snapped) > max(_OFF_GRID_TOLERANCE * t, _FLOAT32_REL_TOLERANCE * abs(p))
     return snapped, off_grid
 
 
