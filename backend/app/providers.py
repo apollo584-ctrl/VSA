@@ -275,6 +275,8 @@ class YahooFuturesIntradayProvider:
                 raise ValueError("returned symbol does not match requested symbol")
             if meta.get("instrumentType") != "FUTURE" or meta.get("exchangeName") != "CBT":
                 raise ValueError("unsupported market metadata; CBOT futures required")
+            if meta.get("dataGranularity") != f"{self.minutes}m":
+                raise ValueError("returned bar granularity does not match the requested interval")
             timestamps = result["timestamp"]
             if not isinstance(timestamps, list) or any(
                 type(t) not in (int, float) or not math.isfinite(t) for t in timestamps

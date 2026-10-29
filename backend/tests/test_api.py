@@ -245,7 +245,8 @@ def _contract_chart(contract="ZCZ26", days=("2026-10-13", "2026-10-14"), minutes
     base = [450 + (i % 8) * .25 for i in range(n)]
     quote = {"open": base, "high": [b + .5 for b in base], "low": [b - .25 for b in base],
              "close": [b + .25 for b in base], "volume": [100 + i for i in range(n)]}
-    meta = {"symbol": f"{contract}.CBT", "exchangeName": "CBT", "instrumentType": "FUTURE"}
+    meta = {"symbol": f"{contract}.CBT", "exchangeName": "CBT", "instrumentType": "FUTURE",
+            "dataGranularity": f"{minutes}m"}
     return {"chart": {"result": [{"meta": meta, "timestamp": [int(s.timestamp()) for s in stamps],
                                   "indicators": {"quote": [quote]}}], "error": None}}
 

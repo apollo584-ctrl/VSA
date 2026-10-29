@@ -16,11 +16,12 @@ def ny_midnight(day: str) -> int:
     return int(datetime(y, m, d, tzinfo=ZoneInfo("America/New_York")).timestamp())
 
 
-def chart(stamps, *, symbol="ZCZ26.CBT", instrument="FUTURE", exchange="CBT", **overrides):
+def chart(stamps, *, symbol="ZCZ26.CBT", instrument="FUTURE", exchange="CBT", granularity="30m", **overrides):
     n = len(stamps)
     quote = {"open": [100.0] * n, "high": [101.0] * n, "low": [99.0] * n, "close": [100.5] * n, "volume": [1000] * n}
     quote.update(overrides)
-    meta = {"symbol": symbol, "instrumentType": instrument, "exchangeName": exchange, "exchangeTimezoneName": "America/New_York"}
+    meta = {"symbol": symbol, "instrumentType": instrument, "exchangeName": exchange, "exchangeTimezoneName": "America/New_York",
+            "dataGranularity": granularity}
     return {"chart": {"result": [{"meta": meta, "timestamp": stamps, "indicators": {"quote": [quote]}}], "error": None}}
 
 
@@ -168,7 +169,7 @@ def test_intraday_happy_path_across_trade_date_boundary():
 
 def test_intraday_url_and_source_for_other_settings():
     urls = []
-    p = YahooFuturesIntradayProvider("ZCZ26", minutes=5, period="5d", fetch=fetcher(chart(EVE + DAY), urls), now=lambda: NOW)
+    p = YahooFuturesIntradayProvider("ZCZ26", minutes=5, period="5d", fetch=fetcher(chart(EVE + DAY, granularity="5m"), urls), now=lambda: NOW)
     source, _ = p.read()
     assert urls == ["https://query1.finance.yahoo.com/v8/finance/chart/ZCZ26.CBT?interval=5m&range=5d&includePrePost=false"]
     assert source.timeframe_minutes == 5 and source.source_name == "yahoo_finance_chart_5m_unofficial_5d"
@@ -241,3 +242,11 @@ def test_intraday_unknown_symbol_is_symbol_not_found():
     body = {"chart": {"result": None, "error": {"code": "Not Found", "description": "No data found"}}}
     with pytest.raises(SymbolNotFound):
         iprov(body).read()
+
+
+def test_intraday_granularity_mismatch_or_missing_rejected():
+    for granularity in ("30m", None):
+        with pytest.raises(ProviderUnavailable):
+            YahooFuturesIntradayProvider("ZCZ26", minutes=5, period="5d",
+                                         fetch=fetcher(chart(EVE + DAY, granularity=granularity)),
+                                         now=lambda: NOW).read()
