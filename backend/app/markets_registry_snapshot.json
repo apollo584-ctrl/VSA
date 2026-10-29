@@ -1,0 +1,47 @@
+{
+ "spec_status": "unverified",
+ "source": "Ag Predictor instruments/registry.json (vendored copy)",
+ "retrieved": "2026-10-28",
+ "instruments": {
+  "ZC": {
+   "tick_size": "0.25",
+   "price_unit": "US cents/bu",
+   "session_template": "cbot_grains"
+  },
+  "ZS": {
+   "tick_size": "0.25",
+   "price_unit": "US cents/bu",
+   "session_template": "cbot_grains"
+  },
+  "ZW": {
+   "tick_size": "0.25",
+   "price_unit": "US cents/bu",
+   "session_template": "cbot_grains"
+  },
+  "KE": {
+   "tick_size": "0.25",
+   "price_unit": "US cents/bu",
+   "session_template": "cbot_grains"
+  },
+  "ZM": {
+   "tick_size": "0.10",
+   "price_unit": "USD/short ton",
+   "session_template": "cbot_grains"
+  },
+  "ZL": {
+   "tick_size": "0.01",
+   "price_unit": "US cents/lb",
+   "session_template": "cbot_grains"
+  },
+  "ZO": {
+   "tick_size": "0.25",
+   "price_unit": "US cents/bu",
+   "session_template": "cbot_grains"
+  },
+  "ZR": {
+   "tick_size": "0.005",
+   "price_unit": "USD/cwt",
+   "session_template": "cbot_grains"
+  }
+ }
+}
