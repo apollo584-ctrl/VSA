@@ -23,11 +23,10 @@ def _atr_before(tr, i, period):
     return float(np.mean(tr[i - period:i])) if i >= period else None
 
 
-def _regime_inputs(tr, i, p):
-    atr = _atr_before(tr, i, p.atr_period)
-    prior = [a for a in (_atr_before(tr, j, p.atr_period) for j in range(max(0, i - p.regime_window), i)) if a is not None]
+def _regime_inputs(atrs, i, p):
+    prior = [a for a in atrs[max(0, i - p.regime_window):i] if a is not None]
     median = float(np.median(prior)) if len(prior) >= 20 else None
-    return atr, median
+    return atrs[i], median
 
 
 def _trend(history, atr, p, progress):
@@ -40,7 +39,8 @@ def _trend(history, atr, p, progress):
         if slope is not None and atr:
             move = slope * (len(history) - 1) / atr
     if p.trend_method == "close_difference":
-        background = "up" if progress is not None and progress > 0 else                      "down" if progress is not None and progress < 0 else "indeterminate"
+        background = ("up" if progress is not None and progress > 0 else
+                      "down" if progress is not None and progress < 0 else "indeterminate")
     elif move is None:
         background = "indeterminate"
     else:
@@ -51,6 +51,7 @@ def _trend(history, atr, p, progress):
 def features(bars: list[Bar], p: Parameters):
     result = []
     tr = _true_ranges(bars)
+    atrs = [_atr_before(tr, j, p.atr_period) for j in range(len(bars))]
     tod_history = defaultdict(list)
     for i, bar in enumerate(bars):
         history = bars[max(0, i - p.lookback):i]
@@ -67,7 +68,7 @@ def features(bars: list[Bar], p: Parameters):
         progress = history[-1].close - history[0].close if len(history) >= p.minimum_history else None
         relative_volume = bar.volume / mean_volume if mean_volume else None
         relative_spread = spread / mean_spread if mean_spread else None
-        atr, atr_median = _regime_inputs(tr, i, p)
+        atr, atr_median = _regime_inputs(atrs, i, p)
         if atr is None or atr_median is None:
             regime = "indeterminate"
         elif not atr_median:
