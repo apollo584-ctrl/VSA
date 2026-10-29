@@ -13,7 +13,7 @@ from typing import Protocol
 import pandas as pd
 
 from app.data import calendar, ingest, session_window
-from app.markets import contract_parts, get_market, is_session_complete, session_windows
+from app.markets import contract_parts, get_market, is_session_complete, session_windows, trade_date_for
 from app.models import Bar, Dataset, Source
 
 
@@ -221,4 +221,101 @@ class YahooFuturesDailyProvider:
             rows += 1
         if not rows:
             raise ValueError(f"No completed daily bars are available for {self.symbol}")
+        return source, output.getvalue().encode()
+
+
+YAHOO_FUTURES_INTRADAY_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval={minutes}m&range={period}&includePrePost=false"
+YAHOO_FUTURES_INTRADAY_MINUTES = (5, 15, 30)
+YAHOO_FUTURES_INTRADAY_PERIODS = ("5d", "1mo", "60d")
+
+
+class YahooFuturesIntradayProvider:
+    """Completed 5/15/30 minute bars for one CBOT grain contract (e.g. ZCZ26 -> ZCZ26.CBT) from the unofficial Yahoo chart endpoint.
+
+    Same caveats as YahooChartProvider. Timestamps are bar-start. Dropped, never repaired: rows with any null value, bars of
+    trade dates whose session is not complete yet, and a partial first trade date (response lacks its 19:00 CT evening slot).
+    Everything else (including invalid positions) passes through; ingest rejects it (fail closed).
+    """
+
+    def __init__(self, contract: str, minutes: int = 30, period: str = "60d", fetch: Fetch = http_fetch,
+                 now: Callable[[], datetime] = lambda: datetime.now(UTC)):
+        if minutes not in YAHOO_FUTURES_INTRADAY_MINUTES:
+            raise ValueError(f"unsupported minutes: {minutes!r}")
+        if period not in YAHOO_FUTURES_INTRADAY_PERIODS:
+            raise ValueError(f"unsupported period: {period!r}")
+        contract_parts(contract)  # raises ValueError for malformed contract codes
+        self.contract, self.minutes, self.period, self.fetch, self.now = contract, minutes, period, fetch, now
+        self.symbol = f"{contract}.CBT"
+
+    def source(self) -> Source:
+        return Source(instrument=self.contract, timeframe_minutes=self.minutes, market="cbot_grains", exchange="CBOT",
+                      timezone="America/Chicago", contract=self.contract, timestamp_convention="bar_start",
+                      price_adjustment="unadjusted", volume_adjustment="raw",
+                      source_name=f"yahoo_finance_chart_{self.minutes}m_unofficial_{self.period}")
+
+    def read(self) -> tuple[Source, bytes]:
+        url = YAHOO_FUTURES_INTRADAY_URL.format(symbol=urllib.parse.quote(self.symbol, safe=""),
+                                                minutes=self.minutes, period=self.period)
+        try:
+            payload = json.loads(self.fetch(url))["chart"]
+            if not isinstance(payload, dict):
+                raise ValueError("chart must be an object")
+            results = payload["result"]
+            if results is None or results == []:
+                error = payload.get("error")
+                if isinstance(error, dict) and error.get("code") == "Not Found":
+                    raise SymbolNotFound(f"No market data found for symbol {self.symbol}")
+                raise ValueError("missing chart result")
+            if not isinstance(results, list) or len(results) != 1 or payload.get("error") is not None:
+                raise ValueError("expected one successful chart result")
+            result = results[0]
+            meta = result["meta"]
+            returned_symbol = meta["symbol"]
+            if not isinstance(returned_symbol, str) or returned_symbol.strip().upper() != self.symbol.strip().upper():
+                raise ValueError("returned symbol does not match requested symbol")
+            if meta.get("instrumentType") != "FUTURE" or meta.get("exchangeName") != "CBT":
+                raise ValueError("unsupported market metadata; CBOT futures required")
+            timestamps = result["timestamp"]
+            if not isinstance(timestamps, list) or any(
+                type(t) not in (int, float) or not math.isfinite(t) for t in timestamps
+            ):
+                raise ValueError("timestamps must be finite numeric epoch seconds")
+            quote = result["indicators"]["quote"][0]
+            columns = [quote[name] for name in ("open", "high", "low", "close", "volume")]
+            if any(not isinstance(column, list) or len(column) != len(timestamps) for column in columns):
+                raise ValueError("OHLCV arrays must align with timestamps")
+            if any(value is not None and type(value) not in (int, float) for column in columns for value in column):
+                raise ValueError("OHLCV values must be numeric or null")
+            stamps = [pd.Timestamp(t, unit="s", tz="UTC") for t in timestamps]
+        except SymbolNotFound:
+            raise
+        except (ValueError, KeyError, IndexError, TypeError, OverflowError) as exc:
+            raise ProviderUnavailable("Market data provider returned an unreadable response") from exc
+        if not timestamps:
+            raise ValueError(f"No bars returned for {self.symbol}")
+        source = self.source()
+        market = get_market("cbot_grains")
+        now_utc = self.now()
+        dates = [trade_date_for(s.to_pydatetime(), market) for s in stamps]
+        # Partial first trade date: no response timestamp (null rows included) is that date's 19:00 CT evening start.
+        partial_first = None
+        known = [d for d in dates if d is not None]
+        if known:
+            first = min(known)
+            windows = session_windows(first, market)
+            if windows and windows[0][0] not in {s.to_pydatetime() for s in stamps}:
+                partial_first = first
+        output = io.StringIO(newline="")
+        writer = csv.writer(output, lineterminator="\n")
+        writer.writerow(["timestamp", "open", "high", "low", "close", "volume"])
+        rows = 0
+        for stamp, day, *values in zip(stamps, dates, *columns):
+            if any(v is None for v in values):
+                continue
+            if day is not None and (not is_session_complete(day, now_utc, market) or day == partial_first):
+                continue
+            writer.writerow([stamp.tz_convert("America/Chicago").isoformat(), *values])
+            rows += 1
+        if not rows:
+            raise ValueError(f"No completed intraday bars are available for {self.symbol}")
         return source, output.getvalue().encode()

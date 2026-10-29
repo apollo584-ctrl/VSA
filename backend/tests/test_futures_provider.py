@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from app.providers import ProviderUnavailable, SymbolNotFound, YahooFuturesDailyProvider, import_provider
+from app.providers import (ProviderUnavailable, SymbolNotFound, YahooFuturesDailyProvider, YahooFuturesIntradayProvider,
+                           import_provider)
 
 NOW = datetime(2026, 10, 30, 12, tzinfo=UTC)  # after the Oct 26-28 sessions have closed
 
@@ -129,3 +130,114 @@ def test_unknown_symbol_is_symbol_not_found():
     body = {"chart": {"result": None, "error": {"code": "Not Found", "description": "No data found, symbol may be delisted"}}}
     with pytest.raises(SymbolNotFound):
         provider(body).read()
+
+
+# ---- YahooFuturesIntradayProvider ----
+
+def chi(y, mo, d, h, mi=0) -> int:
+    return int(datetime(y, mo, d, h, mi, tzinfo=ZoneInfo("America/Chicago")).timestamp())
+
+
+def iprov(body, now=NOW, **kwargs):
+    return YahooFuturesIntradayProvider("ZCZ26", fetch=fetcher(body), now=lambda: now, **kwargs)
+
+
+def csv_rows(raw: bytes) -> list[str]:
+    lines = raw.decode().splitlines()
+    assert lines[0] == "timestamp,open,high,low,close,volume"
+    return [line.split(",")[0] for line in lines[1:]]
+
+
+# Trade date Tue 2026-10-27: evening starts Mon 19:00 CDT. NOW (Oct 30 12:00 UTC) is before Oct 30's close.
+EVE = [chi(2026, 10, 26, 19), chi(2026, 10, 26, 19, 30)]
+DAY = [chi(2026, 10, 27, 8, 30), chi(2026, 10, 27, 9)]
+
+
+def test_intraday_happy_path_across_trade_date_boundary():
+    nxt = [chi(2026, 10, 27, 19), chi(2026, 10, 28, 8, 30)]
+    source, raw = iprov(chart(EVE + DAY + nxt)).read()
+    assert source.market == "cbot_grains" and source.timeframe_minutes == 30 and source.contract == "ZCZ26"
+    assert source.timestamp_convention == "bar_start" and source.timezone == "America/Chicago"
+    assert source.source_name == "yahoo_finance_chart_30m_unofficial_60d"
+    assert csv_rows(raw) == [
+        "2026-10-26T19:00:00-05:00", "2026-10-26T19:30:00-05:00",
+        "2026-10-27T08:30:00-05:00", "2026-10-27T09:00:00-05:00",
+        "2026-10-27T19:00:00-05:00", "2026-10-28T08:30:00-05:00",
+    ]
+
+
+def test_intraday_url_and_source_for_other_settings():
+    urls = []
+    p = YahooFuturesIntradayProvider("ZCZ26", minutes=5, period="5d", fetch=fetcher(chart(EVE + DAY), urls), now=lambda: NOW)
+    source, _ = p.read()
+    assert urls == ["https://query1.finance.yahoo.com/v8/finance/chart/ZCZ26.CBT?interval=5m&range=5d&includePrePost=false"]
+    assert source.timeframe_minutes == 5 and source.source_name == "yahoo_finance_chart_5m_unofficial_5d"
+
+
+def test_intraday_null_rows_are_dropped():
+    _, raw = iprov(chart(EVE + DAY, close=[100.5, None, 100.5, 100.5])).read()
+    assert len(csv_rows(raw)) == 3
+
+
+def test_intraday_forming_bar_with_odd_timestamp_is_dropped():
+    odd = chi(2026, 10, 30, 8, 37)
+    _, raw = iprov(chart(EVE + DAY + [odd])).read()
+    assert "2026-10-30T08:37:00-05:00" not in csv_rows(raw)
+    assert len(csv_rows(raw)) == 4
+
+
+def test_intraday_open_trade_date_dropped_and_completed_kept():
+    stamps = EVE + DAY
+    with pytest.raises(ValueError):
+        iprov(chart(stamps), now=datetime(2026, 10, 27, 17, tzinfo=UTC)).read()  # 12:00 CT, session open
+    _, raw = iprov(chart(stamps), now=datetime(2026, 10, 27, 18, 20, tzinfo=UTC)).read()  # 13:20 CT
+    assert len(csv_rows(raw)) == 4
+    later = [chi(2026, 10, 27, 19), chi(2026, 10, 28, 8, 30)]
+    _, raw = iprov(chart(stamps + later), now=datetime(2026, 10, 27, 18, 30, tzinfo=UTC)).read()
+    assert len(csv_rows(raw)) == 4  # Oct 28 is still open
+
+
+def test_intraday_partial_first_date_dropped_and_kept_with_evening_start():
+    nxt = [chi(2026, 10, 27, 19), chi(2026, 10, 28, 8, 30)]
+    _, raw = iprov(chart([chi(2026, 10, 26, 23)] + DAY + nxt)).read()
+    assert csv_rows(raw) == ["2026-10-27T19:00:00-05:00", "2026-10-28T08:30:00-05:00"]
+    # The 19:00 slot is present as a null row: the first date is complete in the response and is kept.
+    _, raw = iprov(chart(EVE + DAY + nxt, close=[None, 100.5, 100.5, 100.5, 100.5, 100.5])).read()
+    assert csv_rows(raw)[0] == "2026-10-26T19:30:00-05:00" and len(csv_rows(raw)) == 5
+
+
+def test_intraday_offsets_winter_and_summer():
+    winter = [chi(2026, 11, 2, 19), chi(2026, 11, 3, 8, 30)]
+    _, raw = iprov(chart(winter), now=datetime(2026, 11, 10, tzinfo=UTC)).read()
+    assert csv_rows(raw) == ["2026-11-02T19:00:00-06:00", "2026-11-03T08:30:00-06:00"]
+    summer = [chi(2026, 7, 6, 19), chi(2026, 7, 7, 8, 30)]
+    _, raw = iprov(chart(summer), now=datetime(2026, 7, 20, tzinfo=UTC)).read()
+    assert csv_rows(raw) == ["2026-07-06T19:00:00-05:00", "2026-07-07T08:30:00-05:00"]
+
+
+@pytest.mark.parametrize("kwargs", [{"instrument": "EQUITY"}, {"exchange": "NYM"}, {"symbol": "ZCH27.CBT"}])
+def test_intraday_wrong_metadata_is_unavailable(kwargs):
+    with pytest.raises(ProviderUnavailable):
+        iprov(chart(EVE + DAY, **kwargs)).read()
+
+
+def test_intraday_misaligned_arrays_are_unavailable():
+    with pytest.raises(ProviderUnavailable):
+        iprov(chart(EVE + DAY, volume=[1000])).read()
+
+
+@pytest.mark.parametrize("kwargs", [{"minutes": 60}, {"minutes": 1}, {"period": "1y"}, {"period": "2d"}])
+def test_intraday_invalid_settings_are_rejected(kwargs):
+    with pytest.raises(ValueError):
+        YahooFuturesIntradayProvider("ZCZ26", fetch=fetcher(b"{}"), now=lambda: NOW, **kwargs)
+
+
+def test_intraday_invalid_contract_is_rejected():
+    with pytest.raises(ValueError):
+        YahooFuturesIntradayProvider("ZCA26", fetch=fetcher(b"{}"), now=lambda: NOW)
+
+
+def test_intraday_unknown_symbol_is_symbol_not_found():
+    body = {"chart": {"result": None, "error": {"code": "Not Found", "description": "No data found"}}}
+    with pytest.raises(SymbolNotFound):
+        iprov(body).read()
