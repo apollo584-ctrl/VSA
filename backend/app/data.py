@@ -2,7 +2,8 @@
 import csv
 import hashlib
 import io
-from datetime import UTC, datetime
+import re
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -10,8 +11,10 @@ import exchange_calendars as xcals
 import numpy as np
 import pandas as pd
 
+from app import bins, grade, markets
 from app.models import Bar, Dataset, Parameters, Quality, Source
 
+_ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 MAX_ROWS = 50000
 MAX_BYTES = 10 * 1024 * 1024
 
@@ -34,8 +37,101 @@ def session_window(cal, session: str, source: Source):
     return day + pd.Timedelta(hours=4), day + pd.Timedelta(hours=20)
 
 
+def _grain_open_days(first: date, last: date) -> list[date]:
+    days = []
+    market = markets.get_market("cbot_grains")
+    d = first
+    while d <= last:
+        if markets.session_windows(d, market):
+            days.append(d)
+        d += timedelta(days=1)
+    return days
+
+
+def _futures_quality(bars: list[Bar], source: Source, p: Parameters) -> Quality:
+    present = {b.session for b in bars}
+    expected = [d.isoformat() for d in _grain_open_days(date.fromisoformat(bars[0].session),
+                                                        date.fromisoformat(bars[-1].session))]
+    absent = [s for s in expected if s not in present]
+    ratios = [max(a.close / b.open, b.open / a.close) for a, b in zip(bars, bars[1:])]
+    suspected = any(ratio >= p.split_ratio for ratio in ratios)
+    warnings = []
+    if absent:
+        warnings.append("Missing grain trading days; no bars were filled.")
+    if suspected:
+        warnings.append("Large adjacent price discontinuity: possible gap or contract roll. Cross-bar analysis is disabled.")
+    if any(b.volume == 0 for b in bars):
+        warnings.append("Zero-volume placeholder bars exist; they carry no trading information.")
+    warnings.append(grade.YAHOO_LIMITATION)
+    warnings.append(grade.SPECS_LIMITATION)
+    warnings.append("Grain closures use the XNYS holiday list as a stand-in; CME grain holiday schedule not verified.")
+    return Quality(warnings=warnings, missing_bars=len(absent), absent_sessions=absent,
+                   incomplete_sessions=[], split_suspected=suspected)
+
+
+def _ingest_futures(raw: bytes, rows: list[dict], source: Source) -> tuple[Dataset, list[Bar]]:
+    if source.timeframe_minutes != 1440:
+        raise ValueError("Intraday grain data is not supported yet")
+    expiry = markets.contract_last_trade_date(source.contract)
+    market = markets.get_market("cbot_grains")
+    names = ["open", "high", "low", "close", "volume"]
+    bars: list[Bar] = []
+    previous: date | None = None
+    for index, row in enumerate(rows):
+        label = f"Row {index + 2}"
+        cell = row["timestamp"].strip()
+        if not _ISO_DATE.fullmatch(cell):
+            raise ValueError(f"{label}: daily timestamp must be an ISO date YYYY-MM-DD")
+        try:
+            day = date.fromisoformat(cell)
+        except ValueError as exc:
+            raise ValueError(f"{label}: daily timestamp must be an ISO date YYYY-MM-DD") from exc
+        if previous is not None and day <= previous:
+            raise ValueError("Timestamps must be strictly increasing; duplicates are rejected")
+        previous = day
+        windows = markets.session_windows(day, market)
+        if not windows:
+            raise ValueError(f"{label}: {cell} is not a grain trading day")
+        if day > expiry:
+            raise ValueError(f"{label}: bar after contract expiry (possible contract roll)")
+        try:
+            values = [float(row[name]) for name in names]
+        except ValueError as exc:
+            raise ValueError(f"{label}: OHLCV must be numeric") from exc
+        o, h, low, c, v = values
+        if not np.isfinite(values).all() or min(o, h, low, c) <= 0 or v < 0:
+            raise ValueError(f"{label}: finite positive OHLC and nonnegative volume required")
+        if max(o, h, low, c) > 1e9 or v > 1e15:
+            raise ValueError(f"{label}: numerical safety bounds are OHLC <= 1e9 and volume <= 1e15")
+        if low > min(o, c) or h < max(o, c) or low > h:
+            raise ValueError(f"{label}: inconsistent OHLC")
+        bars.append(Bar(timestamp=windows[0][0], available_at=windows[-1][1], session=cell,
+                        open=o, high=h, low=low, close=c, volume=v))
+    if (date.fromisoformat(bars[-1].session) - date.fromisoformat(bars[0].session)).days > 366 * 5:
+        raise ValueError("A dataset may span at most five years")
+    root = markets.contract_parts(source.contract)[0]
+    tick = market.tick_size_for(root)
+    placeholders = sum(1 for b in bars if b.volume == 0 and b.open == b.high == b.low == b.close)
+    off_grid = 0
+    if tick is not None:
+        off_grid = bins.off_grid_count([x for b in bars for x in (b.open, b.high, b.low, b.close)], tick)
+    result = grade.grade_futures(1440, True, len(bars), placeholders, off_grid, market.spec_status)
+    limitations = list(result.limitations)
+    if placeholders:
+        limitations.append(f"{placeholders} placeholder bar(s) with no trading")
+    if off_grid:
+        limitations.append(f"{off_grid} price(s) off the contract tick grid")
+    dataset = Dataset(id=str(uuid4()), content_sha256=hashlib.sha256(raw).hexdigest(), source=source,
+                      created_at=datetime.now(UTC), row_count=len(bars), first_timestamp=bars[0].timestamp,
+                      last_available_at=bars[-1].available_at, quality=quality(bars, source),
+                      data_grade=result.grade, grade_basis=result.basis, limitations=limitations)
+    return dataset, bars
+
+
 def quality(bars: list[Bar], source: Source, parameters: Parameters | None = None) -> Quality:
     p = parameters or Parameters()
+    if source.market == "cbot_grains":
+        return _futures_quality(bars, source, p)
     first, last = bars[0].session, bars[-1].session
     cal = calendar(first, last)
     grouped: dict[str, list[Bar]] = {}
@@ -95,6 +191,8 @@ def ingest(raw: bytes, source: Source) -> tuple[Dataset, list[Bar]]:
         raise ValueError("Malformed CSV: invalid quoting or oversized field") from exc
     if not rows:
         raise ValueError("CSV must contain bars")
+    if source.market == "cbot_grains":
+        return _ingest_futures(raw, rows, source)
     stamps = []
     awareness = set()
     try:

@@ -162,6 +162,28 @@ def session_windows(trade_date: date, market: MarketSpec) -> list[tuple[datetime
     ]
 
 
+MONTH_CODES = "FGHJKMNQUVXZ"
+
+
+def contract_parts(contract: str) -> tuple[str, str, int]:
+    """(root, month_code, year) for a contract such as ZCZ26."""
+    if not isinstance(contract, str) or len(contract) < 4:
+        raise ValueError(f"invalid contract: {contract!r}")
+    root, code, yy = contract[:-3], contract[-3], contract[-2:]
+    if not root or not root.isalpha() or not root.isupper() or code not in MONTH_CODES or not yy.isdigit():
+        raise ValueError(f"invalid contract: {contract!r}")
+    return root, code, 2000 + int(yy)
+
+
+def contract_last_trade_date(contract: str) -> date:
+    """Grain open day immediately before the 15th calendar day of the delivery month."""
+    _, code, year = contract_parts(contract)
+    d = date(year, MONTH_CODES.index(code) + 1, 15) - timedelta(days=1)
+    while d.weekday() >= 5 or is_holiday(d):
+        d -= timedelta(days=1)
+    return d
+
+
 def is_session_complete(trade_date: date, as_of_utc: datetime, market: MarketSpec) -> bool:
     wins = session_windows(trade_date, market)
     if not wins:
