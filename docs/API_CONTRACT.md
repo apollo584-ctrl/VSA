@@ -17,7 +17,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/journal/export.csv`, `/journal/day-summary?date=` | — | CSV of every entry; `{date, trades, losses, realized_pnl}` |
 | GET | `/datasets/{id}` | dataset UUID | Dataset |
 | GET | `/market/bars` | dataset_id; optional as_of, offset=0, limit=1000 (max 10000) | Bar array |
-| GET | `/profiles` | dataset_id; optional as_of, bin_size=.25, value_area_fraction=.7, composite=false | Profile array |
+| GET | `/profiles` | dataset_id; optional as_of, bin_size (equity default .25; grain default = contract tick), value_area_fraction=.7, composite=false | Profile array |
 | GET | `/knowledge/concepts` | optional category | Concept array |
 | GET | `/knowledge/concepts/{id}` | concept ID | Concept |
 | GET | `/knowledge/concepts/{id}/related` | concept ID | related Concept array |
@@ -25,6 +25,14 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/analyses/{id}` | analysis UUID | persisted Analysis |
 
 Categories include `strength`, `weakness`, `neutral`, `profile`, `auction`, `price_action`, `data`, `limitations`. Unknown IDs return 404. Validation failures return 422 with FastAPI's `detail` (string for domain rejection, array for request schema errors). Errors create no dataset or analysis snapshot. Each response includes `X-Request-ID`. There is no live instrument discovery.
+
+
+### CBOT grain gate (profiles and analyze)
+- `/profiles` for a grain dataset uses the stored `data_grade`/`grade_basis`, not a recompute. Daily (1440) bars: 422 `{"reason": "Daily bars cannot support an intraday profile", "data_grade"}`. Intraday (5/15/30) with stored grade B: allowed. Stored grade C or none: 422 `{reason, data_grade}` naming placeholder bars, off-grid prices or no usable bars. Equity datasets are unchanged.
+- `POST /analyze` on any intraday grain dataset returns 422 `{"reason": "Analysis is not supported yet for intraday grain data", "data_grade"}`. Daily grain is still refused by the gate.
+- `bin_size` is optional. Equity default 0.25. Grain default is the contract root tick; a given grain `bin_size` must be a whole multiple of the tick, else 422 `bin_size must be a whole multiple of the contract tick (<tick>)`.
+- Grain TPO periods are fixed at 30 minutes whatever the bar size. Equities keep max(30, timeframe).
+- Initial balance is "not computed" for grain profiles.
 
 ## Authentication
 

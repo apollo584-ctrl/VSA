@@ -277,15 +277,67 @@ def test_contract_required_for_grain():
         ingest(intraday_csv([date(2026, 10, 27)], 30), s)
 
 
-def test_temporary_intraday_profile_guard(tmp_path):
+def _upload(client, body, source):
+    r = client.post("/api/v1/datasets/upload", files={"file": ("z.csv", body, "text/csv")},
+                    data={"metadata": source.model_dump_json()})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_stored_grade_gate_for_intraday_grain(tmp_path):
+    days = [date(2026, 10, 26), date(2026, 10, 27)]
     with TestClient(create_app(tmp_path / "g.sqlite3"), client=("127.0.0.1", 50000),
                     base_url="http://localhost") as client:
-        r = client.post("/api/v1/datasets/upload",
-                        files={"file": ("z.csv", intraday_csv([date(2026, 10, 27)], 30), "text/csv")},
-                        data={"metadata": src(timeframe=30).model_dump_json()})
-        assert r.status_code == 201, r.text
-        assert r.json()["data_grade"] == "B"
-        p = client.get("/api/v1/profiles", params={"dataset_id": r.json()["id"]})
-        assert p.status_code == 422
-        assert p.json()["detail"]["reason"] == "Intraday grain profiles are not supported yet"
-        assert p.json()["detail"]["data_grade"] == "B"
+        b = _upload(client, intraday_csv(days, 30), src(timeframe=30))
+        assert b["data_grade"] == "B"
+        # grade B: default bin = tick (ZC 0.25)
+        r = client.get("/api/v1/profiles", params={"dataset_id": b["id"]})
+        assert r.status_code == 200, r.text
+        assert r.json() and all(p["bin_size"] == 0.25 for p in r.json())
+        # a valid multiple
+        r = client.get("/api/v1/profiles", params={"dataset_id": b["id"], "bin_size": 0.5})
+        assert r.status_code == 200 and all(p["bin_size"] == 0.5 for p in r.json())
+        # not a multiple
+        r = client.get("/api/v1/profiles", params={"dataset_id": b["id"], "bin_size": 0.30})
+        assert r.status_code == 422 and "whole multiple of the contract tick (0.25)" in r.json()["detail"]
+        # analyze refused for intraday grain
+        a = client.post("/api/v1/analyze", json={"dataset_id": b["id"]})
+        assert a.status_code == 422
+        assert a.json()["detail"] == {"reason": "Analysis is not supported yet for intraday grain data",
+                                      "data_grade": "B"}
+        # as_of before the last bar does not leak later bars
+        cut = (slot_starts(days[0], 30)[-1] + timedelta(minutes=30)).astimezone(timezone.utc).isoformat()
+        full = client.get("/api/v1/profiles", params={"dataset_id": b["id"]}).json()
+        part = client.get("/api/v1/profiles", params={"dataset_id": b["id"], "as_of": cut})
+        assert part.status_code == 200, part.text
+        assert len(part.json()) < len(full)
+        # grade C (placeholder bar) refused
+        c = _upload(client, intraday_csv(
+            [date(2026, 10, 27)], 30,
+            line=lambda t: f"{chicago_stamp(t)},430.25,430.25,430.25,430.25,"
+                           + ("0" if t.hour == 8 and t.minute == 0 else "10")), src(timeframe=30))
+        assert c["data_grade"] == "C"
+        r = client.get("/api/v1/profiles", params={"dataset_id": c["id"]})
+        assert r.status_code == 422
+        assert r.json()["detail"] == {"reason": "Placeholder bars or off-grid prices lower the grade",
+                                      "data_grade": "C"}
+        # daily refused
+        d = _upload(client, GOOD, src())
+        r = client.get("/api/v1/profiles", params={"dataset_id": d["id"]})
+        assert r.status_code == 422
+        assert r.json()["detail"]["reason"] == "Daily bars cannot support an intraday profile"
+        assert client.post("/api/v1/analyze", json={"dataset_id": d["id"]}).status_code == 422
+
+
+def test_zm_tick_allows_point_one_bin_and_equity_default_unchanged(tmp_path):
+    with TestClient(create_app(tmp_path / "z.sqlite3"), client=("127.0.0.1", 50000),
+                    base_url="http://localhost") as client:
+        zm = _upload(client, intraday_csv([date(2026, 10, 27)], 30,
+                                          line=lambda t: f"{chicago_stamp(t)},330.10,330.30,330.00,330.20,10"),
+                     src("ZMZ26", timeframe=30))
+        assert zm["data_grade"] == "B"
+        r = client.get("/api/v1/profiles", params={"dataset_id": zm["id"], "bin_size": 0.1})
+        assert r.status_code == 200, r.text
+        eq = _upload(client, demo_csv(), demo_source())
+        r = client.get("/api/v1/profiles", params={"dataset_id": eq["id"]})
+        assert r.status_code == 200 and all(p["bin_size"] == 0.25 for p in r.json())
