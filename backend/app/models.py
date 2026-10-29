@@ -54,6 +54,7 @@ class Source(Model):
 class Parameters(Model):
     bin_size: float = Field(default=0.25, ge=0.000001, le=10000)
     value_area_fraction: float = Field(default=0.7, gt=0, le=1)
+    value_area_method: Literal["two_row", "one_bin"] = "two_row"
     tpo_minutes: Literal[30, 60] = 30
     initial_balance_minutes: int = Field(default=60, ge=30, le=120)
     lookback: int = Field(default=20, ge=3, le=200)

@@ -18,7 +18,7 @@ Base URL: `http://127.0.0.1:8000/api/v1`. Interactive schemas: `/docs`; machine-
 | GET | `/journal/export.csv`, `/journal/day-summary?date=` | — | CSV of every entry; `{date, trades, losses, realized_pnl}` |
 | GET | `/datasets/{id}` | dataset UUID | Dataset |
 | GET | `/market/bars` | dataset_id; optional as_of, offset=0, limit=1000 (max 10000) | Bar array |
-| GET | `/profiles` | dataset_id; optional as_of, bin_size (equity default .25; grain default = contract tick), value_area_fraction=.7, composite=false | Profile array |
+| GET | `/profiles` | dataset_id; optional as_of, bin_size (equity default .25; grain default = contract tick), value_area_fraction=.7, value_area_method=two_row (or one_bin), composite=false | Profile array |
 | GET | `/knowledge/concepts` | optional category | Concept array |
 | GET | `/knowledge/concepts/{id}` | concept ID | Concept |
 | GET | `/knowledge/concepts/{id}/related` | concept ID | related Concept array |
@@ -187,3 +187,11 @@ const analysis = await response.json();
 ```
 
 CORS defaults to `http://localhost:3000` and `http://127.0.0.1:3000`; override with comma-separated `MSI_CORS_ORIGINS`. No frontend files were edited. Synthetic mock responses and metadata are in `backend/fixtures/`; their fixed UUIDs are mock identifiers and cannot be used against a fresh database. Actual upload responses supply real IDs.
+
+## Value area method (step 3.2a)
+
+`Parameters.value_area_method` and the `/profiles` query parameter `value_area_method` accept `two_row` (default) or `one_bin`. Profile output shape is unchanged.
+
+- Default change: value areas (VAL, VAH, achieved_value_fraction, developing value path) now use `two_row`. Pass `one_bin` to get the previous results.
+- `two_row`: start at the POC bin (ties: lowest price). Each step sums the next two bins above and the next two bins below the area (one bin if only one remains on a side, 0 if none) and adds the larger pair; on a tie the lower side is added. Repeat until the enclosed weight is at least `value_area_fraction` x total, or no bins remain.
+- `one_bin`: grow one bin at a time toward the larger neighbour (ties: lower).

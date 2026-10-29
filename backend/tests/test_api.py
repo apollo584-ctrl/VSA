@@ -305,3 +305,17 @@ def test_from_contract_upstream_failures(tmp_path):
     with _contract_client(tmp_path, lambda url: json.dumps(missing).encode()) as c:
         response = c.post("/api/v1/datasets/from-contract", json={"contract": "ZCZ26"})
         assert response.status_code == 422 and "ZCZ26.CBT" in response.json()["detail"]
+
+
+def test_legacy_analysis_without_value_area_method_reads_as_one_bin(client):
+    dataset = upload(client).json()
+    original = client.post("/api/v1/analyze", json={"dataset_id": dataset["id"]}).json()
+    assert original["parameters"]["value_area_method"] == "two_row"
+    legacy = {k: v for k, v in original.items() if k != "parameters"}
+    legacy["id"] = "legacy-value-area"
+    legacy["parameters"] = {k: v for k, v in original["parameters"].items() if k != "value_area_method"}
+    with client.app.state.store.connect() as db:
+        db.execute("INSERT INTO analyses VALUES (?, ?, ?)", (legacy["id"], dataset["id"], json.dumps(legacy)))
+    reopened = client.get("/api/v1/analyses/legacy-value-area").json()
+    assert reopened["parameters"]["value_area_method"] == "one_bin"
+    assert client.get(f'/api/v1/analyses/{original["id"]}').json()["parameters"]["value_area_method"] == "two_row"

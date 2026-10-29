@@ -33,7 +33,7 @@ def developing_profile(bars: list[Bar], source: Source, p: Parameters) -> Develo
         volumes[lo - lower:hi - lower + 1] += bar.volume / (hi - lo + 1)
         if volumes.sum() <= 0:
             continue
-        poc, low, high, _ = value_area_indices(volumes, p.value_area_fraction)
+        poc, low, high, _ = value_area_indices(volumes, p.value_area_fraction, p.value_area_method)
         centers = np.arange(lower, upper + 1, dtype=float) * p.bin_size + p.bin_size / 2
         points.append(DevelopingPoint(timestamp=bar.timestamp, available_at=bar.available_at,
                                       poc=float(centers[poc]), vah=float(centers[high] + p.bin_size / 2),
