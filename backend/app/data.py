@@ -86,11 +86,10 @@ def _slots_per_day(trade_date: date, step: int) -> int:
 
 def _thin_fraction(bars: list[Bar], quality_: Quality, step: int) -> float:
     """Share of expected in-session slots with no bar between the first and last complete trade dates."""
-    bad = set(quality_.incomplete_sessions)
-    complete = sorted({b.session for b in bars} - bad)
-    if not complete:
+    seen = sorted({b.session for b in bars})
+    if not seen:
         return 0.0
-    first, last = date.fromisoformat(complete[0]), date.fromisoformat(complete[-1])
+    first, last = date.fromisoformat(seen[0]), date.fromisoformat(seen[-1])
     days = {d.isoformat() for d in _grain_open_days(first, last)}
     expected = sum(_slots_per_day(date.fromisoformat(d), step) for d in days)
     have = sum(1 for b in bars if b.session in days)

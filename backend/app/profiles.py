@@ -98,14 +98,17 @@ def value_area_indices(weights, fraction):
     return poc, low, high, enclosed
 
 
-def distribution(weights, centers, bars, p, method):
+def distribution(weights, centers, bars, p, method, bounds=None):
+    """bounds: optional exact (lower, upper) float edges per bin (grain), instead of centers -/+ bin_size / 2."""
     total = float(weights.sum())
     if total <= 0:
         return Distribution(method=method, counts=weights.tolist(), poc=None, vah=None, val=None,
                             achieved_value_fraction=None, shape=shape(weights, bars, p))
     poc, low, high, enclosed = value_area_indices(weights, p.value_area_fraction)
+    val = float(bounds[0][low]) if bounds else float(centers[low] - p.bin_size / 2)
+    vah = float(bounds[1][high]) if bounds else float(centers[high] + p.bin_size / 2)
     return Distribution(method=method, counts=weights.tolist(), poc=float(centers[poc]),
-                        val=float(centers[low] - p.bin_size / 2), vah=float(centers[high] + p.bin_size / 2),
+                        val=val, vah=vah,
                         achieved_value_fraction=enclosed / total, shape=shape(weights, bars, p))
 
 
@@ -155,7 +158,9 @@ def profile(bars: list[Bar], source: Source, p: Parameters, scope="session") -> 
         edges = tickbins.bin_edges(lower_index, upper_index, grain_size)
         lowers = np.array([float(e) for e in edges])
         centers = np.array([float(e + grain_size / 2) for e in edges])
+        bounds = (lowers, np.array([float(e + grain_size) for e in edges]))
     else:
+        bounds = None
         lowers = np.arange(lower_index, upper_index + 1, dtype=float) * p.bin_size
         centers = lowers + p.bin_size / 2
     volumes = np.zeros(len(lowers))
@@ -175,8 +180,8 @@ def profile(bars: list[Bar], source: Source, p: Parameters, scope="session") -> 
     tpos = np.zeros(len(lowers))
     for bins in occupancy.values():
         tpos[list(bins)] += 1
-    tpo = distribution(tpos, centers, bars, p, "estimated_tpo_range_occupancy")
-    volume = distribution(volumes, centers, bars, p, "estimated_uniform_volume_per_touched_bin")
+    tpo = distribution(tpos, centers, bars, p, "estimated_tpo_range_occupancy", bounds)
+    volume = distribution(volumes, centers, bars, p, "estimated_uniform_volume_per_touched_bin", bounds)
     nodes = peak_indices(volumes, p)
     valleys = [i for i in range(1, len(volumes) - 1)
                if volumes.max() > 0 and volumes[i] <= volumes.max() * p.valley_fraction

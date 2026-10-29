@@ -114,3 +114,11 @@ def test_bin_limit():
     bars = [bar("2026-11-03 08:30", D1, 400, 1000, 400, 1000)]
     with pytest.raises(ProfileLimitError):
         profile(bars, src(), Parameters(bin_size=0.25))
+
+
+def test_zr_value_area_edges_are_exact_tick_boundaries():
+    bars = [bar("2026-11-03 08:30", D1, 12.315, 12.315, 12.315, 12.315)]
+    result = profile(bars, src("ZRX27"), Parameters(bin_size=0.005))
+    assert result.volume.val == 12.315
+    assert result.volume.vah == 12.32
+    assert result.tpo.val == 12.315 and result.tpo.vah == 12.32

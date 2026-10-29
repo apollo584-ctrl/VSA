@@ -78,3 +78,16 @@ def test_float32_prices_stay_on_grid_for_zl():
                                        "67.66999816894531,67.69000244140625,10")
     d = ingest(body, s)[0]
     assert d.data_grade == "B", d.limitations
+
+
+def test_thin_trading_counts_sparse_boundary_dates():
+    chi = ZoneInfo("America/Chicago")
+
+    def skip(t):
+        local = t.astimezone(chi)
+        evening_of_27 = local.date() == date(2026, 10, 26) and local.hour >= 19
+        return evening_of_27 or (local.date() == date(2026, 10, 27) and local.hour < 8)
+
+    body = intraday_csv([date(2026, 10, 26), date(2026, 10, 27)], 30, skip=skip)
+    dataset, _ = ingest(body, src(timeframe=30))
+    assert any("Thin trading" in x for x in dataset.limitations)
