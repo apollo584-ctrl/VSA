@@ -18,13 +18,13 @@ def ascending():
 
 def test_baselines_exclude_current_bar_and_tod_needs_history():
     bars = [make_bar(i, volume=1000) for i in range(5)] + [make_bar(5, volume=10000)]
-    result = features(bars, Parameters())[-1]
+    result = features(bars, Parameters(trend_method="close_difference"))[-1]
     assert result["volume_ma"] == 1000 and result["relative_volume"] == 10
     assert result["tod_relative_volume"] is None
     bars = [make_bar(0, session=day, volume=v) for day, v in
             [("2025-03-03", 1000), ("2025-03-04", 1000), ("2025-03-05", 1000),
              ("2025-03-06", 1000), ("2025-03-07", 1000), ("2025-03-10", 3000)]]
-    result = features(bars, Parameters())[-1]
+    result = features(bars, Parameters(trend_method="close_difference"))[-1]
     assert result["tod_relative_volume"] == 3
     assert result["tod_prior_sessions"] == 5
 
@@ -32,7 +32,7 @@ def test_baselines_exclude_current_bar_and_tod_needs_history():
 def test_contextual_upthrust_and_followthrough():
     bars = ascending()
     bars.append(make_bar(8, o=101.6, h=103, low=101.2, c=101.3, volume=5000))
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     observation = next(o for o in vsa.detect(bars, features(bars, p), p) if o.concept_id == "upthrust")
     assert observation.status == "provisional"
     assert observation.first_observable_at == bars[-1].available_at
@@ -47,7 +47,7 @@ def test_contextual_upthrust_and_followthrough():
 
 def test_invalidated_candidate_and_no_confirmation_across_gap():
     bars = ascending() + [make_bar(8, o=101.6, h=103, low=101.2, c=101.3, volume=5000)]
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     appended = bars + [make_bar(9, o=103, h=104, low=102, c=103.5)]
     observation = next(o for o in vsa.detect(appended, features(appended, p), p) if o.concept_id == "upthrust")
     assert observation.status == "invalidated" and observation.confirmed_at is None
@@ -58,7 +58,7 @@ def test_invalidated_candidate_and_no_confirmation_across_gap():
 
 def test_pivots_are_not_backdated():
     bars = [make_bar(i, h=high) for i, high in enumerate([101, 102, 105, 103, 102])]
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     early = price_action.detect(bars[:-1], features(bars[:-1], p), p)
     assert not [o for o in early if o.concept_id == "swing_structure"]
     result = price_action.detect(bars, features(bars, p), p)
@@ -71,7 +71,7 @@ def test_auction_transitions_and_incomplete_reference(source):
     prior = [make_bar(i, session="2025-03-07", h=101, low=99) for i in range(78)]
     current = [make_bar(i, o=102, h=103, low=101.5, c=102) for i in range(3)]
     current.append(make_bar(3, o=100, h=101, low=99, c=100))
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     profiles = [profile(prior, source, p), profile(current, source, p)]
     result = auction.classify(prior + current, profiles, {"2025-03-07"}, p)
     assert result.state == "rejection_above_value"
@@ -81,7 +81,7 @@ def test_auction_transitions_and_incomplete_reference(source):
 
 
 def test_auction_missing_session_and_gaps_cannot_establish_acceptance(source):
-    p = Parameters()
+    p = Parameters(trend_method="close_difference")
     prior = [make_bar(i, session="2025-03-07") for i in range(78)]
     current = [make_bar(i, o=102, h=103, low=101.5, c=102) for i in [0, 1, 3]]
     result = auction.classify(prior + current, [profile(prior, source, p), profile(current, source, p)], {"2025-03-07"}, p)
@@ -93,7 +93,7 @@ def test_auction_missing_session_and_gaps_cannot_establish_acceptance(source):
 
 
 def test_low_activity_context_and_expiration():
-    p = Parameters(confirmation_bars=2)
+    p = Parameters(confirmation_bars=2, trend_method="close_difference")
     up = ascending() + [make_bar(8, o=101.5, h=101.7, low=101.5, c=101.55, volume=100)]
     assert any(o.concept_id == "no_demand" for o in vsa.detect(up, features(up, p), p))
     down = [make_bar(i, o=102 - i * .2, h=102.2 - i * .2, low=101.8 - i * .2,
@@ -147,7 +147,7 @@ def test_mixed_evidence_is_retained(source):
     bars = ascending() + [make_bar(8, o=101.6, h=103.5, low=99.8, c=99.95, volume=5000)]
     bars += [make_bar(9, o=100.3, h=101, low=99.7, c=100.9, volume=5000)]
     dataset, bars = ingest(csv_bytes(bars), source)
-    result = interpret(dataset, bars, AnalyzeRequest(dataset_id=dataset.id))
+    result = interpret(dataset, bars, AnalyzeRequest(dataset_id=dataset.id, parameters=Parameters(trend_method="close_difference")))
     assert result.interpretations[0].id == "mixed_evidence"
     assert result.contradicting_evidence
     directions = {o.direction for o in result.vsa_observations if o.status in ("provisional", "confirmed")}

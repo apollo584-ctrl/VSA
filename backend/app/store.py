@@ -232,6 +232,8 @@ class Store:
         # Snapshots saved before value_area_method existed were computed with the one-bin rule.
         if isinstance(snapshot.get("parameters"), dict):
             snapshot["parameters"].setdefault("value_area_method", "one_bin")
+            # Snapshots saved before trend_method existed used the 20-bar close difference.
+            snapshot["parameters"].setdefault("trend_method", "close_difference")
         return Analysis.model_validate(snapshot)
 
     JOURNAL_FIELDS = ["trade_date", "symbol", "kind", "setup_version", "prior_vah", "prior_val", "prior_poc", "entry", "stop", "target",

@@ -75,6 +75,12 @@ class Parameters(Model):
     node_separation_bins: int = Field(default=3, ge=2, le=100)
     trend_progress: float = Field(default=0.6, gt=0, lt=1)
     split_ratio: float = Field(default=1.8, gt=1, le=10)
+    atr_period: int = Field(default=14, ge=3, le=100)
+    regime_window: int = Field(default=100, ge=20, le=500)
+    regime_low: float = Field(default=0.75, gt=0, lt=1)
+    regime_high: float = Field(default=1.25, gt=1, le=10)
+    trend_method: Literal["slope", "close_difference"] = "slope"
+    trend_atr_threshold: float = Field(default=1.0, gt=0, le=10)
 
     @model_validator(mode="after")
     def history_fits(self):
