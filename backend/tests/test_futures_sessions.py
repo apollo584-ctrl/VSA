@@ -77,3 +77,20 @@ def test_day_after_weekday_holiday_is_flagged_possibly_incomplete():
     # Good Friday 2026-04-03 is followed by a weekend, not a trade date
     assert not m.possibly_incomplete(date(2026, 4, 6), G)
     assert not m.possibly_incomplete(date(2026, 11, 27), m.get_market("equity_xnys"))
+
+
+def test_friday_after_close_is_closed_until_sunday_evening():
+    assert m.trade_date_for(utc(2026, 10, 23, 13, 19), G) == date(2026, 10, 23)
+    assert m.trade_date_for(utc(2026, 10, 23, 13, 20), G) is None
+    assert m.trade_date_for(utc(2026, 10, 23, 18, 59), G) is None
+    assert m.trade_date_for(utc(2026, 10, 23, 19, 0), G) is None  # Saturday trade date
+
+
+def test_equity_uses_xnys_schedule_including_early_close_and_special_closure():
+    E = m.get_market("equity_xnys")
+    NY = ZoneInfo("America/New_York")
+    close = datetime(2026, 11, 27, 13, 0, tzinfo=NY).astimezone(timezone.utc)
+    assert m.session_windows(date(2026, 11, 27), E)[-1][1] == close
+    assert m.is_session_complete(date(2026, 11, 27), close, E)
+    assert m.session_windows(date(2025, 1, 9), E) == []
+    assert m.trade_date_for(datetime(2025, 1, 9, 15, 0, tzinfo=timezone.utc), E) is None

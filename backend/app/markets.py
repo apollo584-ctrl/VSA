@@ -106,7 +106,18 @@ def is_holiday(d: date) -> bool:
     return d in _holidays(d.year)
 
 
-def _is_open_day(d: date) -> bool:
+@lru_cache(maxsize=1)
+def _xnys():
+    import exchange_calendars as xcals
+
+    return xcals.get_calendar("XNYS")
+
+
+def _is_open_day(d: date, market: MarketSpec | None = None) -> bool:
+    if market is not None and market.market_id == "equity_xnys":
+        import pandas as pd  # exchange_calendars dependency
+
+        return bool(_xnys().is_session(pd.Timestamp(d)))
     return d.weekday() < 5 and not is_holiday(d)
 
 
@@ -125,18 +136,25 @@ def trade_date_for(ts_utc: datetime, market: MarketSpec) -> date | None:
     ts = _aware_utc(ts_utc)
     if market.market_id == "equity_xnys":
         d = ts.astimezone(_NY).date()
-        return d if _is_open_day(d) else None
+        return d if _is_open_day(d, market) else None
     local = ts.astimezone(_CHI)
+    if local.weekday() == 4 and local.time() >= time(13, 20):
+        return None  # Friday close to Sunday 19:00 CT is closed
     d = local.date() + timedelta(days=1) if local.time() >= time(19, 0) else local.date()
-    return d if _is_open_day(d) else None
+    return d if _is_open_day(d, market) else None
 
 
 def session_windows(trade_date: date, market: MarketSpec) -> list[tuple[datetime, datetime]]:
     """UTC (start, end) windows for the trade date; end is exclusive."""
-    if not _is_open_day(trade_date):
+    if not _is_open_day(trade_date, market):
         return []
     if market.market_id == "equity_xnys":
-        return [(_utc(trade_date, time(9, 30), _NY), _utc(trade_date, time(16, 0), _NY))]
+        import pandas as pd
+
+        day = pd.Timestamp(trade_date)
+        cal = _xnys()
+        return [(cal.session_open(day).to_pydatetime().astimezone(timezone.utc),
+                 cal.session_close(day).to_pydatetime().astimezone(timezone.utc))]
     prev = trade_date - timedelta(days=1)  # Monday's evening starts Sunday 19:00
     return [
         (_utc(prev, time(19, 0), _CHI), _utc(trade_date, time(7, 45), _CHI)),
