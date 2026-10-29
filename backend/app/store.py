@@ -228,7 +228,11 @@ class Store:
             row = db.execute("SELECT snapshot FROM analyses WHERE id=?", (analysis_id,)).fetchone()
         if row is None:
             raise KeyError(analysis_id)
-        return Analysis.model_validate_json(row[0])
+        snapshot = json.loads(row[0])
+        # Snapshots saved before value_area_method existed were computed with the one-bin rule.
+        if isinstance(snapshot.get("parameters"), dict):
+            snapshot["parameters"].setdefault("value_area_method", "one_bin")
+        return Analysis.model_validate(snapshot)
 
     JOURNAL_FIELDS = ["trade_date", "symbol", "kind", "setup_version", "prior_vah", "prior_val", "prior_poc", "entry", "stop", "target",
                       "shares", "est_costs_per_share", "planned_loss", "exit_price", "exit_time", "exit_reason", "fees", "net_pnl",
