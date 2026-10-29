@@ -333,7 +333,7 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             if exc.status_code != 422:
                 raise
             gate_reason = exc.detail.get("reason") if isinstance(exc.detail, dict) else str(exc.detail)
-        return build_structure(contract, root, as_of, dataset, bars, session_profiles, gate_reason)
+        return build_structure(contract, root, as_of, dataset, bars, session_profiles, gate_reason, datetime.now(timezone.utc))
 
     def scan_snapshot():
         results = [ScanResult.model_validate_json(raw) for raw in store.scan_results()]

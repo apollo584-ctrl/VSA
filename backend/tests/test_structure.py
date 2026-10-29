@@ -110,3 +110,20 @@ def test_structure_prefers_larger_timeframe(tmp_path):
         d30 = _load(c)
         body = c.get("/api/v1/structure", params={"contract": "ZCZ26"}).json()
         assert body["timeframe_minutes"] == 30 and body["dataset_id"] == d30["id"]
+
+
+def test_structure_ignores_trade_date_still_in_progress(tmp_path):
+    # 07:00 CT on Oct 14: the Oct 14 trade date has begun (evening session) but its day session has not ended.
+    with _contract_client(tmp_path, _fetch()) as c:
+        _load(c)
+        body = c.get("/api/v1/structure", params={"contract": "ZCZ26", "as_of": "2026-10-14T12:00:00+00:00"}).json()
+    assert body["latest_session"] == "2026-10-13"
+    assert body["session_profile"]["session"] == "2026-10-13" and body["prior_session_profile"] is None
+
+
+def test_structure_with_no_complete_trade_date_is_a_shell_with_reason(tmp_path):
+    with _contract_client(tmp_path, _fetch()) as c:
+        _load(c)
+        body = c.get("/api/v1/structure", params={"contract": "ZCZ26", "as_of": "2026-10-13T12:00:00+00:00"}).json()
+    assert body["session_profile"] is None and body["volatility"] is None and body["latest_session"] is None
+    assert any("No complete trade date" in t for t in body["limitations"])
