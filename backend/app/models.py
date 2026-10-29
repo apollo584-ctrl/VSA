@@ -451,3 +451,47 @@ class JournalEntry(JournalEntryIn):
     created_at: str
     updated_at: str
     r_multiple: float | None = None
+
+
+class StructureLevels(Model):
+    poc: float | None = None
+    vah: float | None = None
+    val: float | None = None
+
+
+class StructureProfile(Model):
+    session: str
+    bin_size: float
+    value_area_method: str
+    volume: StructureLevels
+    tpo: StructureLevels
+    shape: str
+    hvns: list[float]
+    lvns: list[float]
+    single_print_bins: list[float]
+
+
+class StructureVolatility(Model):
+    atr: float | None = None
+    atr_period: int
+    regime: str | None = None
+    trend_background: str | None = None
+    trend_move_atr: float | None = None
+
+
+class StructureResponse(Model):
+    contract_version: Literal["1"] = "1"
+    market: Literal["cbot_grains"] = "cbot_grains"
+    root: str
+    contract: str
+    as_of: datetime | None = None
+    dataset_id: str | None = None
+    data_grade: DataGrade | None = None
+    timeframe_minutes: int | None = None
+    latest_session: str | None = None
+    session_profile: StructureProfile | None = None
+    prior_session_profile: StructureProfile | None = None
+    volatility: StructureVolatility | None = None
+    value_location: None = None
+    auction_state: None = None
+    limitations: list[str] = []

@@ -8,7 +8,7 @@ import threading
 from typing import Literal
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -23,11 +23,12 @@ from app import alerts, auth, grade, journal, markets, outcomes, providers, setu
 from app.data import MAX_BYTES, ingest, quality
 from app.interpretation import interpret, visible
 from app.knowledge import load
-from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, SymbolLoadRequest
+from app.models import Analysis, AnalyzeRequest, Bar, Concept, ContractLoadRequest, Dataset, JournalEntry, JournalEntryIn, Parameters, Profile, Source, StructureResponse, SymbolLoadRequest
 from app.profiles import profile, profiles
 from app.providers import ProviderUnavailable, YahooChartProvider, http_fetch
 from app.scan import Scanner, ScanAutoRequest, ScanResult, ScanRunRequest, ScanSnapshot, ScanStatus
 from app.store import Store
+from app.structure import build_structure, pick_dataset
 from app.study_jobs import AlertJob, DailyAlertTimer, IntradayCollector, JobStatus, StudyRefreshTimer, StudyRunner, is_stale
 
 DAILY_SYMBOL = re.compile(r"^[A-Z][A-Z0-9.\-]{0,15}$")
@@ -310,6 +311,37 @@ def create_app(db_path: Path | None = None, market_fetch=None, scan_universe: li
             return [profile(bars, dataset.source, p, "composite")] if composite else profiles(bars, dataset.source, p)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.get("/api/v1/structure", response_model=StructureResponse)
+    def get_structure(contract: str, as_of: datetime | None = None):
+        try:
+            root = markets.contract_parts(contract)[0]
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        if as_of is not None and (as_of.tzinfo is None or as_of.utcoffset() is None):
+            raise HTTPException(422, "as_of requires a UTC offset")
+        chosen = pick_dataset(store.datasets_for_contract(contract))
+        if chosen is None:
+            return build_structure(contract, root, as_of, None, [], None, None)
+        dataset, bars = dataset_or_404(chosen.id)
+        gate_reason, session_profiles, complete_bars, no_complete = None, None, [], False
+        try:
+            require_profile_allowed(dataset)
+            # Only trade dates whose session has ended by as_of (or now) count; profile just the bars through the latest close,
+            # so a date still in progress cannot trip the discontinuity gate or appear as a session.
+            grain = markets.get_market("cbot_grains")
+            effective = as_of or datetime.now(timezone.utc)
+            done = {s for s in {b.session for b in bars} if markets.is_session_complete(date.fromisoformat(s), effective, grain)}
+            if done:
+                complete_bars = [b for b in bars if b.session in done]
+                session_profiles = get_profiles(dataset.id, max(b.available_at for b in complete_bars), None, 0.7, "two_row", False)
+            else:
+                no_complete = True
+        except HTTPException as exc:
+            if exc.status_code != 422:
+                raise
+            gate_reason = exc.detail.get("reason") if isinstance(exc.detail, dict) else str(exc.detail)
+        return build_structure(contract, root, as_of, dataset, complete_bars, session_profiles, gate_reason, no_complete)
 
     def scan_snapshot():
         results = [ScanResult.model_validate_json(raw) for raw in store.scan_results()]
