@@ -127,3 +127,29 @@ def test_structure_with_no_complete_trade_date_is_a_shell_with_reason(tmp_path):
         body = c.get("/api/v1/structure", params={"contract": "ZCZ26", "as_of": "2026-10-13T12:00:00+00:00"}).json()
     assert body["session_profile"] is None and body["volatility"] is None and body["latest_session"] is None
     assert any("No complete trade date" in t for t in body["limitations"])
+
+
+def test_structure_before_any_stored_bar_is_a_shell_not_an_error(tmp_path):
+    with _contract_client(tmp_path, _fetch()) as c:
+        _load(c)
+        r = c.get("/api/v1/structure", params={"contract": "ZCZ26", "as_of": "2026-10-12T00:00:00+00:00"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["session_profile"] is None and body["volatility"] is None
+    assert any("No complete trade date" in t for t in body["limitations"])
+
+
+def test_unfinished_trade_date_cannot_trip_the_discontinuity_gate(tmp_path):
+    chart = _contract_chart()
+    result = chart["chart"]["result"][0]
+    quote = result["indicators"]["quote"][0]
+    later = [i for i, t in enumerate(result["timestamp"]) if t > BOUNDARY_EPOCH]
+    assert later
+    for key in ("open", "high", "low", "close"):
+        for i in later:
+            quote[key][i] = quote[key][i] + 450.0
+    with _contract_client(tmp_path, _fetch(chart)) as c:
+        _load(c)
+        body = c.get("/api/v1/structure", params={"contract": "ZCZ26", "as_of": "2026-10-14T12:00:00+00:00"}).json()
+    assert body["latest_session"] == "2026-10-13" and body["session_profile"] is not None
+    assert body["session_profile"]["volume"]["poc"] < 600
