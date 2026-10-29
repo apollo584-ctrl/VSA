@@ -9,10 +9,15 @@ class Model(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+DataGrade = Literal["A", "B", "C"]
+
+
 class Source(Model):
     instrument: str = Field(pattern=r"^[A-Z][A-Z0-9.\-]{0,15}$")
-    timeframe_minutes: Literal[1, 5, 15, 30, 60] = 5
-    exchange: Literal["XNYS"] = "XNYS"
+    timeframe_minutes: Literal[1, 5, 15, 30, 60, 1440] = 5
+    exchange: Literal["XNYS", "CBOT"] = "XNYS"
+    market: Literal["equity_xnys", "cbot_grains"] = "equity_xnys"
+    contract: str | None = Field(default=None, pattern=r"^[A-Z]{1,3}[FGHJKMNQUVXZ][0-9]{2}$")
     session_mode: Literal["regular", "extended"] = "regular"
     timestamp_convention: Literal["bar_start", "bar_end"] = "bar_start"
     timezone: str = "America/New_York"
@@ -23,6 +28,22 @@ class Source(Model):
 
     @model_validator(mode="after")
     def compatible_adjustments(self):
+        if self.market == "equity_xnys":
+            if self.exchange != "XNYS":
+                raise ValueError("Equity sources must use exchange XNYS")
+            if self.contract is not None:
+                raise ValueError("Equity sources cannot carry a futures contract")
+            if self.timeframe_minutes == 1440:
+                raise ValueError("Daily bars are only supported for futures sources")
+        else:
+            if self.exchange != "CBOT":
+                raise ValueError("CBOT grain sources must use exchange CBOT")
+            if self.timezone != "America/Chicago":
+                raise ValueError("CBOT grain sources must use timezone America/Chicago")
+            if self.contract is None:
+                raise ValueError("CBOT grain sources require a contract")
+            if self.instrument != self.contract:
+                raise ValueError("Instrument must equal the contract code")
         if self.session_mode == "regular" and self.timeframe_minutes == 60:
             raise ValueError("60-minute bars cannot tile the 390-minute regular session; use 30 minutes or less")
         if (self.price_adjustment == "split_adjusted") != (self.volume_adjustment == "split_adjusted"):
@@ -117,6 +138,9 @@ class Dataset(Model):
     first_timestamp: datetime
     last_available_at: datetime
     quality: Quality
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
+    limitations: list[str] = []
 
 
 class ConditionResult(Model):
@@ -250,6 +274,8 @@ class Profile(Model):
     range_extension: dict[str, float | None]
     extremes: dict[str, str]
     limitations: list[str]
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
 
 
 class Scenario(Model):
@@ -322,6 +348,9 @@ class Analysis(Model):
     invalidation_conditions: list[str]
     uncertainties: list[str]
     plain_english_summary: str
+    data_grade: DataGrade | None = None
+    grade_basis: str | None = None
+    limitations: list[str] = []
 
     @model_validator(mode="after")
     def snapshot_identity(self):
